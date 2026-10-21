@@ -38,7 +38,7 @@ canvas{display:block;touch-action:none;position:fixed;inset:0}
 #pilladoW{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 64px);width:min(300px,60vw);text-align:center;font-weight:900;font-size:12px;letter-spacing:1px}
 #pillado{height:12px;border-radius:8px;background:rgba(0,0,0,.45);overflow:hidden;border:2px solid rgba(255,255,255,.5);margin-top:3px}#pillado i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd23a,#ff3a3a)}
 #pilladoW.hot{animation:sh .15s infinite}@keyframes sh{50%{transform:translateX(-50%) rotate(1.5deg)}}
-#prompt{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 190px);transform:translateX(-50%);background:#ffd67a;color:#1d2533;font-weight:900;padding:8px 16px;border-radius:999px;font-size:16px;display:none;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+#prompt{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 64px);transform:translateX(-50%);background:#ffd67a;color:#1d2533;font-weight:900;padding:8px 16px;border-radius:999px;font-size:16px;display:none;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 #prompt kbd{background:#1d2533;color:#ffd67a;border-radius:6px;padding:1px 6px;margin-right:6px;font-family:inherit}
 .touch #prompt{bottom:calc(env(safe-area-inset-bottom) + 200px)}
 #joy{position:absolute;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);display:none;left:0;top:0;transform:translate(-50%,-50%)}
@@ -61,6 +61,7 @@ canvas{display:block;touch-action:none;position:fixed;inset:0}
 .bub{position:fixed;left:0;top:0;pointer-events:none;background:#fff;color:#1d2533;font-weight:800;font-size:14px;padding:7px 11px;border-radius:14px;max-width:210px;text-align:center;z-index:6;box-shadow:0 4px 12px rgba(0,0,0,.3);will-change:transform;line-height:1.2}
 .bub:after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;border:8px solid transparent;border-top-color:#fff;border-bottom:0}
 .bub.w{background:#ffe2e2;color:#8a1010}.bub.w:after{border-top-color:#ffe2e2}
+.bub.bar{background:#dcf7cf;color:#1f4d15}.bub.bar:after{border-top-color:#dcf7cf}
 .pop{position:fixed;left:0;top:0;pointer-events:none;font-weight:900;font-size:24px;color:#ffd67a;text-shadow:0 3px 0 #b3261e,0 0 10px rgba(0,0,0,.6);z-index:7;white-space:nowrap}
 #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:8;transition:opacity .25s}
 #big{position:fixed;left:0;right:0;top:22%;text-align:center;font-weight:900;font-size:clamp(34px,10vw,64px);color:#ffd67a;text-shadow:0 4px 0 #b3261e,0 0 20px rgba(0,0,0,.5);pointer-events:none;z-index:9;opacity:0;transition:opacity .2s,transform .2s;transform:scale(.7)}
@@ -484,7 +485,7 @@ function makePopCharacter(userCfg) {
       const ET = C.earrings.type, ES = C.earrings.size || 1;
       if (ET === 'gauge') { // dilatador gigante
         const gm = vinyl(C.earrings.color || '#3a2414', { roughness: 0.35 }); const lobe = mk(new T3.TorusGeometry(0.06 * ES, 0.02, 10, 28), skinM, 0); lobe.rotation.y = Math.PI / 2; lobe.position.set(0.012 * s, -0.17 - 0.03 * ES, 0.0); ear.add(lobe);
-        const ring = new T3.Mesh(new T3.TorusGeometry(0.058 * ES, 0.012, 8, 28), gm); ring.rotation.y = Math.PI / 2; ring.position.copy(lobe.position); ring.position.x += 0.012 * s; ring.scale.set(1, 1, 1.7); ear.add(ring);
+        const ring = new T3.Mesh(new T3.TorusGeometry(0.058 * ES, 0.012 * Math.max(1, ES / 1.8), 8, 28), gm); ring.rotation.y = Math.PI / 2; ring.position.copy(lobe.position); ring.position.x += 0.012 * s; ring.scale.set(1, 1, 1.7); ear.add(ring);
       } else {
         const er = ET === 'hoop' ? new T3.Mesh(new T3.TorusGeometry(0.035 * ES, 0.007, 8, 24), em) : new T3.Mesh(new T3.SphereGeometry(0.018, 12, 10), em);
         er.position.set(0.02 * s, -0.1, 0.01); if (ET === 'hoop') { er.rotation.y = Math.PI / 2; er.position.y = -0.1 - 0.035 * ES; } ear.add(er);
@@ -726,7 +727,7 @@ const CROWD_TPL = [
 // camareros hippies
 const WAITERS = [
   // el ALTO de la barra: melena recogida, barba larga, dilatadores gigantes
-  { name: 'Camarero', skin: '#c99272', hair: { style: 'long', color: '#5a3a22', side: '#3b2614', len: 0.6, bun: true, tuck: true }, beard: { style: 'short', color: '#5a3a22', dark: '#2a1a10' }, eyes: { size: 0.05, squint: 0.45 }, mouth: { type: 'smile', width: 0.12, depth: 0.025 }, earrings: { type: 'gauge', color: '#2a1a10', size: 2.0 }, piercings: true, shirt: { type: 'tshirt', color: '#6b7a3a', sleeves: 'short' }, pants: { color: '#3a2e24', baggy: 1.3 }, shoes: { color: '#2b2b2b' }, necklace: '#8a6a3a', legK: 1.9, torsoK: 1.35, tall: 1 },
+  { name: 'Camarero', skin: '#c99272', hair: { style: 'long', color: '#5a3a22', side: '#3b2614', len: 0.6, bun: true, tuck: true }, beard: { style: 'short', color: '#5a3a22', dark: '#2a1a10' }, eyes: { size: 0.05, squint: 0.45 }, mouth: { type: 'smile', width: 0.12, depth: 0.025 }, earrings: { type: 'gauge', color: '#e3a640', size: 3.3 }, piercings: true, shirt: { type: 'tshirt', color: '#6b7a3a', sleeves: 'short' }, pants: { color: '#3a2e24', baggy: 1.3 }, shoes: { color: '#2b2b2b' }, necklace: '#8a6a3a', legK: 1.9, torsoK: 1.35, tall: 1 },
   // camarero de terraza: rastas con bandana
   { name: 'Camarera', skin: '#d6a07c', hair: { style: 'short', color: '#7a4a2a', side: '#4a2a1a', dreads: 10 }, cap: { type: 'bandana', color: '#b03a2e' }, eyes: { size: 0.056, squint: 0.3 }, brows: { color: '#3a2014', y: 0.3 }, mouth: { type: 'smile', width: 0.14, depth: 0.035 }, earrings: { type: 'hoop', color: '#d8b04a', size: 1.4 }, piercings: true, shirt: { type: 'tank', color: '#2e2e33' }, pants: { color: '#7a5a8a', baggy: 1.45 }, shoes: { color: '#6b4a2e' }, armpit: true },
 ];
@@ -968,7 +969,7 @@ const bar = new THREE.Group(); scene.add(bar);
   for (let i = 0; i < 150; i++) { const t = (i + 0.5) / 150; const p = curve.getPointAt(t), tg = curve.getTangentAt(t); const nx = tg.y, nz = -tg.x; d.position.set(p.x + nx * 0.2, BH - 0.12 - 0.16, p.y + nz * 0.2); d.rotation.set(0, -Math.atan2(tg.y, tg.x), 0); d.updateMatrix(); ceilI.setMatrixAt(i, d.matrix); }
   scene.add(ceilI);
   // tarima detrás de la barra
-  const PLAT = window.__GAME ? 0.24 : 0; WX.PLAT = PLAT; WX.counter = { cx, cz, R, zf, DEP, H };
+  const PLAT = window.__GAME ? 0.24 : 0; WX.PLAT = PLAT; WX.counter = { cx, cz, R, zf, DEP, H, curve };
   if (PLAT) { const pm = std({ color: '#2c2420', roughness: 0.8 }); box(cx - BX0 + 0.02, PLAT, (zf - DEP) - (bbZ0 + 0.4) + 0.02, pm, (BX0 + cx) / 2, FLOOR_IN + PLAT / 2, ((zf - DEP) + (bbZ0 + 0.4)) / 2, scene, { cast: false });
     const dk = new THREE.Mesh(new THREE.CylinderGeometry(R - DEP + 0.02, R - DEP + 0.02, PLAT, 40, 1, false, 0, 2.1), pm); dk.position.set(cx, FLOOR_IN + PLAT / 2, cz); dk.receiveShadow = true; scene.add(dk);
     }  // sobre la barra: grifos, cubitera de cobre, TPV, flores
@@ -1225,10 +1226,25 @@ bin(-4.0, 0.45);
 function aframe(x, z, ry, seed) { const g = new THREE.Group(); g.position.set(x, 0.15, z); g.rotation.y = ry; scene.add(g); const t = TX.poster(seed, ['CONCIERTO', 'TAPAS', 'MÚSICA'][seed % 3], 'HOY'); for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.0), std({ map: t, side: THREE.DoubleSide })); p.position.set(0, 0.48, s * 0.12); p.rotation.x = s * 0.22; p.castShadow = true; g.add(p); } addColl(x, z, 0.32, 0.2, ry); }
 aframe(-5.6, 0.85, 0.15, 0); aframe(-6.6, 1.0, -0.2, 2);
 // motos/scooters aparcadas y un coche
+// cada scooter es un objeto montable: WX.scooters[i] = { g, fork, wheels, coll, home } (game.js lo conduce)
+WX.scooters = [];
 function scooter(th, d, ry, col) { const g = arcGroup(th, d, 0); g.rotation.y += ry; const bm = new THREE.MeshPhysicalMaterial({ color: col, roughness: 0.3, clearcoat: 0.8 });
-  for (const z of [-0.6, 0.62]) { const w = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.08, 10, 20), M.black); w.rotation.y = Math.PI / 2; w.position.set(0, 0.28, z); g.add(w); }
-  box(0.36, 0.25, 0.9, bm, 0, 0.5, -0.2, g); box(0.3, 0.12, 0.6, M.black, 0, 0.72, -0.3, g); box(0.34, 0.6, 0.18, bm, 0, 0.75, 0.45, g).rotation.x = -0.25; cyl(0.025, 0.025, 0.65, M.steel, 0, 1.12, 0.52, g, 6).rotation.z = Math.PI / 2; box(0.22, 0.28, 0.3, bm, 0, 0.42, 0.62, g);
-  const p = g.position; addColl(p.x, p.z, 0.25, 0.85, g.rotation.y); }
+  const wheel = (z, parent) => { const w = new THREE.Group(); w.position.set(0, 0.24, z); parent.add(w); const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.07, 10, 22), M.black); tyre.rotation.y = Math.PI / 2; tyre.castShadow = true; w.add(tyre);
+    const hub = cyl(0.11, 0.11, 0.07, M.steel, 0, 0, 0, w, 14); hub.rotation.z = Math.PI / 2; for (let k = 0; k < 3; k++) { const sp = box(0.075, 0.24, 0.035, M.chrome, 0, 0, 0, w, { cast: false }); sp.rotation.x = k * Math.PI / 3; } return w; };
+  const rear = wheel(-0.55, g);
+  // cuerpo: carenado trasero, plataforma para los pies, sillín, escudo frontal
+  box(0.34, 0.26, 0.62, bm, 0, 0.5, -0.36, g); box(0.3, 0.07, 0.5, M.black, 0, 0.34, 0.08, g); box(0.3, 0.1, 0.62, M.black, 0, 0.69, -0.34, g);
+  box(0.2, 0.05, 0.05, std({ color: '#ff2a2a', emissive: '#ff1a1a', emissiveIntensity: 1.2 }), 0, 0.56, -0.68, g, { cast: false });
+  const shield = box(0.34, 0.62, 0.1, bm, 0, 0.62, 0.4, g); shield.rotation.x = -0.28;
+  // horquilla + manillar + rueda delantera (gira con la dirección)
+  const fork = new THREE.Group(); fork.position.set(0, 0, 0.5); g.add(fork); wheel(0.07, fork);
+  box(0.24, 0.2, 0.26, bm, 0, 0.4, 0.07, fork); const col1 = cyl(0.03, 0.03, 0.55, M.steel, 0, 0.78, 0.0, fork, 8); col1.rotation.x = -0.28;
+  const bar = cyl(0.022, 0.022, 0.62, M.chrome, 0, 1.03, -0.07, fork, 8); bar.rotation.z = Math.PI / 2;
+  for (const s of [-1, 1]) { cyl(0.03, 0.03, 0.12, M.black, s * 0.29, 1.03, -0.07, fork, 8).rotation.z = Math.PI / 2; const mi = cyl(0.008, 0.008, 0.2, M.chrome, s * 0.2, 1.12, -0.06, fork, 6); mi.rotation.z = -s * 0.4; const mr = cyl(0.04, 0.04, 0.015, M.chrome, s * 0.25, 1.21, -0.05, fork, 12); mr.rotation.x = Math.PI / 2; }
+  box(0.2, 0.12, 0.14, bm, 0, 1.04, 0.0, fork); const hl = cyl(0.055, 0.055, 0.03, std({ color: '#fff', emissive: '#fff2c8', emissiveIntensity: 1.5 }), 0, 1.03, 0.08, fork, 14); hl.rotation.x = Math.PI / 2;
+  g.traverse(o => { if (o.isMesh) o.userData.keep = 1; });
+  const p = g.position; const coll = { x: p.x, z: p.z, hx: 0.25, hz: 0.8, c: Math.cos(g.rotation.y), s: Math.sin(g.rotation.y) }; COLL.push(coll);
+  const S = { g, fork, wheels: [rear, fork.children[0]], coll, col, home: { x: p.x, z: p.z, yaw: g.rotation.y } }; WX.scooters.push(S); return S; }
 scooter(0.12, SW + 0.5, Math.PI / 2 + 0.4, '#1d4fa8'); scooter(0.165, SW + 0.5, Math.PI / 2 + 0.4, '#d7d7d7'); scooter(0.21, SW + 0.5, Math.PI / 2 + 0.4, '#222'); scooter(-0.12, SW + 0.55, Math.PI / 2 - 0.4, '#e8e8e8');
 { const g = arcGroup(0.3, SW + 1.05, 0); const cm = new THREE.MeshPhysicalMaterial({ color: '#2b2e33', roughness: 0.25, metalness: 0.5, clearcoat: 1 });
   box(4.1, 0.7, 1.75, cm, 0, 0.6, 0, g); { const cg = new THREE.BoxGeometry(2.4, 0.6, 1.6); const pp = cg.attributes.position; for (let i = 0; i < pp.count; i++) if (pp.getY(i) > 0) { pp.setX(i, pp.getX(i) * 0.72 - 0.15); pp.setZ(i, pp.getZ(i) * 0.86); } cg.computeVertexNormals(); const cab = new THREE.Mesh(cg, M.winDark); cab.position.set(-0.2, 1.24, 0); cab.castShadow = true; g.add(cab);
@@ -1247,7 +1263,7 @@ function barrel(x, z) { const prof = []; for (let i = 0; i <= 10; i++) { const t
 barrel(-3.15, 1.05); barrel(4.6, 1.0);
 // macetas en la acera
 for (const x of [-3.4, 3.5]) { cyl(0.22, 0.17, 0.42, M.terracotta, x, 0.36, 0.3); const l = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 1), M.leaf); l.position.set(x, 0.85, 0.3); l.castShadow = true; scene.add(l); addColl(x, 0.3, 0.22, 0.22); }
-window.WORLD = { WX, M, box, cyl, std, WIN_MATS, toTD, scene, COLL, OCC, LAMPS, GLOBES, barLights, arcPt, RC, CEN, SW, ROAD1, SW2, BW, BD, BX0, BX1, FLOOR_IN, BH, beer };
+window.WORLD = { WX, M, box, cyl, std, WIN_MATS, toTD, scene, COLL, OCC, LAMPS, GLOBES, barLights, arcPt, RC, CEN, SW, ROAD1, SW2, BW, BD, BX0, BX1, FLOOR_IN, BH, beer, thMin: TH0 - WALK / RC + 0.03, thMax: TH1 + WALK / RC - 0.03 };
 </script>
 <script type="module">// ===== LA CURVA · el juego =====
 (async () => {
@@ -1398,7 +1414,7 @@ function updAgent(a, dt) {
   const jy = a.startle > 0 ? Math.sin(Math.min(1, (0.6 - a.startle) / 0.45) * Math.PI) * 0.35 : 0;
   a.n.position.set(a.pos.x, a.pos.y + jy, a.pos.z); a.n.rotation.set(0, a.yaw, 0);
   a.n.userData.update(dt, { speed, grounded: jy <= 0.001, wave: a.wave > 0, dance: !!a.dance, turn: 0, accel: 0 });
-  applyPose(a, dt);
+  applyPose(a, dt); if (a.post) a.post(a, dt);
   if (a.wet > 0) { a.wet -= dt; if (Math.random() < dt * 14) drip(a); }
 }
 
@@ -1540,6 +1556,12 @@ function sfx(k) { if (!AC) return; try {
   else if (k === 'knock') { tone(170, 0.08, 'square', 0.22, 0.6); tone(170, 0.08, 'square', 0.22, 0.6, 0.17); tone(160, 0.08, 'square', 0.2, 0.6, 0.34); }
   else if (k === 'slide') { noise(0.45, 0.12, 1400); tone(90, 0.3, 'triangle', 0.08, 0.8); }
   else if (k === 'sit') { tone(260, 0.12, 'triangle', 0.15, 0.7); }
+  else if (k === 'shake') { noise(0.07, 0.16, 2600); tone(rnd(1500, 2100), 0.04, 'triangle', 0.04, 0.8, 0.03); }
+  else if (k === 'pour') { noise(1.0, 0.1, 1800); for (let i = 0; i < 5; i++) tone(rnd(500, 800), 0.1, 'sine', 0.08, 1.3, i * 0.18); }
+  else if (k === 'ding') { tone(1760, 0.5, 'sine', 0.15, 1); tone(2637, 0.4, 'sine', 0.06, 1, 0.02); }
+  else if (k === 'slurp') { noise(0.35, 0.12, 900); tone(300, 0.3, 'sine', 0.08, 1.8); }
+  else if (k === 'kick') { tone(60, 0.25, 'sawtooth', 0.25, 1.6); noise(0.2, 0.15, 300); }
+  else if (k === 'horn') { tone(440, 0.22, 'square', 0.1, 1); tone(554, 0.22, 'square', 0.1, 1); tone(440, 0.22, 'square', 0.1, 1, 0.28); tone(554, 0.22, 'square', 0.1, 1, 0.28); }
   else if (k === 'warp') { tone(80, 1.4, 'sawtooth', 0.15, 8); noise(1.2, 0.2, 2000); }
 } catch (_) {} }
 
@@ -1638,7 +1660,7 @@ function camShake(s) { cam.shake = Math.max(cam.shake, s); }
 function updCamera(dt, follow = true) {
   if (window.__camLock) { if (window.__camFn) window.__camFn(dt, camera, cam); return; }
   const inside = P.pos.z < -0.3 && Math.abs(P.pos.x) < W.BW / 2 + 0.1; cam.inside += ((inside ? 1 : 0) - cam.inside) * Math.min(1, dt * 3);
-  const baseD = (portrait() ? 6.6 : 5.8) * (1 - 0.32 * cam.inside) * cam.distK;
+  const baseD = (portrait() ? 6.6 : 5.8) * (1 - 0.32 * cam.inside) * cam.distK * (P.ride ? 1.12 : 1);
   const tgt = P.pos.clone().add(V3(0, 1.15, 0)); if (portrait()) tgt.add(V3(-Math.sin(cam.yaw) * 0.0, 0.25, 0)); cam.target.lerp(tgt, Math.min(1, dt * 7));
   const spd = Math.hypot(P.vel.x, P.vel.z); if (follow && spd > 0.4 && gameT - lastManual > 1.6) { const want = P.yaw + Math.PI; cam.yaw += angDiff(cam.yaw, want) * Math.min(1, dt * 0.9 * spd / 2.6); }
   const pitch = cam.pitch * (1 - cam.inside) + Math.min(cam.pitch, 0.42) * cam.inside;
@@ -1657,22 +1679,33 @@ function updCamera(dt, follow = true) {
     // la cámara se queda DENTRO del baño (esquina de la puerta, junto al techo) y abre el ángulo para ver WC a la izquierda y lavabo a la derecha
     bpos.x = clamp(bpos.x, BTH.x0 + 0.16, BTH.x1 - 0.2); bpos.z = clamp(bpos.z, BTH.z0 + 0.2, BTH.z1 - 0.13); bt.set(bt.x + (2.72 - bt.x) * 0.35, P.pos.y + (P.sit ? 0.05 : 0.35), bt.z + (-7.05 - bt.z) * 0.35);
     camera.position.lerp(bpos, s); look = cam.target.clone().lerp(bt, s); const nn = Math.max(0.05, camera.near * (1 - s) + 0.06 * s); if (Math.abs(camera.near - nn) > 0.005) { camera.near = nn; camera.updateProjectionMatrix(); } }
+  // cóctel: mientras el camarero lo prepara y estás quieto en la barra, plano por encima del hombro para verle agitar
+  { const on = (CKS.st === 'shake' || CKS.st === 'pour') && !!P.a && !P.ride && !P.sit && Math.hypot(P.pos.x - barman.pos.x, P.pos.z - barman.pos.z) < 3 && Math.hypot(P.vel.x, P.vel.z) < 0.6 && gameT - lastManual > 1.2;
+    cam.ck = (cam.ck || 0) + ((on ? 1 : 0) - (cam.ck || 0)) * Math.min(1, dt * 2.5);
+    if (cam.ck > 0.003) { const s = smooth(clamp(cam.ck, 0, 1)), b = barman.pos, dx = b.x - P.pos.x, dz = b.z - P.pos.z, L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L, sd = portrait() ? 0.5 : 1.0, bk = portrait() ? 1.75 : 1.6, hy = portrait() ? 1.95 : 2.3;
+      let best = null; for (const sg of [1, -1]) { const q = V3(P.pos.x - ux * bk + uz * sd * sg, Math.min(P.pos.y + hy, W.BH - 0.3), P.pos.z - uz * bk - ux * sd * sg), q0 = q.clone(); q.x = clamp(q.x, W.BX0 + 0.35, W.BX1 - 0.35); q.z = clamp(q.z, -5.0, -0.45); const m = q.distanceTo(q0); if (!best || m < best.m - 0.01) best = { q, m }; }
+      camera.position.lerp(best.q, s); look = look.clone().lerp(V3(P.pos.x + dx * 0.72, b.y + 1.3, P.pos.z + dz * 0.72), s); const nn = camera.near * (1 - s) + 0.08 * s; if (Math.abs(camera.near - nn) > 0.005) { camera.near = nn; camera.updateProjectionMatrix(); } } }
   { const f = baseFov + ((portrait() ? 88 : 72) - baseFov) * smooth(clamp(cam.bath, 0, 1)); if (Math.abs(camera.fov - f) > 0.05) { camera.fov = f; camera.updateProjectionMatrix(); } }
   if (cam.shake > 0) { cam.shake -= dt; camera.position.add(V3(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).multiplyScalar(cam.shake * 0.12)); }
   camera.lookAt(look);
-  if (W.WX.globes) for (const g of W.WX.globes) { const v = camera.position.distanceTo(g[0].position) > 1.3 && !(camera.position.distanceTo(g[0].position) < 3.2 && segHits(camera.position, cam.target, g[0].position, 0.3)); g.forEach(o => o && (o.visible = v)); }
+  if (W.WX.globes) for (const g of W.WX.globes) { const v = camera.position.distanceTo(g[0].position) > 1.3 && !(camera.position.distanceTo(g[0].position) < 3.2 && segHits(camera.position, cam.target, g[0].position, 0.3)) && !((cam.ck || 0) > 0.1 && segHits(camera.position, V3(barman.pos.x, barman.pos.y + 1.45, barman.pos.z), g[0].getWorldPosition(V3()), 0.7)); g.forEach(o => o && (o.visible = v)); }
 }
 const _sv = new THREE.Vector3(); function segHits(a, b, c, r) { const ab = _sv.copy(b).sub(a); const t = Math.max(0, Math.min(1, c.clone().sub(a).dot(ab) / ab.lengthSq())); return a.clone().addScaledVector(ab, t).distanceTo(c) < r; }
 let baseFov = 50; function fitView() { camera.aspect = innerWidth / innerHeight; camera.fov = baseFov = camera.aspect < 1 ? Math.min(72, 50 / Math.max(0.5, camera.aspect) ** 0.55) : 50; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); }
 addEventListener('resize', fitView); fitView();
 
 // ---------- bromas ----------
-const PR = { steal: ['🍺', 'Robar caña', 100], pour: ['💦', 'Echarle la caña', 170], untie: ['👟', 'Desatar cordones', 140], scare: ['😱', '¡BUH!', 90], photo: ['📸', 'Photobomb', 150], phone: ['📱', 'Esconder móvil', 130], queue: ['🚽', 'Colarse', 160], drink: ['🍺', 'Bebérsela', 40], sit: ['🚽', 'Sentarse', 0], stand: ['🧻', 'Levantarse', 0] };
+const PR = { steal: ['🍺', 'Robar caña', 100], pour: ['💦', 'Echarle la caña', 170], untie: ['👟', 'Desatar cordones', 140], scare: ['😱', '¡BUH!', 90], photo: ['📸', 'Photobomb', 150], phone: ['📱', 'Esconder móvil', 130], queue: ['🚽', 'Colarse', 160], drink: ['🍺', 'Bebérsela', 40], sit: ['🚽', 'Sentarse', 0], stand: ['🧻', 'Levantarse', 0], cocktail: ['🍹', 'Pedir cóctel', 0, 'Cóctel'], grab: ['🍹', 'Coger cóctel', 0, 'Coger'], sip: ['🍹', 'Beber cóctel', 0, 'Beber'], ride: ['🛵', 'Montarse en la moto', 0, 'Montarse'], unride: ['🛵', 'Bajarse', 0, 'Bajarse'] };
 let curPrank = null, prankScan = 0;
 const fwd = (yaw) => V3(Math.sin(yaw), 0, Math.cos(yaw));
 function findPrank() {
   const me = P.pos; let best = null, bd = 9;
   if (P.sit) return { k: 'stand', p: P.pos };
+  if (P.ride) return { k: 'unride', p: P.pos };
+  const inBar = me.z < -0.3 && Math.abs(me.x) < W.BW / 2;
+  if (inBar && CKS.st === 'wait' && CKS.glass && !P.cocktail && Math.hypot(CKS.glass.g.position.x - me.x, CKS.glass.g.position.z - me.z) < 1.4) return { k: 'grab', p: P.pos };
+  if (inBar && CKS.st === 'idle' && !P.cocktail && !inBath(me)) { const cn = counterNear(me); if (cn.side < 0 && cn.d < 0.9 && cn.t > 0.02 && cn.t < 0.97) return { k: 'cocktail', cn, p: P.pos }; }
+  if (!inBar) { const S = nearScooter(me); if (S) return { k: 'ride', S, p: V3(S.x, 0, S.z) }; }
   if (inBath(me) && Math.hypot(me.x - BTH.wc.x, me.z - (BTH.wc.z + 0.4)) < 0.8) return { k: 'sit', p: P.pos };
   const cand = AG.filter(a => a.visible && a !== P.a && a.kind !== 'waiter' && a.trip <= 0 && a.cyc !== 'inside');
   if (QUEUE.length && !inBath(me) && QUEUE.some(a => a.pos.distanceTo(me) < 1.15 && a.cyc === 'queue') && !P.inQueue) return { k: 'queue', a: QUEUE[0], p: QUEUE[0].pos };
@@ -1685,11 +1718,13 @@ function findPrank() {
     const to = V3(me.x - a.pos.x, 0, me.z - a.pos.z).normalize(); const behind = fwd(a.yaw).dot(to) < -0.15;
     if (a.beer && !P.beer) best = { k: 'steal', a, p: a.pos }; else if (behind && !a.seat && !a.untied && a.cyc !== 'queue') best = { k: 'untie', a, p: a.pos }; else best = { k: 'scare', a, p: a.pos }; }
   if (!best && P.beer) best = { k: 'drink', p: P.pos };
+  if (!best && P.cocktail && P.cocktail.level > 0.05) best = { k: 'sip', p: P.pos };
   return best;
 }
 function award(pts, p, label) { const now = gameT; if (now - lastPrank < 6.5) { combo = Math.min(5, combo + 1); if (combo > stats.maxCombo) stats.maxCombo = combo; if (combo >= 2) { bigText('¡COMBO x' + combo + '!'); sfx('combo'); } } else combo = 1; lastPrank = now; comboT = 6.5;
   const v = Math.round(pts * combo); score += v; popText(p, '+' + v + (label ? ' ' + label : '')); stats.pranks++; }
-function doPrank(pr) { if (!pr || P.lock > 0) return; if (pr.k === 'sit') { sitWC(); return; } if (pr.k === 'stand') { standWC(true); return; } const a = pr.a, [ic, lab, pts] = PR[pr.k]; sfx('prank');
+function doPrank(pr) { if (!pr || P.lock > 0) return; if (pr.k === 'sit') { sitWC(); return; } if (pr.k === 'stand') { standWC(true); return; }
+  if (pr.k === 'cocktail') { orderCocktail(pr.cn); return; } if (pr.k === 'grab') { grabCocktail(); return; } if (pr.k === 'sip') { sipCocktail(); return; } if (pr.k === 'ride') { mountScooter(pr.S); return; } if (pr.k === 'unride') { dismount(false); return; } const a = pr.a, [ic, lab, pts] = PR[pr.k]; sfx('prank');
   const face = (q) => { P.yaw = Math.atan2(q.x - P.pos.x, q.z - P.pos.z); };
   if (a) { a.cd = 7; face(a.pos); }
   switch (pr.k) {
@@ -1717,7 +1752,7 @@ function witness(p, loud, k) { let seen = 0, who = null;
   return !!who; }
 function updWaiters(dt) { for (const w of WAITER_A) {
     if (w.alert > 0) { w.alert -= dt; w.freeze = true; } else w.freeze = false;
-    if (!w.path && w.alert <= 0) { w.wait -= dt; if (w.wait <= 0) { w.pi2 = (w.pi2 + 1) % w.patrol.length; const q = w.patrol[w.pi2]; walkTo(w, [V3(q[0], 0, q[1])], (a) => { a.faceYaw = q[2]; a.wait = q[3]; }); } }
+    if (!w.path && w.alert <= 0 && !w.busy) { w.wait -= dt; if (w.wait <= 0) { w.pi2 = (w.pi2 + 1) % w.patrol.length; const q = w.patrol[w.pi2]; walkTo(w, [V3(q[0], 0, q[1])], (a) => { a.faceYaw = q[2]; a.wait = q[3]; }); } }
     // vigila de forma pasiva: si te ve muy cerca con una caña robada, sospecha
     w.ambT -= dt; if (w.ambT <= 0 && STATE === 'play') { w.ambT = rnd(10, 18); if (w.pos.distanceTo(P.pos) < 9 && !w.alert) say(w, pick(L.waiterAmb), 2.2); }
     const c = w.cone; c.position.set(w.pos.x, (w === barman ? W.FLOOR_IN : groundAt(w.pos.x, w.pos.z)) + 0.03, w.pos.z); c.rotation.y = w.yaw - Math.PI / 2; c.material.color.set(w.alert > 0 ? '#ff3a3a' : '#ffd23a'); c.material.opacity = w.alert > 0 ? 0.42 : 0.24; c.visible = STATE === 'play' || TRAILER; } }
@@ -1731,6 +1766,7 @@ function updCaught(dt) { caughtT += dt; const w = caughtBy; w.lookAt = P.pos; w.
 // ---------- paso del jugador ----------
 function stepPlayer(dt) {
   if (P.sit) { if (STATE === 'caught') standWC(false); else { stepSeated(dt); return; } }
+  if (P.ride) { if (STATE === 'caught') dismount(true); else { stepRide(dt); return; } }
   const inp = STATE === 'play' && P.lock <= 0 ? readInput() : { x: 0, z: 0, run: false };
   if (P.lock > 0) P.lock -= dt; if (P.inQueue > 0) P.inQueue -= dt;
   const f = V3(-Math.sin(cam.yaw), 0, -Math.cos(cam.yaw)), r = V3(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
@@ -1753,6 +1789,8 @@ function stepPlayer(dt) {
   a.n.userData.update(dt, { speed: Math.min(1.4, speed), grounded: P.grounded, vy: P.vy, dance: false, wave: a.wave > 0, turn: -turn * 0.15, accel: accel * 0.6 });
   if (P.beer && !a.pw.pour && !a.pw.drink) { const arm = a.n.userData.arms[1]; arm.rotation.x = Math.min(arm.rotation.x, -0.7); }
   applyPose(a, dt);
+  // cóctel en la otra mano (y sorbo)
+  holdCocktail(a, dt);
   if (!LITE) { fill.position.copy(P.pos).add(V3(0, 2.6, 0)).addScaledVector(V3(Math.sin(cam.yaw), 0, Math.cos(cam.yaw)), 1.6); }
   sun.position.copy(P.pos).add(SUN_OFF); sun.target.position.copy(P.pos);
 }
@@ -1807,7 +1845,7 @@ function stepSeated(dt) { const a = P.a; P.sitT += dt; if (P.lock > 0) P.lock -=
   a.pos.copy(P.pos); a.n.position.copy(P.pos); a.n.rotation.set(0, P.yaw, 0); a.yaw = P.yaw; a.t += dt;
   a.n.userData.update(dt, { speed: 0, grounded: true, vy: 0, dance: false, wave: false, turn: 0, accel: 0 }); applyPose(a, dt);
   const AR = a.n.userData.arms; AR.forEach((ar, k) => { ar.rotation.x = -0.5 + 0.05 * Math.sin(a.t * 1.3 + k); ar.rotation.y = 0; ar.rotation.z = k ? 0.14 : -0.14; ar.scale.y = 1; }); // manos sobre las rodillas
-  const L2 = a.n.userData.legs; if (a.pw.sit > 0.5) { L2[0].rotation.x += Math.sin(a.t * 3.2) * 0.16; L2[1].rotation.x += Math.sin(a.t * 3.2 + Math.PI) * 0.16; }
+  holdCocktail(a, dt); const L2 = a.n.userData.legs; if (a.pw.sit > 0.5) { L2[0].rotation.x += Math.sin(a.t * 3.2) * 0.16; L2[1].rotation.x += Math.sin(a.t * 3.2 + Math.PI) * 0.16; }
   P.vel.set(0, 0, 0); sun.position.copy(P.pos).add(SUN_OFF); sun.target.position.copy(P.pos); }
 // pregunta del viaje astral (solo DOM)
 const tripQEl = $('tripQ'); const tripQOpen = () => tripQEl.classList.contains('on');
@@ -1887,10 +1925,160 @@ function updTrip(dt) { TRIP.t += dt; const t = TRIP.t, n = P.a.n;
 const skipTrip = () => { if (STATE === 'trip') TRIP.skip = true; };
 tripEl.addEventListener('pointerdown', e => { e.preventDefault(); skipTrip(); });
 
+// ---------- CÓCTELES: el camarero alto prepara uno para el jugador ----------
+const CKC = WX.counter.curve, CK_N = 120, CK_PTS = [], CK_LEN = CKC.getLength();
+for (let i = 0; i <= CK_N; i++) { const t = i / CK_N, q = CKC.getPointAt(t), tg = CKC.getTangentAt(t); CK_PTS.push({ t, x: q.x, z: q.y, nx: tg.y, nz: -tg.x }); } // n: hacia el camarero
+function counterNear(p) { let b = null, bd = 1e9; for (const q of CK_PTS) { const d = (p.x - q.x) ** 2 + (p.z - q.z) ** 2; if (d < bd) { bd = d; b = q; } }
+  return Object.assign({ d: Math.sqrt(bd), side: (p.x - b.x) * b.nx + (p.z - b.z) * b.nz }, b); }
+const CK_TYPES = [
+  { k: 'mojito', name: 'Mojito', liq: '#c4f08e', liq2: '#8fd65f', fruit: '#a6d93a', straw: '#2fbf71', umb: '#ff4f9a', mint: true, line: 'Marchando un mojito, hermano' },
+  { k: 'sunrise', name: 'Tequila Sunrise', liq: '#ffb02e', liq2: '#e3283e', fruit: '#ff9f1a', straw: '#ff3b6b', umb: '#2fa8ff', cherry: true, line: 'Un tequila sunrise… como un amanecer en Cabo de Gata, hermano' },
+  { k: 'blue', name: 'Blue Lagoon', liq: '#5fd2ff', liq2: '#1f78e8', fruit: '#ffe14a', straw: '#ffe14a', umb: '#ff7a2a', line: 'Blue lagoon, azul como el mar de Cádiz, colega' },
+];
+const L_CK = { shake: ['Agitado con mucho amor ☮', 'Esto lleva hielo y buen rollo', 'Mira qué arte, colega', 'Buenas vibraciones dentro…'], serve: ['¡Aquí lo tienes, hermano! Paz y salud', '¡Salud, colega! Disfrútalo', 'Hecho con cariño, hermano'], ask: ['¡Camarero! ¿Me pones un cóctel?', '¡Hermano, un cóctel, porfa!', '¿Me haces algo fresquito?'], thanks: ['¡Qué pintaza!', '¡Gracias, crack!', '¡Esto es arte!'], sip: ['Mmm… ¡qué rico!', '¡Esto está de lujo!', 'Sabe a verano', '¡Fresquito, fresquito!'], last: ['¡Otro igual, hermano!', 'Se acabó lo bueno…', '¡Qué rápido se va!'] };
+const ckGlassM = new THREE.MeshPhysicalMaterial({ color: '#eef8ff', roughness: 0.04, metalness: 0, transparent: true, opacity: 0.3, depthWrite: false, clearcoat: 1, side: THREE.DoubleSide });
+const ckIceM = new THREE.MeshPhysicalMaterial({ color: '#f4fbff', roughness: 0.1, transparent: true, opacity: 0.7, clearcoat: 1 });
+function makeCocktail(T) { const g = new THREE.Group(), H = 0.2, r0 = 0.038, r1 = 0.05, rAt = y => r0 + (r1 - r0) * y / H;
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, H, 20, 1, true), ckGlassM); glass.position.y = H / 2 + 0.014; glass.renderOrder = 3; g.add(glass);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(r0 + 0.004, r0 + 0.004, 0.014, 20), ckGlassM); base.position.y = 0.007; g.add(base);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r1, 0.0025, 6, 24), ckGlassM); rim.rotation.x = Math.PI / 2; rim.position.y = H + 0.014; g.add(rim);
+  const liq = new THREE.Group(); liq.position.y = 0.014; g.add(liq); // capas de líquido (se escalan al beber)
+  const layer = (y0, y1, c) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rAt(y1) - 0.004, rAt(y0) - 0.004, y1 - y0, 20), W.std({ color: c, emissive: c, emissiveIntensity: 0.35, roughness: 0.15, transparent: true, opacity: 0.88 })); m.position.y = (y0 + y1) / 2; liq.add(m); return m; };
+  layer(0, 0.07, T.liq2); layer(0.07, 0.172, T.liq);
+  const top = new THREE.Group(); top.position.y = 0.172 + 0.014; g.add(top); // hielo, hierbabuena, fruta: van con el nivel
+  for (let k = 0; k < 3; k++) { const ic = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.028, 0.03), ckIceM); ic.position.set(Math.cos(k * 2.2) * 0.02, -0.004 + k * 0.004, Math.sin(k * 2.2) * 0.02); ic.rotation.set(k, k * 0.7, 0.3); top.add(ic); }
+  if (T.mint) { const mm = W.std({ color: '#2f9e3a', roughness: 0.5, side: THREE.DoubleSide }); for (let k = 0; k < 5; k++) { const lf = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), mm); lf.scale.set(1, 0.25, 0.6); lf.position.set(Math.cos(k * 1.3) * 0.028, 0.006 + (k % 2) * 0.005, Math.sin(k * 1.3) * 0.028); lf.rotation.set(0.4 * k, k, 0.3); top.add(lf); } }
+  if (T.cherry) { const ch = new THREE.Mesh(new THREE.SphereGeometry(0.014, 12, 8), W.std({ color: '#c8102e', roughness: 0.2, clearcoat: 1 })); ch.position.set(0.012, 0.008, -0.015); top.add(ch); }
+  const slice = new THREE.Group(); slice.position.set(r1 - 0.004, H + 0.014, 0); slice.rotation.y = 0; g.add(slice); // rodaja en el borde
+  { const s1 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.008, 16, 1, false, 0, Math.PI), W.std({ color: T.fruit, emissive: T.fruit, emissiveIntensity: 0.25, roughness: 0.4 })); s1.rotation.x = Math.PI / 2; s1.rotation.z = Math.PI / 2; s1.position.y = -0.002; slice.add(s1);
+    const s2 = new THREE.Mesh(new THREE.TorusGeometry(0.029, 0.004, 6, 16, Math.PI), W.std({ color: '#f6f2c8', roughness: 0.5 })); s2.rotation.y = Math.PI / 2; s2.rotation.x = 0; slice.add(s2); s2.rotation.z = -Math.PI / 2; s2.position.y = -0.002; }
+  // pajita de rayas y sombrillita
+  const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.27, 8), W.std({ color: T.straw, roughness: 0.4 })); straw.position.set(-0.016, 0.19, 0.008); straw.rotation.z = 0.22; g.add(straw);
+  const umb = new THREE.Group(); umb.position.set(0.018, H + 0.02, -0.016); umb.rotation.set(0.25, 0, -0.45); g.add(umb);
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 0.13, 5), W.std({ color: '#e8d2a0' })); stick.position.y = 0.035; umb.add(stick);
+  const can = new THREE.Mesh(new THREE.ConeGeometry(0.058, 0.03, 10, 1, true), W.std({ color: T.umb, roughness: 0.6, side: THREE.DoubleSide, emissive: T.umb, emissiveIntensity: 0.2 })); can.position.y = 0.1; umb.add(can);
+  const can2 = new THREE.Mesh(new THREE.ConeGeometry(0.059, 0.031, 10, 1, true, 0, Math.PI / 5), W.std({ color: '#ffffff', side: THREE.DoubleSide })); can2.position.y = 0.1; umb.add(can2);
+  g.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  return { g, liq, top, T, level: 1, setLevel(v) { this.level = v; liq.scale.y = Math.max(0.001, v); top.position.y = 0.014 + 0.172 * v + 0.004; top.visible = v > 0.05; } };
+}
+const shakerM = W.std({ color: '#dfe4ea', roughness: 0.22, metalness: 0.55, emissive: '#3a3f46', emissiveIntensity: 0.4 });
+function makeShaker() { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.042, 0.17, 18), shakerM); b.position.y = 0.085; g.add(b);
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.06, 18), W.M.steel); c.position.y = 0.2; g.add(c); const k = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.026, 0.035, 12), shakerM); k.position.y = 0.245; g.add(k); return g; }
+const CKS = { st: 'idle', t: 0, n: (Math.random() * 3) | 0, T: null, glass: null, shaker: null, q: null, sfxT: 0 };
+function orderCocktail(cn) { if (CKS.st !== 'idle' || P.cocktail) return; const w = barman; CKS.T = CK_TYPES[CKS.n++ % CK_TYPES.length]; CKS.q = cn; CKS.st = 'walk'; CKS.t = 0;
+  // el camarero se pone un poco a un lado (no justo detrás de la cabeza del jugador) para que se le vea agitar
+  const cr = V3(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw)), tg = CKC.getTangentAt(cn.t), sd = (tg.x * cr.x + tg.y * cr.z) >= 0 ? 1 : -1; let t2 = cn.t + sd * 0.6 / CK_LEN; if (t2 < 0.03 || t2 > 0.95) t2 = cn.t - sd * 0.6 / CK_LEN; t2 = clamp(t2, 0.03, 0.95);
+  const c2 = CK_PTS[Math.round(t2 * CK_N)]; let sx = c2.x + c2.nx * 0.95, sz = c2.z + c2.nz * 0.95; for (const o of [0.85, 0.75]) { if (onPlat(sx, sz)) break; sx = c2.x + c2.nx * o; sz = c2.z + c2.nz * o; }
+  w.busy = 1; w.wait = 99; walkTo(w, [V3(sx, 0, sz)], () => { CKS.st = 'shake'; CKS.t = 0; }, 1.8); say(P.a, pick(L_CK.ask), 1.5); P.yaw = Math.atan2(cn.x - P.pos.x, cn.z - P.pos.z); }
+function ckFace(w) { const q = CKS.q, toP = Math.hypot(P.pos.x - w.pos.x, P.pos.z - w.pos.z) < 3.5; w.faceYaw = toP ? Math.atan2(P.pos.x - w.pos.x, P.pos.z - w.pos.z) : Math.atan2(-q.nx, -q.nz); }
+const handPt = (arm, k = 1) => arm.localToWorld(V3(0, -0.36, 0.05 * k));
+function updCocktail(dt) { const w = barman; if (CKS.st === 'idle') return; CKS.t += dt;
+  if (CKS.st === 'walk') { if (CKS.t > 7 && w.path) { w.pos.copy(w.path[w.path.length - 1]); w.path = null; CKS.st = 'shake'; CKS.t = 0; } return; }
+  if (CKS.st === 'shake') { ckFace(w); if (!CKS.shaker) { CKS.shaker = makeShaker(); CKS.shaker.scale.setScalar(1.35); scene.add(CKS.shaker); say(w, CKS.T.line, 2.6, 0, 'bar'); }
+    CKS.sfxT -= dt; if (CKS.sfxT <= 0) { CKS.sfxT = 0.22; sfx('shake'); } if (CKS.t > 1.6 && !CKS.said2) { CKS.said2 = 1; say(w, pick(L_CK.shake), 1.6, 0, 'bar'); }
+    if (CKS.t >= 2.8) { CKS.st = 'pour'; CKS.t = 0; const q = CKS.q, G = makeCocktail(CKS.T); G.setLevel(0); G.g.scale.setScalar(1.6); G.g.position.set(q.x + q.nx * 0.2, W.FLOOR_IN + WX.counter.H + 0.04, q.z + q.nz * 0.2); G.g.rotation.y = Math.atan2(-q.nx, -q.nz); scene.add(G.g); CKS.glass = G; sfx('pour'); } return; }
+  if (CKS.st === 'pour') { ckFace(w); CKS.glass.setLevel(smooth(clamp(CKS.t / 1.0, 0, 1)));
+    if (CKS.t >= 1.15) { if (CKS.shaker) { CKS.shaker.parent.remove(CKS.shaker); CKS.shaker = null; } say(w, pick(L_CK.serve), 2.4, 0, 'bar'); sfx('ding'); CKS.st = 'serve'; CKS.t = 0; } return; }
+  if (CKS.st === 'serve') { ckFace(w); if (CKS.t > 0.7) { w.busy = 0; w.speed = 0.9; w.wait = rnd(2.5, 4); CKS.st = 'wait'; CKS.t = 0; } return; }
+  if (CKS.st === 'wait') { const G = CKS.glass; if (STATE === 'play' && P.a && !P.ride && !P.cocktail && G.g.position.distanceTo(V3(P.pos.x, G.g.position.y, P.pos.z)) < 1.25 && CKS.t > 0.1) grabCocktail(); return; }
+  if (CKS.st === 'fly') { const G = CKS.glass, k = smooth(clamp(CKS.t / 0.4, 0, 1)); const hp = handPt(P.a.n.userData.arms[0]); hp.y -= 0.06; G.g.position.lerpVectors(CKS.from, hp, k); G.g.position.y += Math.sin(k * Math.PI) * 0.25;
+    if (k >= 1) { G.g.scale.setScalar(1.55); P.cocktail = G; CKS.glass = null; CKS.st = 'idle'; say(P.a, pick(L_CK.thanks), 1.8); bigText('🍹 ' + G.T.name, 1.3); } } }
+function grabCocktail() { if (CKS.st !== 'wait' || !CKS.glass) return; CKS.st = 'fly'; CKS.t = 0; CKS.from = CKS.glass.g.position.clone(); sfx('clink'); }
+function sipCocktail() { const G = P.cocktail; if (!G || P.lock > 0) return; P.sipT = 1.25; P.lock = 1.0; sfx('slurp'); G.sips = (G.sips || 0) + 1;
+  setTimeoutG(() => { if (P.cocktail !== G) return; G.setLevel(Math.max(0, 1 - G.sips / 3)); if (G.sips >= 3) { say(P.a, pick(L_CK.last), 1.8); setTimeoutG(() => { if (P.cocktail === G) { G.g.parent && G.g.parent.remove(G.g); P.cocktail = null; } }, 0.5); } else say(P.a, pick(L_CK.sip), 1.6); }, 0.6); }
+function resetCocktail() { if (CKS.shaker && CKS.shaker.parent) CKS.shaker.parent.remove(CKS.shaker); if (CKS.glass && CKS.glass.g.parent) CKS.glass.g.parent.remove(CKS.glass.g); CKS.shaker = CKS.glass = null; CKS.st = 'idle'; CKS.said2 = 0; barman.busy = 0; barman.speed = 0.9;
+  if (P.cocktail) { if (P.cocktail.g.parent) P.cocktail.g.parent.remove(P.cocktail.g); P.cocktail = null; } P.sipT = 0; }
+// pose del camarero agitando la coctelera (se aplica tras la animación base)
+// los accesorios (coctelera, vaso en la mano) van en el mundo y se colocan cada frame en la mano: así no se deforman al estirar el brazo
+function propAt(obj, arm, rx, ry, rz, fwdOff = 0.06) { arm.updateWorldMatrix(true, false); obj.position.copy(arm.localToWorld(_hv.set(0, -0.36, fwdOff))); obj.rotation.set(rx, ry, rz, 'YXZ'); }
+const _hv = new THREE.Vector3();
+function holdCocktail(a, dt) { const G = P.cocktail; if (!G) return; P.sipT = Math.max(0, (P.sipT || 0) - dt); const sw = a.ckSip = (a.ckSip || 0) + ((P.sipT > 0.2 ? 1 : 0) - (a.ckSip || 0)) * Math.min(1, dt * 9); const arm = a.n.userData.arms[0];
+  arm.rotation.x = -1.2 - 0.45 * sw; arm.rotation.y = 0; arm.rotation.z = -0.5 + 0.4 * sw; arm.scale.y = 1.3; propAt(G.g, arm, -0.45 * sw, P.yaw, 0.08 * sw); G.g.position.y -= 0.06;
+  if (sw > 0.01) G.g.position.lerp(a.n.localToWorld(_hv.set(-0.04, 0.52, 0.74)), sw); G.g.visible = !P.ride; }
+barman.post = (a, dt) => { const AR = a.n.userData.arms, U = a.n.userData; const st = CKS.st;
+  const k = a.ckW = (a.ckW || 0) + (((st === 'shake' || st === 'pour') && !a.path ? 1 : 0) - (a.ckW || 0)) * Math.min(1, dt * 8); if (k < 0.01) { AR[0].scale.y = AR[1].scale.y = 1; return; }
+  const A = AR[1], B = AR[0], sc = 1 + 0.5 * k; A.scale.y = B.scale.y = sc;
+  if (st === 'pour') { const tp = smooth(clamp(CKS.t / 0.35, 0, 1)); A.rotation.x = A.rotation.x * (1 - k) + (-1.75 + 0.2 * tp) * k; A.rotation.z = A.rotation.z * (1 - k) + (0.25 - 0.35 * tp) * k; A.rotation.y = 0;
+    B.rotation.x = B.rotation.x * (1 - k) + (-0.4) * k; B.rotation.z = B.rotation.z * (1 - k) + (-0.2) * k;
+    if (CKS.shaker) { propAt(CKS.shaker, A, 2.1 * tp, a.yaw, 0.0, 0.1); CKS.shaker.position.y -= 0.1; } return; }
+  // agitar la coctelera con las dos manos delante de la cara, arriba y abajo, con mucho arte
+  const s = Math.sin(a.t * 22), s2 = Math.sin(a.t * 11);
+  A.rotation.x = A.rotation.x * (1 - k) + (-2.0 + 0.32 * s) * k; A.rotation.z = A.rotation.z * (1 - k) + (-0.22 + 0.12 * s2) * k; A.rotation.y = 0;
+  B.rotation.x = B.rotation.x * (1 - k) + (-1.95 + 0.32 * s) * k; B.rotation.z = B.rotation.z * (1 - k) + (0.3 + 0.12 * s2) * k; B.rotation.y = 0;
+  U.body.position.y += 0.025 * Math.abs(s) * k; U.headPivot.rotation.z += 0.07 * s2 * k;
+  if (CKS.shaker) { propAt(CKS.shaker, A, -0.25 + 0.35 * s, a.yaw, 0.25 * s2, 0.3); CKS.shaker.position.y -= 0.08; } };
+
+// ---------- MOTOS: montarse y conducir ----------
+const SCOOT = WX.scooters || [];
+for (const S of SCOOT) { S.yaw = S.home.yaw; S.x = S.home.x; S.z = S.home.z; S.y = 0; S.speed = 0; S.steer = 0; S.lean = 0; }
+const L_MOTO = ['¡Cuidado, loco!', '¡Que es zona peatonal!', '¡Frena, illo!', '¡Ozú, qué susto!', '¡Mira por dónde vas, quillo!', '¡Que esto no es el circuito de Jerez!', '¡Más despacito, hombre!'];
+const L_MOTOW = ['Hermano, la moto por la calzada', 'Paz… y despacito, colega', '¡Eh, que aquí se viene a pie!'];
+let engine = null, motoSayT = 0, hornT = 0;
+function engineOn(on) { if (!AC) return; try {
+  if (on && !engine) { const o = AC.createOscillator(), o2 = AC.createOscillator(), lp = AC.createBiquadFilter(), g = AC.createGain(); o.type = 'sawtooth'; o2.type = 'square'; o.frequency.value = 44; o2.frequency.value = 22; lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = 3; g.gain.value = 0; o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(master); o.start(); o2.start(); engine = { o, o2, g, lp }; }
+  else if (!on && engine) { const e = engine; engine = null; const t = AC.currentTime; e.g.gain.cancelScheduledValues(t); e.g.gain.setValueAtTime(e.g.gain.value, t); e.g.gain.linearRampToValueAtTime(0, t + 0.25); e.o.stop(t + 0.3); e.o2.stop(t + 0.3); } } catch (_) {} }
+function engineUpd(v) { if (!engine) return; try { const t = AC.currentTime, f = 44 + Math.abs(v) * 13; engine.o.frequency.setTargetAtTime(f, t, 0.08); engine.o2.frequency.setTargetAtTime(f / 2, t, 0.08); engine.lp.frequency.setTargetAtTime(380 + Math.abs(v) * 110, t, 0.1); engine.g.gain.setTargetAtTime(STATE === 'play' ? 0.05 + Math.abs(v) * 0.006 : 0, t, 0.1); } catch (_) {} }
+function nearScooter(p) { let best = null, bd = 0.8; for (const S of SCOOT) { if (S === P.ride) continue; const f = fwd(S.yaw), dx = p.x - S.x, dz = p.z - S.z, al = clamp(dx * f.x + dz * f.z, -0.6, 0.6); const d = Math.hypot(dx - f.x * al, dz - f.z * al); if (d < bd) { bd = d; best = S; } } return best; }
+function placeScooter(S) { S.g.position.set(S.x, S.y, S.z); S.g.rotation.set(0, S.yaw, S.lean, 'YXZ'); S.fork.rotation.y = S.steer * 0.5; }
+function mountScooter(S) { if (P.ride || !P.a || !S) return; P.ride = S; S.speed = 0; S.steer = 0; S.lean = 0; const i = W.COLL.indexOf(S.coll); if (i >= 0) W.COLL.splice(i, 1);
+  P.vel.set(0, 0, 0); P.vy = 0; P.grounded = true; P.lock = 0.35; P.yaw = S.yaw; P.lastYaw = S.yaw; setPose(P.a, 'sit', 1); P.a.pw.sit = 1; P.sipT = 0;
+  if (P.beer) P.beer.visible = false; if (P.cocktail) P.cocktail.g.visible = false;
+  sfx('kick'); engineOn(true); say(P.a, pick(['¡Brrrum, brrrum!', '¡A dar una vueltecita!', '¡Agárrense, que voy!']), 1.8); cam.yaw += angDiff(cam.yaw, S.yaw + Math.PI) * 0.6; lastManual = -99; }
+function dismount(quiet) { const S = P.ride; if (!S) return; P.ride = null; S.speed = 0; S.steer = 0; S.lean = 0; placeScooter(S);
+  Object.assign(S.coll, { x: S.x, z: S.z, c: Math.cos(S.yaw), s: Math.sin(S.yaw) }); if (!W.COLL.includes(S.coll)) W.COLL.push(S.coll);
+  const lx = Math.cos(S.yaw), lz = -Math.sin(S.yaw); let best = null;
+  for (const s of [-1, 1]) for (const o of [0.62, 0.8]) { const q = V3(S.x + lx * o * s, 0, S.z + lz * o * s), q0 = q.clone(); collideBoxes(q); const m = q.distanceTo(q0) + (W.toTD(q.x, q.z).d < 0.3 ? 5 : 0); if (!best || m < best.m) best = { q, m }; }
+  P.pos.set(best.q.x, groundAt(best.q.x, best.q.z), best.q.z); P.vel.set(0, 0, 0); P.vy = 0; P.grounded = true; P.lock = 0.3; P.yaw = S.yaw; P.lastYaw = S.yaw;
+  const a = P.a; if (a) { setPose(a, 'sit', 0); a.n.rotation.set(0, P.yaw, 0); a.pos.copy(P.pos); a.n.position.copy(P.pos); a.n.userData.arms.forEach(ar => { ar.rotation.set(0, 0, 0); }); }
+  if (P.beer) P.beer.visible = true; if (P.cocktail) P.cocktail.g.visible = true; engineOn(false);
+  if (!quiet && a) say(a, pick(['¡Qué gustazo!', 'Aparcada, como un señor', '¡Qué vueltecita más buena!']), 1.8); }
+function resetScooters() { if (P.ride) dismount(true); for (const S of SCOOT) { S.x = S.home.x; S.z = S.home.z; S.yaw = S.home.yaw; S.y = 0; S.speed = S.steer = S.lean = 0; placeScooter(S); Object.assign(S.coll, { x: S.x, z: S.z, c: Math.cos(S.yaw), s: Math.sin(S.yaw) }); if (!W.COLL.includes(S.coll)) W.COLL.push(S.coll); } }
+function motoReact(q, hit) { if ((q.motoCd || 0) > gameT) return; q.motoCd = gameT + 5; q.look = 2.2; q.lookAt = P.pos;
+  if (!q.seat && q.kind !== 'waiter') { q.startle = 0.6; setPose(q, 'startle', 1, 0.55); setTimeoutG(() => setPose(q, 'complain', 1, 1.4), 0.55); } else setPose(q, 'complain', 1, 1.4);
+  if (motoSayT <= 0 || hit) { motoSayT = 1.3; say(q, pick(q.kind === 'waiter' ? L_MOTOW : L_MOTO), 2.2, 0, q.kind === 'waiter' ? 'bar' : ''); } }
+function horn() { if (hornT > 0) return; hornT = 0.7; sfx('horn'); const near = AG.filter(q => q.visible && q !== P.a && q.pos.distanceTo(P.pos) < 4.5); near.forEach(q => { q.look = 1.5; q.lookAt = P.pos; }); if (near.length && motoSayT <= 0) { motoSayT = 1.5; say(pick(near), pick(['¡Ya va, ya va!', '¡Mec, mec! ¿Qué pasa?', '¡Qué pesao con el pito!']), 1.8); } }
+function stepRide(dt) { const S = P.ride, a = P.a; if (P.lock > 0) P.lock -= dt; motoSayT -= dt; hornT -= dt;
+  const inp = STATE === 'play' && P.lock <= 0 ? readInput() : { x: 0, z: 0, run: false };
+  jumpQ -= dt; if ((keys.Space || jumpQ > 0) && STATE === 'play') { jumpQ = 0; horn(); }
+  const f = V3(-Math.sin(cam.yaw), 0, -Math.cos(cam.yaw)), r = V3(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
+  const want = V3().addScaledVector(r, inp.x).addScaledVector(f, -inp.z), mag = Math.min(1, want.length()); let hf = fwd(S.yaw), steerTo = 0;
+  const maxV = inp.run ? 8.0 : 6.0;
+  if (mag > 0.12) { want.normalize(); const dot = want.dot(hf), ang = angDiff(S.yaw, Math.atan2(want.x, want.z));
+    if (dot > -0.25) { steerTo = clamp(ang * 1.5, -1, 1); const tv = maxV * mag * (0.45 + 0.55 * Math.max(0, dot)); S.speed += (tv - S.speed) * Math.min(1, dt * (S.speed < tv ? 0.95 : 1.6)); }
+    else if (dot < -0.85 && S.speed < 0.4) { S.speed += (-1.4 * mag - S.speed) * Math.min(1, dt * 2.5); } // justo hacia atrás y casi parado: marcha atrás
+    else if (S.speed > 3) { S.speed = Math.max(0, S.speed - 7 * dt); steerTo = Math.sign(ang) * 0.6; } // frenar antes de dar la vuelta
+    else { steerTo = Math.sign(ang) || 1; const tv = 1.9 * mag; S.speed += (tv - S.speed) * Math.min(1, dt * 2); } } // media vuelta cerrada
+  else { const dv = Math.min(Math.abs(S.speed), (1.6 + Math.abs(S.speed) * 0.3) * dt); S.speed -= Math.sign(S.speed) * dv; }
+  S.steer += (steerTo - S.steer) * Math.min(1, dt * 6);
+  const yawRate = S.steer * Math.min(2.3, Math.abs(S.speed) * 1.2) * Math.sign(S.speed || 1) * (S.speed < 0 ? 0.5 : 1); S.yaw += yawRate * dt; hf = fwd(S.yaw);
+  const np = V3(S.x + hf.x * S.speed * dt, 0, S.z + hf.z * S.speed * dt), pre = np.clone();
+  collideBoxes(np, 0.38); for (const o of [0.52, -0.5]) { const q = np.clone().addScaledVector(hf, o), q0 = q.clone(); collideBoxes(q, 0.26); np.x += q.x - q0.x; np.z += q.z - q0.z; }
+  // dentro de la calle: ni en el bar ni en las fachadas
+  const td = W.toTD(np.x, np.z), dmin = 0.5, dmax = W.SW2 - 0.5; if (td.d < dmin || td.d > dmax || td.th < W.thMin || td.th > W.thMax) { const c = W.arcPt(clamp(td.th, W.thMin, W.thMax), clamp(td.d, dmin, dmax)); np.x = c.x; np.z = c.z; }
+  // gente: la moto frena y se aparta (sin hacer daño); los de delante se quejan
+  for (const q of AG) { if (!q.visible || q === P.a || q.cyc === 'inside') continue; const dx = q.pos.x - np.x, dz = q.pos.z - np.z; if (Math.abs(dx) > 3 || Math.abs(dz) > 3) continue;
+    const al = clamp(dx * hf.x + dz * hf.z, -0.62, 0.68), ex = dx - hf.x * al, ez = dz - hf.z * al, dd = Math.hypot(ex, ez), m = q.radius + 0.24;
+    if (dd < m && dd > 1e-4) { np.x -= ex / dd * (m - dd); np.z -= ez / dd * (m - dd); if (Math.abs(S.speed) > 0.8) { S.speed *= 0.15; motoReact(q, true); } }
+    else if (Math.abs(S.speed) > 2.2 && dx * hf.x + dz * hf.z > 0.2 && Math.hypot(dx, dz) < 2.3) motoReact(q, false); }
+  const bump = pre.distanceTo(np); if (bump > 0.004 && Math.abs(S.speed) > 1.2) { if (Math.abs(S.speed) > 3) { sfx('thud'); camShake(0.15); } S.speed *= 0.4; }
+  S.x = np.x; S.z = np.z; S.y += (groundAt(S.x, S.z) - S.y) * Math.min(1, dt * 14);
+  const leanT = -clamp(yawRate * Math.abs(S.speed) * 0.07, -0.34, 0.34); S.lean += (leanT - S.lean) * Math.min(1, dt * 6);
+  for (const wh of S.wheels) wh.rotation.x += S.speed * dt / 0.24;
+  placeScooter(S); S.g.updateMatrixWorld(true);
+  P.pos.set(S.x, S.y, S.z); P.vel.set(hf.x * S.speed, 0, hf.z * S.speed); P.yaw = S.yaw; P.vy = 0; P.grounded = true;
+  const rp = S.g.localToWorld(V3(0, 0.55, -0.24)); a.pos.copy(P.pos); a.n.position.copy(rp); a.n.rotation.set(0, S.yaw, S.lean, 'YXZ'); a.yaw = S.yaw; a.t += dt;
+  const accel = (S.speed - (P.lastSpeed || 0)) / Math.max(dt, 1e-3); P.lastSpeed = S.speed;
+  a.n.userData.update(dt, { speed: 0, grounded: true, vy: 0, dance: false, wave: false, turn: -yawRate * 0.35, accel: accel * 0.5 }); a.pose.sit = 1; applyPose(a, dt);
+  const AR = a.n.userData.arms; AR[0].rotation.set(-1.18, 0, -0.32); AR[1].rotation.set(-1.18, 0, 0.32); AR.forEach(ar => ar.scale.y = 1);
+  const LG = a.n.userData.legs; LG[0].rotation.z = -0.12; LG[1].rotation.z = 0.12; a.n.userData.torso.rotation.x += 0.12;
+  engineUpd(S.speed);
+  if (!LITE) { fill.position.copy(P.pos).add(V3(0, 2.6, 0)).addScaledVector(V3(Math.sin(cam.yaw), 0, Math.cos(cam.yaw)), 1.6); }
+  sun.position.copy(P.pos).add(SUN_OFF); sun.target.position.copy(P.pos); }
+
 // ---------- separación entre personajes (radio según la cabeza Pop) ----------
 function sepAgents(dt, init) {
   const L3 = AG.filter(a => a.visible && a !== P.a && a.trip <= 0);
-  if (P.a && (STATE === 'play' || STATE === 'caught') && !P.sit) L3.push(P.a);
+  if (P.a && (STATE === 'play' || STATE === 'caught') && !P.sit && !P.ride) L3.push(P.a);
   const moved = new Set();
   for (let i = 0; i < L3.length; i++) { const a = L3[i]; for (let j = i + 1; j < L3.length; j++) { const b = L3[j];
     const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z; const m = a.radius * (a.seat ? 0.85 : 1) + b.radius * (b.seat ? 0.85 : 1); if (Math.abs(dx) > m || Math.abs(dz) > m) continue; const d = Math.hypot(dx, dz); if (d >= m) continue;
@@ -1932,35 +2120,35 @@ window.PORTRAITS = PORTRAITS;
 let selIdx = store.get('lacurva_pj', 0); if (!(selIdx >= 0 && selIdx < NG)) selIdx = 0;
 const grid = $('grid');
 GANG.forEach((g, i) => { const c = document.createElement('div'); c.className = 'card' + (i === selIdx ? ' sel' : ''); c.innerHTML = `<img alt="" src="${PORTRAITS[i]}"><b>${g.name}</b>`; c.onclick = () => { selIdx = i; [...grid.children].forEach((e, k) => e.classList.toggle('sel', k === i)); audioOn(); }; c.ondblclick = () => startGame(i); grid.appendChild(c); });
-const HOWTO = 'Elige a alguien de la pandilla y tienes <b>3 minutos</b> para liarla en El Último Tango sin que te echen. Muévete con el <b>joystick</b> (en el móvil) o con <b>WASD/flechas</b>; acércate a la gente y pulsa <b>BROMA</b> (o <b>E</b>) cuando aparezca la acción: robar cañas, echárselas por encima, desatar cordones por la espalda, dar sustos, hacer photobombs, esconder móviles o colarte en la cola del baño. Si vas lanzado contra una <b>mesa de la terraza</b>, ¡la tiras con todas las cañas! Encadena bromas seguidas para hacer <b>combos</b> (hasta x5). Ojo con los <b>camareros hippies</b>: si te ven dentro de su cono de visión sube el medidor de <b>PILLADO</b>, y si se llena… ¡a la calle! Escóndete detrás de la gente o de las paredes y deja que se te olvide.';
+const HOWTO = 'Elige a alguien de la pandilla y tienes <b>3 minutos</b> para liarla en El Último Tango sin que te echen. Muévete con el <b>joystick</b> (en el móvil) o con <b>WASD/flechas</b>; acércate a la gente y pulsa <b>BROMA</b> (o <b>E</b>) cuando aparezca la acción: robar cañas, echárselas por encima, desatar cordones por la espalda, dar sustos, hacer photobombs, esconder móviles o colarte en la cola del baño. Si vas lanzado contra una <b>mesa de la terraza</b>, ¡la tiras con todas las cañas! Encadena bromas seguidas para hacer <b>combos</b> (hasta x5). Ojo con los <b>camareros hippies</b>: si te ven dentro de su cono de visión sube el medidor de <b>PILLADO</b>, y si se llena… ¡a la calle! Escóndete detrás de la gente o de las paredes y deja que se te olvide. Y para relajarte: en la <b>barra</b> el camarero te prepara un <b>cóctel</b> 🍹, y en la calle puedes <b>montarte en una moto</b> 🛵 (con <b>Espacio</b> o SALTAR pitas).';
 $('howto').innerHTML = HOWTO; $('howBtn').onclick = () => $('howto').classList.toggle('on');
 $('play').onclick = () => { audioOn(); startGame(selIdx); };
 $('again').onclick = () => { audioOn(); startGame(selIdx); }; $('change').onclick = () => showMenu();
 const showBest = () => { $('best').textContent = best > 0 ? 'Récord: ' + best + ' puntos' : ''; };
-function showMenu() { if (STATE === 'trip') endTrip(); STATE = 'menu'; P.sit = false; hideTripQ(); $('menu').classList.add('on'); $('end').classList.remove('on'); $('hud').classList.remove('on'); showBest(); if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); P.a = null; } }
-function resetRound() { for (const T of TABLES) if (T.state !== 'up') { T.state = 'up'; T.thudd = 0; T.root.quaternion.identity(); T.root.position.set(T.x, T.y, T.z); T.inner.position.set(0, 0, 0); if (!W.COLL.includes(T.coll)) W.COLL.push(T.coll); fillTable(T); }
+function showMenu() { if (STATE === 'trip') endTrip(); resetScooters(); resetCocktail(); STATE = 'menu'; P.sit = false; hideTripQ(); $('menu').classList.add('on'); $('end').classList.remove('on'); $('hud').classList.remove('on'); showBest(); if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); P.a = null; } }
+function resetRound() { resetScooters(); resetCocktail(); for (const T of TABLES) if (T.state !== 'up') { T.state = 'up'; T.thudd = 0; T.root.quaternion.identity(); T.root.position.set(T.x, T.y, T.z); T.inner.position.set(0, 0, 0); if (!W.COLL.includes(T.coll)) W.COLL.push(T.coll); fillTable(T); }
   for (const p of PARTS) if (p.m.parent) p.m.parent.remove(p.m); PARTS.length = 0; TIMERS.length = 0; for (const b of BUBS) b.el.remove(); BUBS.length = 0;
   for (const a of AG) { a.trip = 0; a.untied = 0; a.wet = 0; a.cd = 0; a.n.rotation.set(0, a.yaw, 0); for (const k of ['complain', 'startle', 'push', 'crouch', 'pour', 'drink', 'pose', 'scratch']) { a.pose[k] = 0; } if (a.beerHand != null && a.kind !== 'waiter' && !a.selfie) giveBeer(a); }
   for (const w of WAITER_A) { w.alert = 0; w.freeze = false; }
   score = 0; timeLeft = TRAILER ? 999 : 180; combo = 1; comboT = 0; lastPrank = -99; pillado = 0; seenT = 99; stats = { pranks: 0, tables: 0, beers: 0, maxCombo: 1 }; }
 GANG_A.forEach(a => { a.tagT = TAGS.find(t => t.a === a); });
-function startGame(i) { if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); } selIdx = i; store.set('lacurva_pj', i);
+function startGame(i) { resetScooters(); resetCocktail(); if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); } selIdx = i; store.set('lacurva_pj', i);
   resetRound(); const a = GANG_A[i]; P.a = a; for (const T of TABLES) T.seated = T.seated.filter(x => x !== a); a.seat = null; a.pose.sit = 0; a.pw.sit = 0; takeBeer(a); P.beer = null; a.tagT.el.classList.add('me');
   P.pos.copy(SPAWN); P.pos.y = groundAt(SPAWN.x, SPAWN.z); P.vel.set(0, 0, 0); P.vy = 0; P.yaw = Math.PI + 0.45; P.flung = 0; P.lock = 0; P.inQueue = 0; P.sit = false; P.tripDone = false; P.askT = -1; P.bounce = 0; hideTripQ(); a.radius = a.radius || RAD; cam.yaw = 0.45; cam.pitch = portrait() ? 0.48 : 0.42; cam.target.copy(P.pos).add(V3(0, 1.2, 0)); camDist = 6; lastManual = -99;
   for (const T of TABLES) T.seated = T.seated.filter(x => x.seat);
   $('menu').classList.remove('on'); $('end').classList.remove('on'); $('hud').classList.add('on'); STATE = 'play'; gameT = 0; bigText('¡A liarla, ' + a.name + '!', 1.6); }
 const TITLES = [[0, 'Pringao de La Curva'], [700, 'Aprendiz de gamberro'], [1600, 'Liante de barrio'], [2800, 'Terror de las terrazas'], [4200, 'Leyenda del Último Tango'], [6000, 'Rey de La Curva']];
 const titleFor = s => TITLES.filter(t => s >= t[0]).pop()[1];
-function endGame(expelled) { if (STATE === 'end') return; STATE = 'end'; const nb = score > best; if (nb) { best = score; store.set('lacurva_best', best); }
+function endGame(expelled) { if (STATE === 'end') return; STATE = 'end'; engineOn(false); const nb = score > best; if (nb) { best = score; store.set('lacurva_best', best); }
   $('endWhy').textContent = expelled ? '¡Te han echado del bar! 🚪' : '¡Se acabó la noche! 🌙'; $('endTitle').textContent = (expelled ? 'Vetado · ' : '') + titleFor(score); $('endScore').textContent = score;
   $('endStats').innerHTML = `${P.a.name} · ${stats.pranks} bromas · ${stats.tables} mesas por los suelos · ${stats.beers} cañas robadas · combo máx. x${stats.maxCombo}<br>${nb ? '🏆 ¡NUEVO RÉCORD!' : 'Récord: ' + best}`;
   hideTripQ(); $('hud').classList.remove('on'); setTimeoutG(() => {}, 0); setTimeout(() => $('end').classList.add('on'), MANUAL ? 0 : 600); joy.id = null; joyEl.style.display = 'none'; }
 let paused = false; function togglePause() { if (STATE === 'play') { STATE = 'pause'; bigText('PAUSA', 9999); } else if (STATE === 'pause') { STATE = 'play'; bigText('¡Sigue!', 0.6); } }
 // ---------- HUD ----------
 const hud = { s: -1, t: -1, c: -1, p: -1, k: '' };
-function updHUD() { if (score !== hud.s) { hud.s = score; $('score').textContent = score; } const ts = Math.ceil(timeLeft); if (ts !== hud.t) { hud.t = ts; $('time').textContent = Math.floor(ts / 60) + ':' + String(ts % 60).padStart(2, '0'); $('time').style.color = ts <= 15 ? '#ff6b6b' : ''; if (ts <= 10 && ts > 0 && STATE === 'play') sfx('tick'); }
+function updHUD() { const rd = !!P.ride; if (rd !== hud.rd) { hud.rd = rd; $('bJump').textContent = rd ? 'PITAR' : 'SALTAR'; $('bRun').textContent = rd ? 'TURBO' : 'CORRER'; } if (score !== hud.s) { hud.s = score; $('score').textContent = score; } const ts = Math.ceil(timeLeft); if (ts !== hud.t) { hud.t = ts; $('time').textContent = Math.floor(ts / 60) + ':' + String(ts % 60).padStart(2, '0'); $('time').style.color = ts <= 15 ? '#ff6b6b' : ''; if (ts <= 10 && ts > 0 && STATE === 'play') sfx('tick'); }
   if (combo !== hud.c) { hud.c = combo; $('comboV').textContent = 'x' + combo; } const pp = Math.round(pillado); if (pp !== hud.p) { hud.p = pp; $('pillado').firstElementChild.style.width = pp + '%'; $('pilladoW').classList.toggle('hot', pp > 66); }
-  const k = curPrank ? curPrank.k : ''; if (k !== hud.k) { hud.k = k; const pr = $('prompt'), b = $('bPrank'); if (k) { const [ic, lab] = PR[k]; pr.innerHTML = (TOUCH ? '' : '<kbd>E</kbd>') + ic + ' ' + lab; pr.style.display = 'block'; b.innerHTML = ic + '<br>' + lab.replace('¡BUH!', 'BUH'); b.classList.add('ready'); } else { pr.style.display = 'none'; b.textContent = 'BROMA'; b.classList.remove('ready'); } } }
+  const k = curPrank ? curPrank.k : ''; if (k !== hud.k) { hud.k = k; const pr = $('prompt'), b = $('bPrank'); if (k) { const [ic, lab, , sh] = PR[k]; pr.innerHTML = (TOUCH ? '' : '<kbd>E</kbd>') + ic + ' ' + lab + (k === 'unride' && !TOUCH ? ' &nbsp;<kbd>Espacio</kbd>pitar' : ''); pr.style.display = 'block'; b.innerHTML = ic + '<br>' + (sh || lab.replace('¡BUH!', 'BUH')); b.classList.add('ready'); } else { pr.style.display = 'none'; b.textContent = 'BROMA'; b.classList.remove('ready'); } } }
 // ---------- bucle principal ----------
 let menuA = 0;
 function frame(dt, noRender) {
@@ -1976,7 +2164,7 @@ function frame(dt, noRender) {
     updCamera(dt); updAmbient(dt); if (tripQOpen() && !P.sit) hideTripQ();
   } else if (!window.__camLock) { if (camera.near !== 0.1) { camera.near = 0.1; camera.updateProjectionMatrix(); } menuA += dt * 0.12; const c = V3(0.2, 1.6, -0.5); camera.position.set(c.x + Math.sin(menuA * 0.7) * 3.5, 3.0 + Math.sin(menuA * 0.5) * 0.4, 9.5 + Math.cos(menuA * 0.6) * 1.2); camera.lookAt(c); prankQ = false; }
   for (const a of AG) { if (a === P.a) continue; if (a.cd > 0 && a.look <= 0 && a.seat) a.faceYaw = a.seat.yaw; updAgent(a, dt); }
-  updWaiters(dt); updBath(dt); updDoor(dt); sepAgents(dt); updBathFade(); updTables(dt); updParts(dt); updTimers(dt);
+  updWaiters(dt); updCocktail(dt); updBath(dt); updDoor(dt); sepAgents(dt); updBathFade(); updTables(dt); updParts(dt); updTimers(dt);
   for (const d of DOGS) { d.t += dt; d.tail.rotation.z = Math.sin(d.t * 18) * 0.6; d.head.rotation.y = Math.sin(d.t * 0.6) * 0.3; }
   if (window.__fan) window.__fan.rotation.y += dt * 3;
   if (noRender) return;
@@ -1998,7 +2186,7 @@ requestAnimationFrame(loop);
 document.addEventListener('visibilitychange', () => { if (document.hidden && STATE === 'play') togglePause(); });
 // ---------- arranque ----------
 prog(1, '¡Listo!'); $('load').classList.remove('on'); showMenu();
-window.GAME = { start: startGame, showMenu, endGame, step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) frame(dt, i < n - 1); }, tick(dt = 1 / 30, dom = false) { frame(dt, true); if (dom) { updDOM(dt); updHUD(); } }, setInput(o) { window.__input = o; }, prank() { prankQ = true; }, sitWC, standWC, tripYes, tripNo, showTripQ, skipTrip, inBath, bathDoor, BTH, TRIP, sepAgents, get tripQ() { return tripQOpen(); }, jump() { jumpQ = 0.2; }, findPrank, doPrank, knock, witness, P, AG, TABLES, QUEUE, WAITER_A, GANG_A, CROWD_A, BATH, cam, camera, renderer, scene, groundAt, bigText, say, setPose, popText,
+window.GAME = { start: startGame, showMenu, endGame, step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) frame(dt, i < n - 1); }, tick(dt = 1 / 30, dom = false) { frame(dt, true); if (dom) { updDOM(dt); updHUD(); } }, setInput(o) { window.__input = o; }, prank() { prankQ = true; }, sitWC, standWC, tripYes, tripNo, showTripQ, skipTrip, inBath, bathDoor, BTH, TRIP, sepAgents, get tripQ() { return tripQOpen(); }, jump() { jumpQ = 0.2; }, findPrank, doPrank, knock, W, SCOOT, CKS, counterNear, orderCocktail, grabCocktail, sipCocktail, mountScooter, dismount, barman, witness, P, AG, TABLES, QUEUE, WAITER_A, GANG_A, CROWD_A, BATH, cam, camera, renderer, scene, groundAt, bigText, say, setPose, popText,
   get state() { return STATE; }, set state(v) { STATE = v; }, get score() { return score; }, set score(v) { score = v; }, get pillado() { return pillado; }, set pillado(v) { pillado = v; }, get timeLeft() { return timeLeft; }, set timeLeft(v) { timeLeft = v; }, get combo() { return combo; }, get curPrank() { return curPrank; }, stats: () => stats, BAKE, LITE, updCamera };
 window.GAME_READY = 1;
 })().catch(e => { console.error(e); const t = document.getElementById('loadtxt'); if (t) t.textContent = 'Error: ' + e.message; });
