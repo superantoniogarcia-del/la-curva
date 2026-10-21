@@ -15,6 +15,7 @@ canvas{display:block;touch-action:none;position:fixed;inset:0}
 #bar{width:min(320px,70vw);height:12px;border-radius:8px;background:rgba(255,255,255,.15);margin-top:22px;overflow:hidden}#bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd67a,#ff7a3a);transition:width .2s}
 #loadtxt{margin-top:10px;font-size:13px;opacity:.8}
 #menu{background:linear-gradient(180deg,rgba(13,17,36,.55),rgba(13,17,36,.92) 40%);overflow-y:auto;touch-action:pan-y;justify-content:flex-start}
+#menuBtns{position:sticky;bottom:calc(-14px - env(safe-area-inset-bottom));z-index:3;width:100%;text-align:center;padding:12px 0 calc(env(safe-area-inset-bottom) + 12px);background:linear-gradient(180deg,rgba(13,17,36,0),rgba(13,17,36,.96) 40%)}
 #grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;width:min(820px,100%);margin:12px 0}
 @media (max-aspect-ratio:1/1){#grid{grid-template-columns:repeat(3,1fr);gap:8px}}
 @media (max-aspect-ratio:1/1) and (max-width:380px){#grid{grid-template-columns:repeat(3,1fr)}}
@@ -70,12 +71,27 @@ canvas{display:block;touch-action:none;position:fixed;inset:0}
 #endStats{opacity:.9;font-size:14px;margin:10px 0 16px;line-height:1.6}
 #cap{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:30;background:rgba(10,12,26,.82);text-align:center;padding:30px}
 #cap.on{display:flex}#cap h1{font-size:clamp(34px,11vw,70px);margin:0;color:#ffd67a;text-shadow:0 4px 0 #b3261e;font-weight:900;letter-spacing:2px}#cap p{font-size:clamp(18px,5.5vw,30px);font-weight:800;margin:10px 0 0}
+#tripQ{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 104px);transform:translateX(-50%) scale(.9);z-index:15;display:none;flex-direction:column;align-items:center;background:linear-gradient(135deg,rgba(60,20,120,.92),rgba(13,17,60,.92));border:3px solid #9ff3ff;border-radius:22px;padding:14px 16px 10px;width:min(360px,90vw);text-align:center;box-shadow:0 0 30px rgba(159,243,255,.45),0 8px 24px rgba(0,0,0,.5);pointer-events:auto;opacity:0;transition:opacity .25s,transform .25s}
+#tripQ.on{display:flex;opacity:1;transform:translateX(-50%) scale(1)}
+#tripQ .tq{font-weight:900;font-size:clamp(19px,5.4vw,24px);line-height:1.15;color:#fff;text-shadow:0 2px 0 #7b2ff7}
+#tripQ .tq small{display:block;font-size:13px;font-weight:700;color:#9ff3ff;margin-top:5px;text-shadow:none}
+#tripQ .row{display:flex;gap:10px;margin-top:10px;width:100%;justify-content:center}
+#tripQ .btn{margin:0;min-width:120px;min-height:56px;font-size:22px;touch-action:none}
+#tripYes{background:linear-gradient(90deg,#ff4fd8,#ffd23a,#4fffb0)!important;color:#1d2533;box-shadow:0 5px 0 #7b2ff7!important}
+#tripQ .kh{font-size:11px;opacity:.7;margin-top:8px;font-weight:700}.touch #tripQ .kh{display:none}
+#tripFx{position:fixed;inset:0;z-index:25;display:none;pointer-events:auto;touch-action:none}
+#tripFx.on{display:block}
+#tripFx:before{content:"";position:absolute;inset:-50%;background:repeating-conic-gradient(from calc(var(--h,0)*1deg),rgba(255,79,216,.09) 0 8deg,transparent 8deg 15deg,rgba(47,216,255,.09) 15deg 23deg,transparent 23deg 30deg,rgba(255,225,79,.07) 30deg 38deg,transparent 38deg 45deg);animation:kal 6s linear infinite;mix-blend-mode:screen}
+@keyframes kal{to{transform:rotate(360deg)}}
+#tripFx h2{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top) + 9%);margin:0;text-align:center;font-weight:900;font-size:clamp(34px,10vw,64px);color:#fff;letter-spacing:2px;text-shadow:0 0 18px hsl(calc(var(--h,0)*1deg),100%,60%),0 4px 0 #7b2ff7;animation:wob 1.2s ease-in-out infinite}
+@keyframes wob{50%{transform:scale(1.08) rotate(-2deg)}}
+#tripFx p{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 26px);margin:0;text-align:center;font-weight:800;font-size:14px;opacity:.85}
 #rot{display:none}
 </style></head><body>
 <div id="load" class="scr on"><div class="logo">LA CURVA</div><div class="sub">El Último Tango · C. Diario de Córdoba</div><div id="bar"><i></i></div><div id="loadtxt">Cargando el barrio…</div></div>
 <div id="menu" class="scr"><div class="logo" style="font-size:clamp(34px,10vw,60px)">LA CURVA</div><div class="sub">Elige quién de la pandilla va a liarla esta noche</div><div id="best"></div>
   <div id="grid"></div>
-  <div><button class="btn" id="play">¡A liarla!</button><button class="btn alt" id="howBtn">Cómo se juega</button></div>
+  <div id="menuBtns"><button class="btn" id="play">¡A liarla!</button><button class="btn alt" id="howBtn">Cómo se juega</button></div>
   <div id="howto"></div></div>
 <div id="hud"><div id="top"><div class="pill"><small>PUNTOS</small><span id="score">0</span></div><div class="pill" id="combo"><small>COMBO</small><span id="comboV">x1</span></div><div class="pill" style="text-align:right"><small>TIEMPO</small><span id="time">3:00</span></div></div>
   <div id="pilladoW">PILLADO<div id="pillado"><i></i></div></div><button id="pause">II</button>
@@ -84,6 +100,8 @@ canvas{display:block;touch-action:none;position:fixed;inset:0}
   <div id="keys"><b>WASD/flechas</b> mover · <b>Shift</b> correr · <b>Espacio</b> saltar · <b>E/X</b> broma · <b>ratón</b> cámara · <b>P</b> pausa</div></div>
 <div id="end" class="scr"><div class="sub" id="endWhy">¡Se acabó la noche!</div><div id="endTitle">Rey de La Curva</div><div id="endScore">0</div><div class="sub">puntos</div><div id="endStats"></div>
   <div><button class="btn" id="again">Otra ronda</button><button class="btn alt" id="change">Cambiar personaje</button></div></div>
+<div id="tripQ"><div class="tq">¿Te pegas un viajecito astral?<small>Tiras de la cadena… ¡y el váter te absorbe! 🌀</small></div><div class="row"><button class="btn" id="tripYes">¡SÍ!</button><button class="btn alt" id="tripNo">No</button></div><div class="kh">S = sí · N = no</div></div>
+<div id="tripFx"><h2>¡VIAJE ASTRAL!</h2><p>Toca la pantalla o pulsa una tecla para volver</p></div>
 <div id="flash"></div><div id="big"></div><div id="cap"><h1></h1><p></p></div><div id="layer"></div>
 <script>/* semilla determinista para tráiler/pruebas */(function(){var q=location.search;if(/[?&](trailer|seed)=/.test(q)){var m=q.match(/seed=(\d+)/),s=m?+m[1]:12345;Math.random=function(){s=(s*16807)%2147483647;return(s-1)/2147483646;};}window.__GAME=1;})();</script>
 <script type="module">/**
@@ -988,11 +1006,76 @@ const bar = new THREE.Group(); scene.add(bar);
   if (!window.__GAME) { tableOut(-2.25, 0.45, [[0.1, 0.05], [-0.12, -0.08], [0.05, -0.15]]); chair(-2.25, 1.0, Math.PI); chair(-2.85, 0.5, Math.PI / 2);
   tableOut(0.32, 0.5, [[-0.08, 0.1], [0.12, -0.05]]); chair(0.32, 1.05, Math.PI); chair(0.9, 0.5, -Math.PI / 2); }
   WX.chair = chair; WX.table = table;
-  // baño (esquina del fondo a la derecha, puerta en su lado izquierdo)
-  const bx0 = 1.75, bz0 = -6.3; box(0.12, BH, BD - 6.3, M.plasterIn, bx0, BH / 2, (bz0 - BD) / 2, scene, { occ: true }); box(BX1 - bx0, BH, 0.12, M.plasterIn, (bx0 + BX1) / 2, BH / 2, bz0, scene, { occ: true });
-  addColl(bx0, (bz0 - BD) / 2, 0.08, (BD + bz0) / -2 * -1 > 0 ? (BD + bz0) / 2 : -(BD + bz0) / 2); addColl((bx0 + BX1) / 2, bz0, (BX1 - bx0) / 2, 0.08);
-  const door = box(0.05, 2.05, 0.8, M.darkWood, bx0 - 0.07, FLOOR_IN + 1.03, -7.1); const sgT = TX.text(128, 64, (x, w, h) => { x.fillStyle = '#f2efe8'; x.fillRect(0, 0, w, h); x.fillStyle = '#222'; x.font = 'bold 30px Arial'; x.textAlign = 'center'; x.fillText('ASEO', w / 2, 43); });
-  plane(0.3, 0.15, std({ map: sgT }), scene, bx0 - 0.1, FLOOR_IN + 1.6, -7.1, -Math.PI / 2);
+  // baño (esquina del fondo a la derecha): se puede entrar. Puerta CORREDERA en su lado izquierdo (x = bx0).
+  // Entrando por la puerta (mirando hacia +x): WC a la IZQUIERDA (pared del fondo) y lavabo + espejo a la DERECHA.
+  { const bx0 = 1.75, bz0 = -5.95, bz1 = -BD, dz0 = -7.55, dz1 = -6.65, DW = dz1 - dz0, DZ = (dz0 + dz1) / 2, T = 0.12, DH = 2.12;
+    const fadeM = M.plasterIn.clone(); const FADE = [fadeM]; const keep = m => { m.userData.keep = 1; return m; };
+    const wall = (w, h, d, x, y, z) => { const m = box(w, h, d, fadeM, x, y, z, scene, { occ: true }); m.userData.keep = 1; m.userData.bathFade = 1; return m; };
+    // muro con puerta (dos tramos + dintel) y muro frontal hacia la barra
+    wall(T, BH, dz0 - bz1, bx0, BH / 2, (bz1 + dz0) / 2); addColl(bx0, (bz1 + dz0) / 2, 0.08, (dz0 - bz1) / 2);
+    wall(T, BH, bz0 - dz1, bx0, BH / 2, (dz1 + bz0) / 2); addColl(bx0, (dz1 + bz0) / 2, 0.08, (bz0 - dz1) / 2);
+    wall(T, BH - FLOOR_IN - DH, DW, bx0, (BH + FLOOR_IN + DH) / 2, DZ);
+    wall(BX1 - bx0 + T / 2, BH, T, (bx0 + BX1) / 2, BH / 2, bz0); addColl((bx0 + BX1) / 2, bz0, (BX1 - bx0) / 2, 0.08);
+    // texturas: azulejo de metro con roña abajo, pintura oscura con grafitis y pegatinas arriba
+    const tileT = TX.text(256, 256, (x, w, h) => { x.fillStyle = '#9fb3a8'; x.fillRect(0, 0, w, h); for (let r = 0; r < 8; r++) for (let c = -1; c < 5; c++) { const v = (Math.random() * 16) | 0; x.fillStyle = `rgb(${214 - v},${226 - v},${214 - v})`; x.fillRect(c * 64 + (r % 2) * 32 + 2, r * 32 + 2, 60, 28); x.fillStyle = 'rgba(255,255,255,0.35)'; x.fillRect(c * 64 + (r % 2) * 32 + 5, r * 32 + 4, 40, 3); }
+      x.globalAlpha = 0.18; for (let i = 0; i < 40; i++) { x.fillStyle = Math.random() < 0.5 ? '#6b5a3a' : '#3a4a40'; x.fillRect(Math.random() * w, h - Math.random() * 60, 2 + Math.random() * 6, 2 + Math.random() * 30); } x.globalAlpha = 1; });
+    tileT.wrapS = tileT.wrapT = THREE.RepeatWrapping;
+    const grafT = (seed) => TX.text(512, 256, (x, w, h) => { x.fillStyle = '#24262f'; x.fillRect(0, 0, w, h); x.globalAlpha = 0.25; for (let i = 0; i < 900; i++) { x.fillStyle = Math.random() < 0.5 ? '#3a3d4a' : '#16171d'; x.fillRect(Math.random() * w, Math.random() * h, 3, 3); } x.globalAlpha = 1;
+      const tags = [['LA CURVA', '#ffd23a', 'bold 54px Impact, Arial Black'], ['Paco Martos ♥', '#ff6bd6', 'italic bold 30px Georgia'], ['AQUÍ ESTUVO LA PANDILLA', '#7cff6b', 'bold 22px Arial'], ['buen rollito ☮', '#5ad1ff', 'italic 30px "Comic Sans MS", cursive'], ['KROPOTKIN PRESIDENTE', '#ff8a3a', 'bold 20px Arial Black'], ['¡Ocupaaado!', '#ffffff', 'bold 34px "Comic Sans MS", cursive'], ['Tango ♪♫', '#ff5a5a', 'italic bold 36px Georgia'], ['NO TIRES NADA AL WC', '#f2f2f2', 'bold 18px Arial']];
+      for (let k = 0; k < 5; k++) { const [t, c, f] = tags[(seed * 3 + k) % tags.length]; x.save(); x.translate(40 + Math.random() * (w - 260), 50 + k * 42 + Math.random() * 10); x.rotate((Math.random() - 0.5) * 0.35); x.font = f; x.lineWidth = 5; x.strokeStyle = 'rgba(0,0,0,0.7)'; x.strokeText(t, 0, 0); x.fillStyle = c; x.fillText(t, 0, 0); x.restore(); }
+      const stk = ['#ff3b30', '#ffd23a', '#00c2ff', '#7cff6b', '#ffffff', '#ff6bd6'];
+      for (let i = 0; i < 9; i++) { x.save(); x.translate(Math.random() * w, Math.random() * h); x.rotate((Math.random() - 0.5) * 0.8); x.fillStyle = stk[i % stk.length]; if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 14, 0, 7); x.fill(); x.fillStyle = '#111'; x.fillRect(-6, -4, 3, 3); x.fillRect(3, -4, 3, 3); x.beginPath(); x.arc(0, 2, 6, 0.2, 2.9); x.stroke(); } else { x.fillRect(-22, -12, 44, 24); x.fillStyle = '#111'; x.font = 'bold 11px Arial'; x.textAlign = 'center'; x.fillText(['PUNK', 'ROCK', 'CBA', '♥', 'INDIE', 'PAZ'][i % 6], 0, 4); } x.restore(); }
+      x.strokeStyle = '#ffd23a'; x.lineWidth = 3; for (let i = 0; i < 4; i++) { const sx = Math.random() * w, sy = Math.random() * h; x.beginPath(); for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5, r = k % 2 ? 6 : 14; x.lineTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r); } x.closePath(); x.stroke(); } });
+    const TILEH = 1.25, inner = (len, cx, cz, ry, seed, trim = true) => { const tm = std({ map: tileT.clone(), roughness: 0.35 }); tm.map.needsUpdate = true; tm.map.repeat.set(len / 1.0, TILEH / 1.0); const pa = plane(len, TILEH, tm, scene, cx, FLOOR_IN + TILEH / 2, cz, ry);
+      const pb = plane(len, BH - TILEH - FLOOR_IN - 0.1, std({ map: grafT(seed), roughness: 0.9 }), scene, cx, FLOOR_IN + TILEH + (BH - TILEH - FLOOR_IN - 0.1) / 2, cz, ry);
+      if (!trim) for (const m of [pa, pb]) { m.userData.keep = 1; m.userData.bathNear = 1; } // caras junto a la cámara interior: se ocultan con la cámara dentro
+      if (trim) box(len, 0.04, 0.03, std({ color: '#1c1c1f' }), cx + Math.sin(ry) * 0.012, FLOOR_IN + TILEH, cz + Math.cos(ry) * 0.012, scene, { ry, cast: false }); };
+    inner(bz0 - bz1, BX1 - 0.012, (bz0 + bz1) / 2, -Math.PI / 2, 0); // pared derecha (lavabo)
+    inner(BX1 - bx0 - T / 2, (bx0 + BX1) / 2 + T / 4, bz1 + 0.012, 0, 1); // pared del fondo (WC)
+    inner(dz0 - bz1, bx0 + T / 2 + 0.005, (bz1 + dz0) / 2, Math.PI / 2, 2, false); inner(bz0 - dz1, bx0 + T / 2 + 0.005, (dz1 + bz0) / 2, Math.PI / 2, 3, false); // caras interiores (de espaldas a la cámara)
+    inner(BX1 - bx0 - T / 2, (bx0 + BX1) / 2 + T / 4, bz0 - T / 2 - 0.005, Math.PI, 4, false);
+    // suelo de baldosa ajedrezada
+    const chk = TX.text(128, 128, (x, w, h) => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { x.fillStyle = (i + j) % 2 ? '#1d1d20' : '#d8d4c8'; x.fillRect(i * 32, j * 32, 32, 32); } x.globalAlpha = 0.12; for (let i = 0; i < 300; i++) { x.fillStyle = '#5a4a30'; x.fillRect(Math.random() * w, Math.random() * h, 2, 2); } }); chk.wrapS = chk.wrapT = THREE.RepeatWrapping; chk.repeat.set((BX1 - bx0) / 0.6, (bz0 - bz1) / 0.6);
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(BX1 - bx0, bz0 - bz1), std({ map: chk, roughness: 0.4 })); fl.rotation.x = -Math.PI / 2; fl.position.set((bx0 + BX1) / 2, FLOOR_IN + 0.004, (bz0 + bz1) / 2); fl.receiveShadow = true; scene.add(fl);
+    // WC con tapa, cisterna y pulsador (contra la pared del fondo, mirando hacia fuera)
+    const wcX = 2.55, wcZ = bz1 + 0.38, porc = new THREE.MeshPhysicalMaterial({ color: '#f4f4f0', roughness: 0.18, clearcoat: 0.8 }), seatM = std({ color: '#151517', roughness: 0.35 });
+    const wc = new THREE.Group(); wc.position.set(wcX, FLOOR_IN, wcZ); scene.add(wc);
+    cyl(0.12, 0.15, 0.3, porc, 0, 0.15, 0.04, wc, 18); const bowl = cyl(0.2, 0.13, 0.15, porc, 0, 0.34, 0.12, wc, 24); bowl.scale.z = 1.25;
+    const water = new THREE.Mesh(new THREE.CircleGeometry(0.15, 20), std({ color: '#5fb6d9', roughness: 0.05, metalness: 0.2 })); water.rotation.x = -Math.PI / 2; water.scale.y = 1.25; water.position.set(0, 0.395, 0.12); wc.add(water);
+    const seat = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.032, 10, 26), seatM); seat.rotation.x = Math.PI / 2; seat.scale.y = 1.25; seat.position.set(0, 0.425, 0.12); seat.castShadow = true; wc.add(seat);
+    const lid = box(0.36, 0.44, 0.03, seatM, 0, 0.66, -0.1, wc); lid.rotation.x = -0.12;
+    const cis = box(0.42, 0.4, 0.17, porc, 0, 0.78, -0.27, wc); box(0.45, 0.04, 0.2, porc, 0, 1.0, -0.27, wc); cyl(0.035, 0.035, 0.02, M.chrome, 0, 1.025, -0.27, wc, 14);
+    box(0.06, 0.06, 0.04, M.chrome, 0, 0.62, -0.2, wc);
+    const stick = TX.text(128, 64, (x, w, h) => { x.fillStyle = '#ffd23a'; x.fillRect(0, 0, w, h); x.fillStyle = '#111'; x.font = 'bold 26px Arial'; x.textAlign = 'center'; x.fillText('LA CURVA', w / 2, 42); }); plane(0.16, 0.08, std({ map: stick }), cis, 0, 0.02, 0.086);
+    addColl(wcX, bz1 + 0.27, 0.23, 0.27);
+    // rollo de papel en la pared derecha, junto al WC
+    { const h = new THREE.Group(); h.position.set(BX1 - 0.07, FLOOR_IN + 0.72, wcZ + 0.05); scene.add(h); const r = cyl(0.055, 0.055, 0.11, std({ color: '#fbfaf5', roughness: 0.9 }), 0, 0, 0, h, 16); r.rotation.x = Math.PI / 2; const ax = cyl(0.012, 0.012, 0.14, M.chrome, 0, 0, 0, h, 8); ax.rotation.x = Math.PI / 2; box(0.07, 0.02, 0.02, M.chrome, 0.035, 0, -0.07, h); box(0.07, 0.02, 0.02, M.chrome, 0.035, 0, 0.07, h);
+      const tail = plane(0.1, 0.16, std({ color: '#fbfaf5', side: THREE.DoubleSide }), h, -0.05, -0.08, 0, Math.PI / 2); }
+    // lavabo pequeño con grifo + espejo con pegatina (pared derecha)
+    const skZ = bz0 - 0.5; const sk = new THREE.Group(); sk.position.set(BX1, FLOOR_IN, skZ); sk.rotation.y = -Math.PI / 2; scene.add(sk);
+    cyl(0.06, 0.08, 0.72, porc, 0, 0.36, 0.17, sk, 14); const bas = cyl(0.2, 0.13, 0.14, porc, 0, 0.8, 0.2, sk, 22); bas.scale.z = 0.85;
+    const bw = new THREE.Mesh(new THREE.CircleGeometry(0.16, 20), std({ color: '#b9c3c8', roughness: 0.2, metalness: 0.6 })); bw.rotation.x = -Math.PI / 2; bw.scale.y = 0.85; bw.position.set(0, 0.86, 0.2); sk.add(bw);
+    cyl(0.018, 0.018, 0.16, M.chrome, 0, 0.94, 0.04, sk, 8); const sp = cyl(0.014, 0.014, 0.12, M.chrome, 0, 1.01, 0.1, sk, 8); sp.rotation.x = Math.PI / 2;
+    box(0.5, 0.64, 0.025, std({ color: '#111', roughness: 0.5 }), 0, 1.58, 0.013, sk);
+    const mir = plane(0.44, 0.58, new THREE.MeshStandardMaterial({ color: '#b8c8d0', roughness: 0.12, metalness: 0.35, emissive: '#3a4a52', emissiveIntensity: 0.6 }), sk, 0, 1.58, 0.03);
+    const mst = TX.text(128, 128, (x, w, h) => { x.clearRect(0, 0, w, h); x.fillStyle = '#ff6bd6'; x.beginPath(); x.arc(64, 64, 58, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = 'bold 30px Arial'; x.textAlign = 'center'; x.fillText('¡GUAPO!', 64, 74); }); plane(0.1, 0.1, std({ map: mst, transparent: true }), sk, 0.14, 1.78, 0.032);
+    addColl(BX1 - 0.18, skZ, 0.18, 0.22);
+    // bombilla tenue colgando
+    const bulbM = new THREE.MeshStandardMaterial({ color: '#fff2cc', emissive: '#ffcf7a', emissiveIntensity: 2.2 }); const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), bulbM); bulb.position.set(2.5, BH - 0.62, -7.0); bulb.userData.keep = 1; scene.add(bulb);
+    const wire = cyl(0.005, 0.005, 0.45, M.black, 2.5, BH - 0.38, -7.0, scene, 4); wire.userData.keep = 1;
+    const light = new THREE.PointLight('#ffc98a', 3.2, 3.4, 1.4); light.position.set(2.5, BH - 0.75, -7.0); scene.add(light);
+    // puerta corredera: hoja + carril + cartel ASEO (la hoja se desliza a lo largo de la pared hacia la barra)
+    const dX = bx0 - T / 2 - 0.035, door = new THREE.Group(); door.position.set(dX, FLOOR_IN, DZ); scene.add(door);
+    const dM = std({ map: TX.wood('#4a2d1a', '#2a180c'), roughness: 0.6 }); FADE.push(dM);
+    const leaf = keep(box(0.04, DH - 0.02, DW + 0.06, dM, 0, (DH - 0.02) / 2, 0, door));
+    const sgT = TX.text(256, 128, (x, w, h) => { x.fillStyle = '#f2efe8'; x.fillRect(0, 0, w, h); x.strokeStyle = '#222'; x.lineWidth = 6; x.strokeRect(6, 6, w - 12, h - 12); x.fillStyle = '#222'; x.font = 'bold 56px Arial'; x.textAlign = 'center'; x.fillText('ASEO', w / 2, 70); x.font = 'bold 22px Arial'; x.fillText('← CORREDERA →', w / 2, 106); });
+    const sgM = std({ map: sgT }); FADE.push(sgM); keep(plane(0.34, 0.17, sgM, door, -0.025, 1.55, 0, -Math.PI / 2));
+    const hM = M.chrome.clone(); FADE.push(hM); keep(box(0.03, 0.22, 0.03, hM, -0.035, 1.0, DW / 2 - 0.08, door));
+    const stkT = TX.text(128, 128, (x, w, h) => { x.clearRect(0, 0, w, h); x.fillStyle = '#7cff6b'; x.fillRect(10, 30, 108, 60); x.fillStyle = '#111'; x.font = 'bold 26px Arial'; x.textAlign = 'center'; x.fillText('ROCK!', 64, 70); }); const stM = std({ map: stkT, transparent: true }); FADE.push(stM); keep(plane(0.13, 0.13, stM, door, -0.023, 0.9, -0.18, -Math.PI / 2));
+    const rM = M.iron.clone(); FADE.push(rM); keep(box(0.05, 0.05, DW * 2 + 0.2, rM, dX - 0.01, FLOOR_IN + DH + 0.03, DZ + DW / 2, scene));
+    const doorColl = { x: bx0, z: DZ, hx: 0.08, hz: DW / 2, c: 1, s: 0 }; COLL.push(doorColl);
+    WX.bath = { x0: bx0, x1: BX1, z0: bz1, z1: bz0, dz0, dz1, DZ, DW, door, doorColl, FADE, wc: { x: wcX, z: wcZ + 0.08, y: FLOOR_IN + 0.457 - 0.19, yaw: 0 }, bowl: V3(wcX, FLOOR_IN + 0.42, wcZ + 0.12), light, sinkZ: skZ };
+  }
   // ventilador de techo con aspas de madera
   { const f = new THREE.Group(); f.position.set(-2.0, BH - 0.45, -1.4); scene.add(f); f.userData.fan = true; cyl(0.015, 0.015, 0.3, M.black, 0, 0.17, 0, f, 6); cyl(0.09, 0.09, 0.08, M.black, 0, 0, 0, f, 16); for (let k = 0; k < 3; k++) { const b = box(0.62, 0.012, 0.12, std({ color: '#b5703a', roughness: 0.6 }), 0, -0.02, 0, f); b.geometry.translate(0.36, 0, 0); b.rotation.y = k * Math.PI * 2 / 3; } window.__fan = f; }
   // carteles en el ladrillo y guirnalda de bombillas de colores en el muro izquierdo
@@ -1012,6 +1095,48 @@ for (const [x, z, h] of [[-2.4, -3.45, 1.2], [-1.3, -3.4, 1.05], [-0.2, -3.5, 0.
 }
 const barLights = [V3(-1.8, 2.4, -2.6), V3(0.8, 2.4, -3.2), V3(-1.0, 2.3, -4.6), V3(0, 2.2, -1.2)].map((p, i) => { const l = new THREE.PointLight('#ffb978', 6, 9, 1.6); l.position.copy(p); scene.add(l); return l; });
 
+// ---------- cartel publicitario PlatoReel (fachada izquierda, junto a FERIA/JAZZ) ----------
+const PLATOREEL_LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAD5CAYAAAD7uUu+AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA4RpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDkuMS1jMDAyIDc5LmRiYTNkYTNiNSwgMjAyMy8xMi8xNS0xMDo0MjozNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDoyMTM1NTk3ZC1jYjJkLTE4NGYtYWU2My02MWZmN2JhZjQwNTAiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NzVGQUI1NjI1N0JFMTFGMUFCM0VCNjk0MTFCQjA5ODkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NzVGQUI1NjE1N0JFMTFGMUFCM0VCNjk0MTFCQjA5ODkiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI1LjYgKFdpbmRvd3MpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MTAyZjhhOTktOThlZC03MzRmLTgwYjYtMDEzYjgxODBkYjdjIiBzdFJlZjpkb2N1bWVudElEPSJhZG9iZTpkb2NpZDpwaG90b3Nob3A6OTA5YzFjMGEtNzcwOS04NjQ0LTk4MzEt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';
+function platoReelPoster(g, x, y) {
+  const PW = 0.86, PH = 1.22; // algo más grande que los carteles vecinos
+  const draw = (c, w, h, logo) => { // marca: azul noche #000D1A, rojo #ff3b30, verde #00ff88
+    const bg = c.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#001830'); bg.addColorStop(1, '#000D1A'); c.fillStyle = bg; c.fillRect(0, 0, w, h);
+    c.globalAlpha = 0.06; for (let i = 0; i < 900; i++) { c.fillStyle = Math.random() < 0.5 ? '#fff' : '#000'; c.fillRect(Math.random() * w, Math.random() * h, 2, 2); } c.globalAlpha = 1;
+    const glow = c.createRadialGradient(w * 0.5, h * 0.56, 20, w * 0.5, h * 0.56, w * 0.62); glow.addColorStop(0, 'rgba(255,59,48,0.35)'); glow.addColorStop(1, 'rgba(255,59,48,0)'); c.fillStyle = glow; c.fillRect(0, 0, w, h);
+    // logo (imagen real de platoreel.com) o, si aún no ha cargado, el wordmark redibujado
+    if (logo) c.drawImage(logo, 16, 6, w - 32, (w - 32) * 249 / 600);
+    else { c.fillStyle = '#ff2a1a'; c.beginPath(); c.arc(140, 104, 88, 0, 7); c.fill(); c.fillStyle = '#fff'; c.font = '900 64px Arial Black, Arial, sans-serif'; c.textBaseline = 'middle'; c.fillText('PLATO', 46, 112); c.font = 'bold 60px Arial, sans-serif'; c.fillText('ReeL.com', 252, 112); c.textBaseline = 'alphabetic'; }
+    c.textAlign = 'center'; c.fillStyle = '#fff'; c.font = 'bold 44px Arial, Helvetica, sans-serif'; c.fillText('Tu carta en', w / 2, 262); c.fillStyle = '#ff3b30'; c.font = '900 50px Arial Black, Arial, sans-serif'; c.fillText('formato REEL', w / 2, 316);
+    // móvil estilizado con un plato en vídeo vertical
+    const px = 150, py = 346, pw = 212, ph = 330, rr = (X, Y, W, H, R) => { c.beginPath(); c.moveTo(X + R, Y); c.arcTo(X + W, Y, X + W, Y + H, R); c.arcTo(X + W, Y + H, X, Y + H, R); c.arcTo(X, Y + H, X, Y, R); c.arcTo(X, Y, X + W, Y, R); c.closePath(); };
+    c.shadowColor = 'rgba(0,255,136,0.55)'; c.shadowBlur = 24; c.fillStyle = '#111'; rr(px, py, pw, ph, 30); c.fill(); c.shadowBlur = 0;
+    const sx = px + 12, sy = py + 14, sw = pw - 24, sh = ph - 28; c.save(); rr(sx, sy, sw, sh, 20); c.clip();
+    const sg = c.createLinearGradient(0, sy, 0, sy + sh); sg.addColorStop(0, '#3a2414'); sg.addColorStop(1, '#120a06'); c.fillStyle = sg; c.fillRect(sx, sy, sw, sh);
+    const cx = sx + sw / 2, cy = sy + sh * 0.46; c.fillStyle = '#f4f1ea'; c.beginPath(); c.ellipse(cx, cy, 82, 60, 0, 0, 7); c.fill(); c.fillStyle = '#d9d4c8'; c.beginPath(); c.ellipse(cx, cy, 60, 43, 0, 0, 7); c.fill();
+    c.fillStyle = '#e8a33a'; c.beginPath(); c.ellipse(cx, cy, 46, 31, 0, 0, 7); c.fill(); c.fillStyle = '#c96a1e'; for (let k = 0; k < 7; k++) { c.beginPath(); c.arc(cx - 30 + k * 10, cy - 6 + (k % 2) * 12, 7, 0, 7); c.fill(); } // tortilla / bravas
+    c.fillStyle = '#3f9a3a'; for (let k = 0; k < 4; k++) { c.beginPath(); c.arc(cx - 14 + k * 9, cy - 18 + (k % 2) * 4, 4, 0, 7); c.fill(); }
+    c.fillStyle = 'rgba(255,255,255,0.85)'; c.beginPath(); c.moveTo(cx - 14, cy - 92); c.lineTo(cx - 14, cy - 64); c.lineTo(cx + 12, cy - 78); c.closePath(); c.fill(); // play
+    c.font = '26px sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ff3b30'; c.fillText('♥', sx + sw - 22, sy + sh * 0.62); c.fillStyle = '#fff'; c.font = 'bold 14px Arial'; c.fillText('2,4k', sx + sw - 22, sy + sh * 0.62 + 18);
+    c.textAlign = 'left'; c.fillStyle = '#fff'; c.font = 'bold 18px Arial'; c.fillText('Salmorejo', sx + 12, sy + sh - 52); c.fillStyle = '#00ff88'; c.font = 'bold 16px Arial'; c.fillText('6,50 €', sx + 12, sy + sh - 32);
+    c.fillStyle = 'rgba(255,255,255,0.3)'; c.fillRect(sx + 12, sy + sh - 16, sw - 24, 4); c.fillStyle = '#ff3b30'; c.fillRect(sx + 12, sy + sh - 16, (sw - 24) * 0.6, 4); c.restore();
+    c.fillStyle = '#000'; rr(px + pw / 2 - 30, py + 6, 60, 10, 5); c.fill();
+    // QR para pedir
+    const qx = 382, qy = 520, q = 104; c.fillStyle = '#fff'; c.fillRect(qx, qy, q, q); c.fillStyle = '#000D1A'; const n = 13, cs = (q - 12) / n;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { const fin = (a, b) => a < 4 && b < 4; if (fin(i, j) || fin(n - 1 - i, j) || fin(i, n - 1 - j)) continue; if (Math.random() < 0.5) c.fillRect(qx + 6 + i * cs, qy + 6 + j * cs, cs, cs); }
+    for (const [a, b] of [[0, 0], [n - 4, 0], [0, n - 4]]) { c.fillRect(qx + 6 + a * cs, qy + 6 + b * cs, cs * 4, cs * 4); c.fillStyle = '#fff'; c.fillRect(qx + 6 + (a + 0.7) * cs, qy + 6 + (b + 0.7) * cs, cs * 2.6, cs * 2.6); c.fillStyle = '#000D1A'; c.fillRect(qx + 6 + (a + 1.3) * cs, qy + 6 + (b + 1.3) * cs, cs * 1.4, cs * 1.4); }
+    c.textAlign = 'center'; c.fillStyle = '#00ff88'; c.font = 'bold 20px Arial'; c.fillText('Escanea', qx + q / 2, qy + q + 26); c.fillText('y pide', qx + q / 2, qy + q + 48);
+    c.fillStyle = '#fff'; c.font = 'bold 22px Arial'; c.fillText('Menús QR', 76, 540); c.fillText('interactivos', 76, 566); c.fillStyle = '#ff9500'; c.font = '40px sans-serif'; c.fillText('▶', 76, 620);
+    // franja inferior con la web
+    c.fillStyle = '#ff3b30'; c.fillRect(0, h - 78, w, 78); c.fillStyle = '#fff'; c.font = '900 46px Arial Black, Arial, sans-serif'; c.fillText('platoreel.com', w / 2, h - 24);
+    c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 6; c.strokeRect(3, 3, w - 6, h - 6); };
+  const t = TX.text(512, 726, (c, w, h) => draw(c, w, h, null));
+  const img = new Image(); img.onload = () => { try { const cv = t.image, c = cv.getContext('2d'); draw(c, cv.width, cv.height, img); t.needsUpdate = true; } catch (_) {} }; img.src = PLATOREEL_LOGO;
+  // marco metálico fino + caja de luz (retroiluminado suave)
+  box(PW + 0.08, PH + 0.08, 0.05, std({ color: '#1b1d22', roughness: 0.4, metalness: 0.7 }), x, y, 0.025, g);
+  const m = plane(PW, PH, std({ map: t, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: 0.4, roughness: 0.4 }), g, x, y, 0.056); m.userData.keep = 1;
+  const halo = plane(PW + 0.5, PH + 0.5, new THREE.MeshBasicMaterial({ map: POSTER_HALO(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.5 }), g, x, y, 0.012); halo.userData.keep = 1; halo.receiveShadow = false;
+  WX.platoreel = m; }
+function POSTER_HALO() { return TX.text(128, 128, (x, w, h) => { const gr = x.createRadialGradient(64, 64, 20, 64, 64, 64); gr.addColorStop(0, 'rgba(120,170,255,0.55)'); gr.addColorStop(0.6, 'rgba(255,90,70,0.18)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gr; x.fillRect(0, 0, w, h); }); }
 // ---------- FACHADAS VECINAS ----------
 {
   // pared blanca a la izquierda del bar (carteles, contador, papelera)
@@ -1019,7 +1144,7 @@ const barLights = [V3(-1.8, 2.4, -2.6), V3(0.8, 2.4, -3.2), V3(-1.0, 2.3, -4.6),
   box(4.0, BH + 6.8, 9, M.plaster, 0, (BH + 6.8) / 2, -4.5, gL, { occ: true }); collLocal(gL, 0, -4.5, 2.0, 4.5);
   box(4.05, 0.85, 9, std({ map: TX.plaster('#d4cdc1') }), 0, 0.42, -4.48, gL, { cast: false });
   plane(0.62, 0.8, std({ map: TX.poster(1, 'FERIA', 'CÓRDOBA 2026') }), gL, -1.0, 1.75, 0.01); plane(0.5, 0.66, std({ map: TX.poster(4, 'JAZZ', 'CAFÉ DEL ARTE') }), gL, -0.3, 1.7, 0.01);
-  box(0.55, 0.4, 0.08, std({ color: '#dcd8d0' }), 0.9, 1.9, 0.04, gL); box(0.6, 0.45, 0.06, std({ color: '#c9c4ba' }), 1.2, 0.85, 0.03, gL);
+  platoReelPoster(gL, 0.86, 1.98); box(0.6, 0.45, 0.06, std({ color: '#c9c4ba' }), 1.2, 0.85, 0.03, gL);
   box(0.06, 0.6, 0.18, M.darkWood, 1.55, 1.25, 0.09, gL); box(0.4, 0.04, 0.2, M.darkWood, 1.55, 1.3, 0.1, gL); // repisa de madera
   // cables y caja eléctrica
   const wire = (pts) => { const t = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.012, 5), M.black); scene.add(t); };
@@ -1203,9 +1328,9 @@ const onPlat = (x, z) => (x >= W.BX0 && x <= C0.cx && z <= C0.zf - C0.DEP + 0.01
 function groundAt(x, z) { const inside = z < -0.05 && x > W.BX0 - 0.1 && x < W.BX1 + 0.1; if (inside) return W.FLOOR_IN + (onPlat(x, z) ? WX.PLAT : 0); const d = W.toTD(x, z).d; return (d < W.SW || d > W.ROAD1) ? 0.15 : 0; }
 const AP = (x, d) => W.arcPt(x / W.RC, d); // punto de la calle: x≈a lo largo, d = distancia a la fachada del bar
 const RAD = 0.27;
-function collideBoxes(p) { for (let it = 0; it < 2; it++) for (const b of W.COLL) { const dx = p.x - b.x, dz = p.z - b.z; if (Math.abs(dx) > b.hx + b.hz + 1 && Math.abs(dz) > b.hx + b.hz + 1) continue; const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c;
+function collideBoxes(p, R = RAD) { for (let it = 0; it < 2; it++) for (const b of W.COLL) { const dx = p.x - b.x, dz = p.z - b.z; if (Math.abs(dx) > b.hx + b.hz + 1 && Math.abs(dz) > b.hx + b.hz + 1) continue; const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c;
   const qx = Math.max(-b.hx, Math.min(b.hx, lx)), qz = Math.max(-b.hz, Math.min(b.hz, lz)); const ex = lx - qx, ez = lz - qz; const dd = Math.hypot(ex, ez);
-  if (dd < RAD) { let nx, nz, push; if (dd > 1e-5) { nx = ex / dd; nz = ez / dd; push = RAD - dd; } else { const px = b.hx - Math.abs(lx), pz = b.hz - Math.abs(lz); if (px < pz) { nx = Math.sign(lx) || 1; nz = 0; push = px + RAD; } else { nx = 0; nz = Math.sign(lz) || 1; push = pz + RAD; } }
+  if (dd < R) { let nx, nz, push; if (dd > 1e-5) { nx = ex / dd; nz = ez / dd; push = R - dd; } else { const px = b.hx - Math.abs(lx), pz = b.hz - Math.abs(lz); if (px < pz) { nx = Math.sign(lx) || 1; nz = 0; push = px + R; } else { nx = 0; nz = Math.sign(lz) || 1; push = pz + R; } }
     const wx = nx * b.c + nz * b.s, wz = -nx * b.s + nz * b.c; p.x += wx * push; p.z += wz * push; } } }
 
 // ---------- personajes ----------
@@ -1226,6 +1351,7 @@ function agent(cfg, o) {
   if (o.seat) sitDown(a, o.seat);
   if (a.beerHand != null) giveBeer(a);
   if (o.idle === 'selfie') { const ph = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.012), new THREE.MeshStandardMaterial({ color: '#111', roughness: 0.3 })); ph.position.set(0, -0.36, 0.06); ph.rotation.x = -0.3; n.userData.arms[0].add(ph); a.phone = ph; a.selfie = true; }
+  { n.updateMatrixWorld(true); const hb = new THREE.Box3().setFromObject(n.userData.head, true), sz = hb.getSize(V3()); a.radius = clamp(Math.max(sz.x, sz.z) * 0.42, 0.27, 0.52); }
   AG.push(a); place(a); return a;
 }
 function sitDown(a, seat) { a.seat = seat; a.pos.set(seat.x, seat.y, seat.z); a.yaw = a.faceYaw = seat.yaw; }
@@ -1343,6 +1469,9 @@ const L = {
   crowdAmb: ['Qué buen rollo hay hoy', 'Hoy toca Paco Martos', 'Qué calor, illo', '¿Vamos al concierto?', 'Mi perro se llama Kropotkin', 'Esto antes era otra cosa…', '¿Una de croquetas?', 'Qué noche más bonita'],
   buh: ['¡BUH!', '¡BUUUH!', '¡UAAAH!'],
   drink: ['¡Glu, glu, glu!', '¡Ahhh, qué rica!', '¡Fresquita!'],
+  wc: ['Aquí se está a gusto', '¡Ocupaaado!', 'Nadie me molesta aquí', 'Por fin un poco de paz…', 'Qué buena acústica tiene esto', 'Aquí no me encuentra el camarero', 'La la laaa… ♪'],
+  knock: ['¡Toc, toc! ¿Queda mucho?', '¡Eh, que hay cola!', '¿Hay alguien ahí dentro?', '¡Venga, que es para hoy!', '¡Toc, toc, toc!'],
+  flush: ['¡Fluuush!', '¡Como nuevo!', '¡Siguiente!', 'Ahí lo dejo, tan limpio'],
 };
 function lineFor(a, k) { const g = a.kind === 'gang' && L[k + 'G'] && Math.random() < 0.6; return fmt(pick(g ? L[k + 'G'] : L[k])); }
 const fmt = s => s.replace(/\{P\}/g, P.a ? P.a.name : 'tú');
@@ -1352,7 +1481,7 @@ const layer = $('layer'); const BUBS = [], POPS = [], TAGS = [];
 const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 500);
 const _v = new THREE.Vector3();
 function screenOf(p) { _v.copy(p).project(camera); return { x: (_v.x * 0.5 + 0.5) * innerWidth, y: (-_v.y * 0.5 + 0.5) * innerHeight, ok: _v.z < 1 && Math.abs(_v.x) < 1.15 && Math.abs(_v.y) < 1.15 }; }
-const headPos = (a, extra = 0.18) => V3(a.n.position.x, a.n.position.y + a.n.userData.height * a.n.scale.y * (a.seat ? 0.82 : 1) + extra, a.n.position.z);
+const headPos = (a, extra = 0.18) => V3(a.n.position.x, a.n.position.y + a.n.userData.height * a.n.scale.y * (a.seat && a !== P.a ? 0.82 : 1) + extra, a.n.position.z);
 function say(a, text, dur = 2.4, delay = 0, cls = '') { if (!text) return; if (delay) { setTimeoutG(() => say(a, text, dur, 0, cls), delay); return; }
   const old = BUBS.find(b => b.a === a); if (old) { old.el.remove(); BUBS.splice(BUBS.indexOf(old), 1); }
   if (BUBS.length > 5) { const o = BUBS.shift(); o.el.remove(); }
@@ -1362,16 +1491,27 @@ let bigT = 0; function bigText(t, dur = 1.1) { const b = $('big'); b.textContent
 function makeTag(a, me) { const el = document.createElement('div'); el.className = 'tag' + (me ? ' me' : ''); el.textContent = a.name; layer.appendChild(el); const T = { a, el, vis: true, chk: Math.random() }; TAGS.push(T); return T; }
 const ray = new THREE.Raycaster();
 function losClear(from, to) { const d = to.clone().sub(from); const L = d.length(); ray.set(from, d.normalize()); ray.far = Math.max(0.01, L - 0.25); return ray.intersectObjects(W.OCC, false).length === 0; }
+let HUD_B = 0; addEventListener('resize', () => { HUD_B = 0; });
 function updDOM(dt) {
-  const tagOff = TAGS.length > 0;
-  for (const T of TAGS) { const a = T.a; if (!a.visible || a.hidden || STATE === 'menu' && !TRAILER && false) { T.el.style.display = 'none'; continue; }
+  // etiquetas con "declutter": la propia siempre visible; las demás, de cerca a lejos, se apilan o se ocultan si chocan
+  const cand = [];
+  for (const T of TAGS) { const a = T.a, me = !!P.a && a === P.a && STATE !== 'menu'; if (!a.visible || (a.hidden && !me) || (STATE === 'menu' && !TRAILER)) { if (T.on !== false) { T.el.style.display = 'none'; T.on = false; } continue; }
     const hp = headPos(a, 0.06); const s = screenOf(hp); const dist = hp.distanceTo(camera.position);
     T.chk -= dt; if (T.chk <= 0) { T.chk = 0.25; T.vis = losClear(camera.position, headPos(a, -0.3)); }
-    const show = s.ok && dist < 22 && T.vis && !(STATE === 'menu' && !TRAILER);
-    T.el.style.display = show ? 'block' : 'none'; if (show) { const sc = clamp(7 / dist, 0.6, 1.15); T.el.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-100%) scale(${sc.toFixed(2)})`; } }
+    if (s.ok && (me || (dist < 22 && T.vis))) cand.push({ T, x: s.x, y: s.y, dist, me, sc: clamp(7 / dist, 0.6, 1.15) }); else if (T.on !== false) { T.el.style.display = 'none'; T.on = false; } }
+  cand.sort((p, q) => (q.me - p.me) || (p.dist - q.dist)); const placed = [];
+  for (const c of cand) { const T = c.T; if (T.on !== true) { T.el.style.display = 'block'; T.on = true; if (!T.w) T.w = T.el.offsetWidth || 70; }
+    const w = T.w * c.sc + 4, h = 22 * c.sc + 2; let y = c.y, ok = false;
+    for (let k = 0; k < 3 && !ok; k++) { const yy = c.y - k * h; ok = !placed.some(r => Math.abs(r.x - c.x) < (r.w + w) / 2 && Math.abs(r.y - yy) < (r.h + h) / 2); if (ok) y = yy; }
+    if (!ok && !c.me) { T.el.style.display = 'none'; T.on = false; continue; }
+    placed.push({ x: c.x, y, w, h }); T.el.style.transform = `translate(${c.x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-100%) scale(${c.sc.toFixed(2)})`; T.el.style.zIndex = c.me ? 6 : 5; }
   for (let i = BUBS.length - 1; i >= 0; i--) { const b = BUBS[i]; b.t -= dt; if (b.t <= 0 || !b.a.visible) { b.el.remove(); BUBS.splice(i, 1); continue; }
     const hp = headPos(b.a, b.a.kind === 'gang' || b.a === P.a ? 0.42 : 0.22); const s = screenOf(hp); b.el.style.display = s.ok ? 'block' : 'none';
-    if (s.ok) b.el.style.transform = `translate(${clamp(s.x, 110, innerWidth - 110)}px,${Math.max(70, s.y)}px) translate(-50%,-100%)`; b.el.style.opacity = Math.min(1, b.t * 4); }
+    if (s.ok) { if (!b.w) { b.w = b.el.offsetWidth || 120; b.h = b.el.offsetHeight || 34; } let bx = clamp(s.x, 110, innerWidth - 110), by = clamp(s.y, 70, innerHeight * (portrait() ? 0.7 : 0.86)); // ni bajo el HUD ni encima del botón/indicación de acción
+      for (let k = 0; k < 4; k++) { const r = placed.find(r => Math.abs(r.x - bx) < (r.w + b.w) / 2 && by > r.y - r.h - 2 && by - b.h - 8 < r.y); if (!r) break; by = r.y - r.h - 3; } // no tapar etiquetas ni otros bocadillos
+      if (!HUD_B) { const hr = $('pilladoW').getBoundingClientRect(); HUD_B = hr.bottom > 0 ? hr.bottom + 6 : 0; } const minB = HUD_B + b.h; // no subir por encima del HUD (PILLADO)
+      if (HUD_B && by < minB) { by = minB; const r = placed.find(r => Math.abs(r.x - bx) < (r.w + b.w) / 2 && by > r.y - r.h - 2 && by - b.h - 8 < r.y); if (r) { const R = r.x + (r.w + b.w) / 2 + 4, Lx = r.x - (r.w + b.w) / 2 - 4; bx = clamp(R + b.w / 2 < innerWidth - 4 ? R : Lx, b.w / 2 + 4, innerWidth - b.w / 2 - 4); } }
+      placed.push({ x: bx, y: by, w: b.w, h: b.h + 8 }); b.el.style.transform = `translate(${bx}px,${by}px) translate(-50%,-100%)`; } b.el.style.opacity = Math.min(1, b.t * 4); }
   for (let i = POPS.length - 1; i >= 0; i--) { const o = POPS[i]; o.t += dt; if (o.t > 1.3) { o.el.remove(); POPS.splice(i, 1); continue; } const s = screenOf(o.p.clone().add(V3(0, 1.6 + o.t * 0.9, 0))); o.el.style.display = s.ok ? 'block' : 'none'; o.el.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-50%) scale(${(1 + 0.4 * Math.max(0, 0.25 - o.t) * 4).toFixed(2)})`; o.el.style.opacity = Math.min(1, (1.3 - o.t) * 3); }
   if (bigT > 0) { bigT -= dt; if (bigT <= 0) $('big').classList.remove('on'); }
 }
@@ -1396,16 +1536,21 @@ function sfx(k) { if (!AC) return; try {
   else if (k === 'flash') { noise(0.12, 0.3, 3000); tone(1600, 0.1, 'square', 0.06); }
   else if (k === 'out') { tone(400, 0.6, 'sawtooth', 0.2, 0.3); }
   else if (k === 'tick') tone(1200, 0.04, 'square', 0.05);
+  else if (k === 'flush') { noise(1.3, 0.35, 250); tone(420, 1.1, 'sine', 0.18, 0.25); for (let i = 0; i < 6; i++) tone(rnd(160, 380), 0.12, 'sine', 0.18, 0.5, 0.35 + i * 0.13); }
+  else if (k === 'knock') { tone(170, 0.08, 'square', 0.22, 0.6); tone(170, 0.08, 'square', 0.22, 0.6, 0.17); tone(160, 0.08, 'square', 0.2, 0.6, 0.34); }
+  else if (k === 'slide') { noise(0.45, 0.12, 1400); tone(90, 0.3, 'triangle', 0.08, 0.8); }
+  else if (k === 'sit') { tone(260, 0.12, 'triangle', 0.15, 0.7); }
+  else if (k === 'warp') { tone(80, 1.4, 'sawtooth', 0.15, 8); noise(1.2, 0.2, 2000); }
 } catch (_) {} }
 
 // ---------- poblar el escenario ----------
 const SEATS = {}; const mkSeat = (k, x, z, yaw, fl) => { WX.chair(x, z, yaw); SEATS[k] = { x: x - Math.sin(yaw) * 0.05, z: z - Math.cos(yaw) * 0.05, y: (fl != null ? fl : W.FLOOR_IN) + 0.475 - 0.19, yaw }; };
 const TA = kTable(-2.25, 0.45, { beers: 3 }), TB = kTable(0.32, 0.5, { beers: 2, phone: true });
-mkSeat('A1', -2.25, 1.0, Math.PI); mkSeat('A2', -2.85, 0.5, Math.PI / 2); mkSeat('B1', 0.32, 1.05, Math.PI); mkSeat('B2', 0.9, 0.5, -Math.PI / 2);
+mkSeat('A1', -2.25, 1.08, Math.PI); mkSeat('A2', -2.95, 0.45, Math.PI / 2); mkSeat('B1', 0.32, 1.05, Math.PI); mkSeat('B2', 0.9, 0.5, -Math.PI / 2);
 SEATS.I1 = { x: -2.6 + 0.05, z: -1.1, y: W.FLOOR_IN + 0.475 - 0.19, yaw: Math.PI / 2 };
 { const p = AP(-4.7, 2.2); kTable(p.x, p.z, { beers: 3 }); } { const p = AP(-0.9, 3.0); kTable(p.x, p.z, { beers: 3, phone: true }); } { const p = AP(3.45, 1.2); kTable(p.x, p.z, { beers: 2 }); } { const p = AP(-7.4, 1.4); kTable(p.x, p.z, { beers: 2 }); } { const p = AP(6.3, 1.35); kTable(p.x, p.z, { beers: 3, phone: true }); }
 // pandilla: 10 huecos (el elegido sale de su hueco)
-const SLOTS = [{ seat: 'A1' }, { seat: 'A2' }, { seat: 'B1' }, { x: -1.55, z: -2.45, yaw: 2.6 }, { x: -0.85, z: -2.38, yaw: -2.7 }, { seat: 'I1' }, { x: -3.0, z: 1.85, yaw: Math.PI - 0.4 }, { x: 1.05, z: 2.25, yaw: Math.PI + 0.35 }, { x: 4.15, z: 2.0, yaw: Math.PI - 0.6 }, { x: -0.15, z: -1.45, yaw: 0.4 }];
+const SLOTS = [{ seat: 'A1' }, { seat: 'A2' }, { seat: 'B1' }, { x: -1.65, z: -2.2, yaw: 2.6 }, { x: -0.72, z: -2.18, yaw: -2.7 }, { seat: 'I1' }, { x: -3.0, z: 1.85, yaw: Math.PI - 0.4 }, { x: 1.05, z: 2.25, yaw: Math.PI + 0.35 }, { x: 4.15, z: 2.0, yaw: Math.PI - 0.6 }, { x: -0.15, z: -1.45, yaw: 0.4 }];
 const SLOT_OF = [6, 3, 0, 4, 1, 2, 7, 8, 5, 9];
 const GANG_A = []; const NG = GANG.length;
 for (let i = 0; i < NG; i++) { const s = SLOTS[SLOT_OF[i]]; const o = s.seat ? { x: SEATS[s.seat].x, z: SEATS[s.seat].z, yaw: SEATS[s.seat].yaw, seat: SEATS[s.seat] } : { x: s.x, z: s.z, yaw: s.yaw };
@@ -1422,7 +1567,7 @@ for (let i = 0; i < NCROWD; i++) { const [x, d, yaw, idle] = CROWD_SPOTS[i]; con
   const a = agent(Object.assign(cfg, { name: '' }), { x: p.x, z: p.z, yaw: inside ? yaw : yaw - (x / W.RC), kind: 'crowd', idle, beer: idle === 'selfie' ? false : undefined }); if (idle === 'armUp') a.pose.armUp = 1; if (idle === 'selfie') a.pose.selfie = 1; if (idle === 'armUp' && a.beer) { a.beerHand = 1; }
   CROWD_A.push(a); if (i % 3 === 2) { prog(0.55 + 0.25 * i / NCROWD, 'Llega el personal…'); await tick(); } }
 // cola del baño (fondo a la derecha) y los que salen rascándose la nariz
-const QS = [V3(1.42, 0, -7.05), V3(1.36, 0, -6.45), V3(1.6, 0, -5.85), V3(2.32, 0, -5.5)];
+const QS = [V3(1.2, 0, -7.1), V3(1.0, 0, -6.22), V3(1.05, 0, -5.33), V3(2.62, 0, -5.32)];
 const DOOR = V3(1.55, 0, -7.1);
 const IN_PATH = [V3(2.2, 0, 1.25), V3(2.2, 0, -0.9), V3(2.05, 0, -3.2), V3(2.1, 0, -5.05)];
 const OUT_SPOTS = [[6.2, 3.9], [-4.6, 4.2], [3.6, 4.6], [-6.4, 4.1]];
@@ -1461,7 +1606,9 @@ let STATE = 'load', score = 0, timeLeft = 180, combo = 1, comboT = 0, lastPrank 
 let input = { x: 0, z: 0, run: false }, jumpQ = 0, prankQ = false;
 // ----- teclado
 const keys = {};
-addEventListener('keydown', e => { if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault(); keys[e.code] = true; audioOn(); if (e.repeat) return;
+addEventListener('keydown', e => { if (STATE === 'trip') { e.preventDefault(); if (!e.repeat) skipTrip(); return; }
+  if (tripQOpen() && !e.repeat && ['KeyS', 'KeyY', 'KeyN'].includes(e.code)) { e.preventDefault(); audioOn(); if (e.code === 'KeyN') tripNo(); else tripYes(); return; }
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault(); keys[e.code] = true; audioOn(); if (e.repeat) return;
   if (e.code === 'Space') jumpQ = 0.15; if (e.code === 'KeyE' || e.code === 'KeyX' || e.code === 'Enter') prankQ = true; if (e.code === 'KeyP' || e.code === 'Escape') togglePause(); });
 addEventListener('keyup', e => keys[e.code] = false);
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
@@ -1485,7 +1632,7 @@ function readInput() { if (MANUAL && window.__input) return window.__input; let 
   return { x, z, run: keys.ShiftLeft || keys.ShiftRight || P.run }; }
 // ----- cámara
 const portrait = () => innerHeight > innerWidth;
-const cam = { yaw: 0, pitch: 0.5, distK: 1, dist: 6, target: V3(), shake: 0, inside: 0 };
+const cam = { yaw: 0, pitch: 0.5, distK: 1, dist: 6, target: V3(), shake: 0, inside: 0, bath: 0 };
 let camDist = 6;
 function camShake(s) { cam.shake = Math.max(cam.shake, s); }
 function updCamera(dt, follow = true) {
@@ -1502,22 +1649,33 @@ function updCamera(dt, follow = true) {
   camera.position.copy(cam.target).addScaledVector(dir, camDist); if (cam.inside > 0.05) camera.position.y = Math.min(camera.position.y, W.BH - 0.35);
   // corte tipo maqueta: dentro del bar, el plano cercano recorta paredes/techo entre cámara y jugador
   const nearW = Math.max(0.1, camera.position.distanceTo(cam.target) - (cam.inside > 0.5 ? 2.3 : 3.3)); if (Math.abs(camera.near - nearW) > 0.01) { camera.near = nearW; camera.updateProjectionMatrix(); }
+  // dentro del baño: cámara cercana desde la esquina de la puerta (WC a la izquierda, lavabo a la derecha) y paredes desvanecidas
+  const ib = !!P.a && inBath(P.pos, -0.25); cam.bath += ((ib ? 1 : 0) - cam.bath) * Math.min(1, dt * 3.5); let look = cam.target;
+  if (cam.bath > 0.003) { const s = smooth(clamp(cam.bath, 0, 1)), BY = -0.66; if (ib) { if (gameT - lastManual > 1.2) cam.yaw += angDiff(cam.yaw, BY) * Math.min(1, dt * 3); cam.yaw = BY + clamp(angDiff(BY, cam.yaw), -0.5, 0.5); }
+    const yaw = BY + clamp(angDiff(BY, cam.yaw), -0.5, 0.5), pt = portrait() ? 0.7 : 0.62, bd = (portrait() ? 3.7 : 3.0) * clamp(cam.distK, 0.8, 1.2); const bt = P.pos.clone().lerp(V3(2.5, P.pos.y, -7.0), 0.55).add(V3(0, P.sit ? 0.55 : 0.62, 0));
+    const bpos = bt.clone().addScaledVector(V3(Math.sin(yaw) * Math.cos(pt), Math.sin(pt), Math.cos(yaw) * Math.cos(pt)), bd); bpos.y = Math.min(bpos.y, W.BH - 0.2);
+    // la cámara se queda DENTRO del baño (esquina de la puerta, junto al techo) y abre el ángulo para ver WC a la izquierda y lavabo a la derecha
+    bpos.x = clamp(bpos.x, BTH.x0 + 0.16, BTH.x1 - 0.2); bpos.z = clamp(bpos.z, BTH.z0 + 0.2, BTH.z1 - 0.13); bt.set(bt.x + (2.72 - bt.x) * 0.35, P.pos.y + (P.sit ? 0.05 : 0.35), bt.z + (-7.05 - bt.z) * 0.35);
+    camera.position.lerp(bpos, s); look = cam.target.clone().lerp(bt, s); const nn = Math.max(0.05, camera.near * (1 - s) + 0.06 * s); if (Math.abs(camera.near - nn) > 0.005) { camera.near = nn; camera.updateProjectionMatrix(); } }
+  { const f = baseFov + ((portrait() ? 88 : 72) - baseFov) * smooth(clamp(cam.bath, 0, 1)); if (Math.abs(camera.fov - f) > 0.05) { camera.fov = f; camera.updateProjectionMatrix(); } }
   if (cam.shake > 0) { cam.shake -= dt; camera.position.add(V3(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).multiplyScalar(cam.shake * 0.12)); }
-  camera.lookAt(cam.target);
+  camera.lookAt(look);
   if (W.WX.globes) for (const g of W.WX.globes) { const v = camera.position.distanceTo(g[0].position) > 1.3 && !(camera.position.distanceTo(g[0].position) < 3.2 && segHits(camera.position, cam.target, g[0].position, 0.3)); g.forEach(o => o && (o.visible = v)); }
 }
 const _sv = new THREE.Vector3(); function segHits(a, b, c, r) { const ab = _sv.copy(b).sub(a); const t = Math.max(0, Math.min(1, c.clone().sub(a).dot(ab) / ab.lengthSq())); return a.clone().addScaledVector(ab, t).distanceTo(c) < r; }
-function fitView() { camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 1 ? Math.min(72, 50 / Math.max(0.5, camera.aspect) ** 0.55) : 50; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); }
+let baseFov = 50; function fitView() { camera.aspect = innerWidth / innerHeight; camera.fov = baseFov = camera.aspect < 1 ? Math.min(72, 50 / Math.max(0.5, camera.aspect) ** 0.55) : 50; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); }
 addEventListener('resize', fitView); fitView();
 
 // ---------- bromas ----------
-const PR = { steal: ['🍺', 'Robar caña', 100], pour: ['💦', 'Echarle la caña', 170], untie: ['👟', 'Desatar cordones', 140], scare: ['😱', '¡BUH!', 90], photo: ['📸', 'Photobomb', 150], phone: ['📱', 'Esconder móvil', 130], queue: ['🚽', 'Colarse', 160], drink: ['🍺', 'Bebérsela', 40] };
+const PR = { steal: ['🍺', 'Robar caña', 100], pour: ['💦', 'Echarle la caña', 170], untie: ['👟', 'Desatar cordones', 140], scare: ['😱', '¡BUH!', 90], photo: ['📸', 'Photobomb', 150], phone: ['📱', 'Esconder móvil', 130], queue: ['🚽', 'Colarse', 160], drink: ['🍺', 'Bebérsela', 40], sit: ['🚽', 'Sentarse', 0], stand: ['🧻', 'Levantarse', 0] };
 let curPrank = null, prankScan = 0;
 const fwd = (yaw) => V3(Math.sin(yaw), 0, Math.cos(yaw));
 function findPrank() {
   const me = P.pos; let best = null, bd = 9;
+  if (P.sit) return { k: 'stand', p: P.pos };
+  if (inBath(me) && Math.hypot(me.x - BTH.wc.x, me.z - (BTH.wc.z + 0.4)) < 0.8) return { k: 'sit', p: P.pos };
   const cand = AG.filter(a => a.visible && a !== P.a && a.kind !== 'waiter' && a.trip <= 0 && a.cyc !== 'inside');
-  if (QUEUE.length && QUEUE.some(a => a.pos.distanceTo(me) < 1.15 && a.cyc === 'queue') && !P.inQueue) return { k: 'queue', a: QUEUE[0], p: QUEUE[0].pos };
+  if (QUEUE.length && !inBath(me) && QUEUE.some(a => a.pos.distanceTo(me) < 1.15 && a.cyc === 'queue') && !P.inQueue) return { k: 'queue', a: QUEUE[0], p: QUEUE[0].pos };
   for (const a of cand) { const d = Math.hypot(a.pos.x - me.x, a.pos.z - me.z); if (a.cd > 0) continue;
     if (P.beer && d < 1.3 && d < bd) { best = { k: 'pour', a, p: a.pos }; bd = d; continue; }
     if (a.selfie && d < 2.4) { const to = V3(me.x - a.pos.x, 0, me.z - a.pos.z).normalize(); if (fwd(a.yaw).dot(to) < -0.25) { if (!best || best.k !== 'pour') { best = { k: 'photo', a, p: a.pos }; bd = d - 2; } continue; } } }
@@ -1531,7 +1689,7 @@ function findPrank() {
 }
 function award(pts, p, label) { const now = gameT; if (now - lastPrank < 6.5) { combo = Math.min(5, combo + 1); if (combo > stats.maxCombo) stats.maxCombo = combo; if (combo >= 2) { bigText('¡COMBO x' + combo + '!'); sfx('combo'); } } else combo = 1; lastPrank = now; comboT = 6.5;
   const v = Math.round(pts * combo); score += v; popText(p, '+' + v + (label ? ' ' + label : '')); stats.pranks++; }
-function doPrank(pr) { if (!pr || P.lock > 0) return; const a = pr.a, [ic, lab, pts] = PR[pr.k]; sfx('prank');
+function doPrank(pr) { if (!pr || P.lock > 0) return; if (pr.k === 'sit') { sitWC(); return; } if (pr.k === 'stand') { standWC(true); return; } const a = pr.a, [ic, lab, pts] = PR[pr.k]; sfx('prank');
   const face = (q) => { P.yaw = Math.atan2(q.x - P.pos.x, q.z - P.pos.z); };
   if (a) { a.cd = 7; face(a.pos); }
   switch (pr.k) {
@@ -1572,6 +1730,7 @@ function updCaught(dt) { caughtT += dt; const w = caughtBy; w.lookAt = P.pos; w.
 
 // ---------- paso del jugador ----------
 function stepPlayer(dt) {
+  if (P.sit) { if (STATE === 'caught') standWC(false); else { stepSeated(dt); return; } }
   const inp = STATE === 'play' && P.lock <= 0 ? readInput() : { x: 0, z: 0, run: false };
   if (P.lock > 0) P.lock -= dt; if (P.inQueue > 0) P.inQueue -= dt;
   const f = V3(-Math.sin(cam.yaw), 0, -Math.cos(cam.yaw)), r = V3(Math.cos(cam.yaw), 0, -Math.sin(cam.yaw));
@@ -1584,10 +1743,11 @@ function stepPlayer(dt) {
   const spd = Math.hypot(P.vel.x, P.vel.z);
   if (STATE === 'play') for (const T of TABLES) if (T.state === 'up') { const dx = T.x - np.x, dz = T.z - np.z, d = Math.hypot(dx, dz); if ((d < RAD + 0.36 || (d < 1.08 && (P.vel.x * dx + P.vel.z * dz) / (d * spd) > 0.75)) && spd > 1.1 && (P.vel.x * dx + P.vel.z * dz) / (d * spd) > 0.35 && P.pos.y < T.y + 0.5) { knock(T, V3(P.vel.x, 0, P.vel.z)); setPose(P.a, 'push', 1, 0.4); } }
   collideBoxes(np);
-  for (const a of AG) { if (!a.visible || a === P.a) continue; const dx = np.x - a.pos.x, dz = np.z - a.pos.z, d = Math.hypot(dx, dz), m = RAD + a.radius * (a.seat ? 0.8 : 1); if (d < m && d > 1e-4) { np.x = a.pos.x + dx / d * m; np.z = a.pos.z + dz / d * m; } }
+  for (const a of AG) { if (!a.visible || a === P.a) continue; const dx = np.x - a.pos.x, dz = np.z - a.pos.z, d = Math.hypot(dx, dz), m = a.seat ? (P.a.radius || RAD) + a.radius * 0.85 : RAD + 0.3; if (d < m && d > 1e-4) { np.x = a.pos.x + dx / d * m; np.z = a.pos.z + dz / d * m; } }
   P.pos.x = np.x; P.pos.z = np.z;
   const gy = groundAt(P.pos.x, P.pos.z); P.vy -= 12 * dt; P.pos.y += P.vy * dt;
-  if (P.pos.y <= gy) { if (P.grounded && gy - P.pos.y < 0.3) P.pos.y += (gy - P.pos.y) * Math.min(1, dt * 18); else P.pos.y = gy; P.vy = 0; P.grounded = true; } else if (P.pos.y > gy + 0.02 && P.vy !== 0) P.grounded = false; else if (P.pos.y > gy) P.pos.y = Math.max(gy, P.pos.y - dt * 1.5);
+  if (P.pos.y <= gy && P.bounce) { P.bounce = 0; P.pos.y = gy; P.vy = 3.6; P.grounded = false; dust(P.pos, 10); sfx('thud'); camShake(0.25); setPose(P.a, 'startle', 1, 0.5); }
+  else if (P.pos.y <= gy) { if (P.grounded && gy - P.pos.y < 0.3) P.pos.y += (gy - P.pos.y) * Math.min(1, dt * 18); else P.pos.y = gy; P.vy = 0; P.grounded = true; } else if (P.pos.y > gy + 0.02 && P.vy !== 0) P.grounded = false; else if (P.pos.y > gy) P.pos.y = Math.max(gy, P.pos.y - dt * 1.5);
   const a = P.a; a.pos.copy(P.pos); a.n.position.copy(P.pos); a.n.rotation.set(0, P.yaw, 0); a.yaw = P.yaw; a.t += dt; if (a.wave > 0) a.wave -= dt;
   const speed = Math.hypot(P.vel.x, P.vel.z) / 2.6; let turn = angDiff(P.lastYaw, P.yaw) / Math.max(dt, 1e-3); P.lastYaw = P.yaw; const accel = (speed - P.lastSpeed) / Math.max(dt, 1e-3); P.lastSpeed = speed;
   a.n.userData.update(dt, { speed: Math.min(1.4, speed), grounded: P.grounded, vy: P.vy, dance: false, wave: a.wave > 0, turn: -turn * 0.15, accel: accel * 0.6 });
@@ -1598,12 +1758,158 @@ function stepPlayer(dt) {
 }
 // ---------- cola del baño ----------
 function updBath(dt) {
-  QUEUE.forEach((a, i) => { if (a.cyc !== 'queue') return; const s = QS[Math.min(i, QS.length - 1)]; if (!a.path && Math.hypot(a.pos.x - s.x, a.pos.z - s.z) > 0.12) walkTo(a, [s], q => { q.faceYaw = i === 0 ? -Math.PI / 2 : Math.atan2(QS[Math.max(0, i - 1)].x - q.pos.x, QS[Math.max(0, i - 1)].z - q.pos.z); }, 0.9); });
-  if (!BATH.occ) { const a = QUEUE[0]; if (a && !a.path && a.cyc === 'queue') { BATH.wait += dt; if (BATH.wait > 3.5) { BATH.wait = 0; QUEUE.shift(); BATH.occ = a; a.cyc = 'entering'; walkTo(a, [DOOR], q => { q.visible = false; q.n.visible = false; q.cyc = 'inside'; BATH.t = rnd(4, 6.5); }, 0.9); } } }
-  else if (BATH.occ.cyc === 'inside') { BATH.t -= dt; if (BATH.t <= 0) { const a = BATH.occ; BATH.occ = null; a.visible = true; a.n.visible = true; a.pos.set(DOOR.x - 0.1, groundAt(DOOR.x, DOOR.z), DOOR.z); a.cyc = 'out'; a.cycT = rnd(10, 16); setPose(a, 'scratch', 1, 7.5); say(a, pick(L.bath), 2.4, 0.6);
+  QUEUE.forEach((a, i) => { if (a.cyc !== 'queue') return; const s = QS[Math.min(i, QS.length - 1)]; if (!a.path && Math.hypot(a.pos.x - s.x, a.pos.z - s.z) > 0.3) walkTo(a, [s], q => { q.faceYaw = i === 0 ? -Math.PI / 2 : Math.atan2(QS[Math.max(0, i - 1)].x - q.pos.x, QS[Math.max(0, i - 1)].z - q.pos.z); }, 0.9); });
+  const pIn = playerInBath();
+  if (!BATH.occ) { const a = QUEUE[0]; if (a && !a.path && a.cyc === 'queue') { BATH.wait += dt;
+      if (pIn) { BATH.wait = Math.min(BATH.wait, 2.5); BATH.knockT = (BATH.knockT || 0) - dt; // el jugador está dentro: el primero de la cola llama y espera fuera
+        if (BATH.knockT <= 0) { BATH.knockT = rnd(4.5, 7); a.look = 1.5; a.lookAt = V3(BTH.x0, 0, BTH.DZ); say(a, pick(L.knock), 2.4); sfx('knock'); setPose(a, 'push', 1, 0.45); } }
+      else if (BATH.wait > 3.5) { BATH.wait = 0; QUEUE.shift(); BATH.occ = a; a.cyc = 'entering'; walkTo(a, [DOOR], q => { if (playerInBath()) { q.cyc = 'queue'; QUEUE.unshift(q); BATH.occ = null; say(q, '¡Uy, perdón! Ya espero…', 2.2); return; } q.visible = false; q.n.visible = false; q.cyc = 'inside'; BATH.t = rnd(4, 6.5); bathDoor.npcT = 0.5; }, 0.9); } } }
+  else if (BATH.occ.cyc === 'inside') { BATH.t -= dt; if (BATH.t <= 0) { const a = BATH.occ; BATH.occ = null; a.visible = true; a.n.visible = true; bathDoor.npcT = 1.3; a.pos.set(DOOR.x - 0.1, groundAt(DOOR.x, DOOR.z), DOOR.z); a.cyc = 'out'; a.cycT = rnd(10, 16); setPose(a, 'scratch', 1, 7.5); say(a, pick(L.bath), 2.4, 0.6);
       const sp = AP(OUT_SPOTS[a.spot][0], OUT_SPOTS[a.spot][1]); walkTo(a, [V3(1.45, 0, -6.1), ...IN_PATH.slice().reverse(), sp], q => { q.faceYaw = Math.PI + rnd(-0.8, 0.8); if (!q.beer) giveBeer(q); }, 1.0); } }
   for (const a of AG) if (a.cyc === 'out' && !a.path) { a.cycT -= dt; if (a.cycT <= 0 && QUEUE.length < 4) { a.cyc = 'toQueue'; const slot = QS[Math.min(QUEUE.length, 3)]; walkTo(a, [...IN_PATH, slot], q => { q.cyc = 'queue'; QUEUE.push(q); }, 1.0); } }
 }
+// ---------- baño: puerta corredera, paredes que se desvanecen, sentarse en el WC ----------
+const BTH = WX.bath;
+const inBath = (p, m = 0) => p.x > BTH.x0 + m && p.x < BTH.x1 && p.z > BTH.z0 && p.z < BTH.z1;
+const playerInBath = () => !!P.a && STATE !== 'menu' && STATE !== 'end' && inBath(P.pos);
+const bathDoor = { open: 0, want: false, npcT: 0, occMsgT: 0 };
+const smooth = k => k * k * (3 - 2 * k);
+function updDoor(dt) {
+  const pd = P.a ? Math.hypot(P.pos.x - BTH.x0, P.pos.z - BTH.DZ) : 99, busy = BATH.occ && BATH.occ.cyc === 'inside', play = STATE === 'play' || STATE === 'caught';
+  let want = play && !P.sit && pd < 1.3 && !busy;
+  if (bathDoor.npcT > 0) { bathDoor.npcT -= dt; want = true; }
+  if (BATH.occ && BATH.occ.cyc === 'entering' && Math.hypot(BATH.occ.pos.x - DOOR.x, BATH.occ.pos.z - DOOR.z) < 0.9) want = true;
+  bathDoor.occMsgT -= dt; if (busy && STATE === 'play' && pd < 1.0 && !inBath(P.pos) && bathDoor.occMsgT <= 0) { bathDoor.occMsgT = 4.5; say(P.a, '¡Ocupado! Toca esperar…', 2.0); sfx('knock'); }
+  if (want !== bathDoor.want) { bathDoor.want = want; if (play && pd < 6) sfx('slide'); }
+  bathDoor.open = clamp(bathDoor.open + (want ? 1 : -1) * dt * 2.2, 0, 1);
+  BTH.door.position.z = BTH.DZ + (BTH.DW + 0.02) * smooth(bathDoor.open);
+  const i = W.COLL.indexOf(BTH.doorColl), shut = bathDoor.open < 0.55 || (busy && !inBath(P.pos)); if (shut && i < 0) W.COLL.push(BTH.doorColl); else if (!shut && i >= 0) W.COLL.splice(i, 1); }
+const FADE_MESH = [], NEAR_MESH = []; scene.traverse(o => { if (o.isMesh && BTH.FADE.includes(o.material)) FADE_MESH.push(o); if (o.isMesh && o.userData.bathNear) NEAR_MESH.push(o); });
+BTH.FADE.forEach(m => { m.transparent = true; });
+let bathFadeV = 1;
+function updBathFade() { const v = 1 - smooth(clamp(cam.bath, 0, 1)); for (const o of NEAR_MESH) o.visible = v > 0.5; if (Math.abs(v - bathFadeV) < 0.002 && v !== 0 && v !== 1) return; bathFadeV = v;
+  for (const m of BTH.FADE) { m.opacity = v; m.depthWrite = v > 0.97; } for (const o of FADE_MESH) o.visible = v > 0.03; }
+// sentarse / levantarse
+const wcDropM = new THREE.MeshBasicMaterial({ color: '#7fd4ff', transparent: true, opacity: 0.85 });
+function flushFx() { const b = BTH.bowl; for (let i = 0; i < 22; i++) { const m = new THREE.Mesh(dropGeo, wcDropM); const a = i / 22 * Math.PI * 4; m.position.set(b.x + Math.cos(a) * 0.12, b.y + 0.02, b.z + Math.sin(a) * 0.12); m.scale.setScalar(1.4); particle(m, V3(-Math.sin(a) * 1.2, rnd(1.0, 2.2), Math.cos(a) * 1.2), { life: 0.8, ground: b.y - 0.1 }); } }
+function sitWC() { if (P.sit || !P.a) return; P.sit = true; P.sitT = 0; P.lineT = rnd(6, 9); P.vel.set(0, 0, 0); P.vy = 0; P.grounded = true; P.lock = 0.4;
+  P.pos.set(BTH.wc.x, BTH.wc.y, BTH.wc.z); P.yaw = BTH.wc.yaw; P.lastYaw = P.yaw; P.a.seat = BTH.wc; setPose(P.a, 'sit', 1); P.a.pw.sit = Math.max(P.a.pw.sit || 0, 0.6);
+  sfx('sit'); say(P.a, pick(L.wc), 2.8, 0.3); P.askT = P.tripDone ? -1 : 1.6; }
+function standWC(flush) { if (!P.sit) return; P.sit = false; P.a.seat = null; setPose(P.a, 'sit', 0); hideTripQ();
+  P.pos.set(BTH.wc.x, groundAt(BTH.wc.x, BTH.wc.z + 0.5), BTH.wc.z + 0.5); P.vel.set(0, 0, 0); P.lock = 0.25;
+  if (flush) { sfx('flush'); flushFx(); say(P.a, pick(L.flush), 1.8); } }
+function stepSeated(dt) { const a = P.a; P.sitT += dt; if (P.lock > 0) P.lock -= dt;
+  const inp = STATE === 'play' ? readInput() : { x: 0, z: 0 }; jumpQ -= dt;
+  if (STATE === 'play' && P.lock <= 0 && !tripQOpen() && (Math.hypot(inp.x, inp.z) > 0.35 || keys.Space || jumpQ > 0)) { jumpQ = 0; standWC(true); return; }
+  if (STATE === 'play' && P.lock <= 0 && tripQOpen() && Math.hypot(inp.x, inp.z) > 0.35) { tripNo(); standWC(true); return; }
+  if (P.askT > 0 && STATE === 'play') { P.askT -= dt; if (P.askT <= 0) showTripQ(); }
+  P.lineT -= dt; if (P.lineT <= 0) { P.lineT = rnd(7, 11); say(a, pick(L.wc), 2.4); }
+  a.pos.copy(P.pos); a.n.position.copy(P.pos); a.n.rotation.set(0, P.yaw, 0); a.yaw = P.yaw; a.t += dt;
+  a.n.userData.update(dt, { speed: 0, grounded: true, vy: 0, dance: false, wave: false, turn: 0, accel: 0 }); applyPose(a, dt);
+  const AR = a.n.userData.arms; AR.forEach((ar, k) => { ar.rotation.x = -0.5 + 0.05 * Math.sin(a.t * 1.3 + k); ar.rotation.y = 0; ar.rotation.z = k ? 0.14 : -0.14; ar.scale.y = 1; }); // manos sobre las rodillas
+  const L2 = a.n.userData.legs; if (a.pw.sit > 0.5) { L2[0].rotation.x += Math.sin(a.t * 3.2) * 0.16; L2[1].rotation.x += Math.sin(a.t * 3.2 + Math.PI) * 0.16; }
+  P.vel.set(0, 0, 0); sun.position.copy(P.pos).add(SUN_OFF); sun.target.position.copy(P.pos); }
+// pregunta del viaje astral (solo DOM)
+const tripQEl = $('tripQ'); const tripQOpen = () => tripQEl.classList.contains('on');
+function showTripQ() { if (P.tripDone || !P.sit || STATE !== 'play') return; tripQEl.classList.add('on'); }
+function hideTripQ() { tripQEl.classList.remove('on'); }
+function tripNo() { hideTripQ(); P.askT = -1; if (P.sit) say(P.a, pick(['Mejor me quedo aquí sentadito', 'Hoy no, que estoy a gusto', 'Otro día, galaxia']), 2.2); }
+function tripYes() { if (!tripQOpen() || !P.sit || STATE !== 'play') return; hideTripQ(); startTrip(); }
+for (const [id, f] of [['tripYes', tripYes], ['tripNo', tripNo]]) $(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioOn(); f(); });
+
+// ---------- VIAJE ASTRAL: la cisterna te absorbe y sales disparado por la galaxia ----------
+const TRIP = { t: 0, sw: 1.25, dur: 9.0, built: false, skip: false, music: null };
+const tripEl = $('tripFx');
+function dotTex(soft) { return TX.text(64, 64, (x, w, h) => { const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(soft ? 0.25 : 0.4, 'rgba(255,255,255,' + (soft ? 0.5 : 0.9) + ')'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); }); }
+function buildTrip() { if (TRIP.built) return; TRIP.built = true;
+  const S = new THREE.Scene(); S.background = new THREE.Color('#050012'); S.environment = scene.environment; TRIP.scene = S;
+  TRIP.cam = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 600);
+  // estrellas en túnel (velocidad warp): segmentos que se estiran con la velocidad
+  const N = LITE ? 900 : 2000; TRIP.N = N; const pos = new Float32Array(N * 6), col = new Float32Array(N * 6); TRIP.st = [];
+  for (let i = 0; i < N; i++) { const a = Math.random() * Math.PI * 2, r = 1.6 + Math.random() ** 0.7 * 26; TRIP.st.push({ x: Math.cos(a) * r, y: Math.sin(a) * r, z: -Math.random() * 300, h: Math.random() }); }
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); lg.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  TRIP.lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })); TRIP.lines.frustumCulled = false; S.add(TRIP.lines);
+  const pg = new THREE.BufferGeometry(); const pp = new Float32Array(N * 3); pg.setAttribute('position', new THREE.BufferAttribute(pp, 3)); pg.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+  TRIP.pts = new THREE.Points(pg, new THREE.PointsMaterial({ size: 0.55, map: dotTex(false), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); TRIP.pts.frustumCulled = false; S.add(TRIP.pts);
+  // anillos de neón del túnel
+  TRIP.rings = []; for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.TorusGeometry(7, 0.07, 6, 48), new THREE.MeshBasicMaterial({ color: '#fff', transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })); m.position.z = -i * 22; S.add(m); TRIP.rings.push(m); }
+  // nebulosas
+  const neb = dotTex(true); TRIP.nebs = []; for (let i = 0; i < 9; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: neb, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false })); sp.scale.setScalar(rnd(22, 42)); sp.position.set(rnd(-40, 40), rnd(-30, 30), -rnd(60, 220)); sp.userData.h = Math.random(); S.add(sp); TRIP.nebs.push(sp); }
+  // planetas que giran
+  const planetTex = (c1, c2, c3) => TX.text(256, 128, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, c1); g.addColorStop(0.5, c2); g.addColorStop(1, c3); x.fillStyle = g; x.fillRect(0, 0, w, h); for (let i = 0; i < 14; i++) { x.globalAlpha = 0.25; x.fillStyle = i % 2 ? c1 : c3; x.fillRect(0, Math.random() * h, w, rnd(3, 12)); } x.globalAlpha = 0.3; for (let i = 0; i < 20; i++) { x.fillStyle = '#fff'; x.beginPath(); x.ellipse(Math.random() * w, Math.random() * h, rnd(4, 18), rnd(2, 6), 0, 0, 7); x.fill(); } });
+  TRIP.planets = []; const PL = [[3.2, planetTex('#ff4fd8', '#7b2ff7', '#2fd8ff'), true, [-9, 4, -30]], [2.2, planetTex('#ffe14f', '#ff7b2f', '#c4262f'), false, [10, -5, -42]], [5, planetTex('#4fffb0', '#2f7bff', '#1a1060'), true, [6, 9, -80]], [1.4, planetTex('#ffffff', '#9fd8ff', '#3a60ff'), false, [-7, -7, -18]]];
+  for (const [r, t, ring, p] of PL) { const g = new THREE.Group(); g.position.set(...p); const sm = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 20), new THREE.MeshStandardMaterial({ map: t, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 0.55, roughness: 0.6 })); g.add(sm);
+    if (ring) { const rm = new THREE.Mesh(new THREE.RingGeometry(r * 1.35, r * 2.0, 48), new THREE.MeshBasicMaterial({ color: '#ffd6f5', transparent: true, opacity: 0.55, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })); rm.rotation.x = 1.2; g.add(rm); g.userData.ring = rm; }
+    g.userData.home = V3(...p); g.userData.sp = rnd(0.3, 0.8); S.add(g); TRIP.planets.push(g); }
+  TRIP.amb = new THREE.AmbientLight('#ffffff', 0.9); S.add(TRIP.amb); TRIP.l1 = new THREE.PointLight('#ff4fd8', 30, 30, 1.2); TRIP.l1.position.set(3, 2, 2); S.add(TRIP.l1); TRIP.l2 = new THREE.PointLight('#2fd8ff', 30, 30, 1.2); TRIP.l2.position.set(-3, -1, 1); S.add(TRIP.l2); }
+function tripMusic(on) { if (!AC) return; try {
+  if (on) { const g = AC.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(0.22, AC.currentTime + 1); g.connect(master); const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.Q.value = 6; lp.connect(g);
+    const lfo = AC.createOscillator(), lg = AC.createGain(); lfo.frequency.value = 0.35; lg.gain.value = 700; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+    const os = [55, 55.4, 82.4].map(f => { const o = AC.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.connect(lp); o.start(); return o; });
+    const dl = AC.createDelay(); dl.delayTime.value = 0.27; const fb = AC.createGain(); fb.gain.value = 0.45; dl.connect(fb); fb.connect(dl); dl.connect(g);
+    TRIP.music = { g, os: [...os, lfo], dl, arpT: 0, k: 0 }; }
+  else if (TRIP.music) { const m = TRIP.music; TRIP.music = null; m.g.gain.cancelScheduledValues(AC.currentTime); m.g.gain.setValueAtTime(m.g.gain.value, AC.currentTime); m.g.gain.linearRampToValueAtTime(0, AC.currentTime + 0.6); m.os.forEach(o => o.stop(AC.currentTime + 0.7)); }
+} catch (_) {} }
+function tripArp(dt) { const m = TRIP.music; if (!m || !AC) return; m.arpT -= dt; if (m.arpT > 0) return; m.arpT = 0.13; const sc = [0, 3, 5, 7, 10, 12, 15, 19]; const f = 330 * 2 ** (sc[(m.k * 3 + (m.k >> 2)) % sc.length] / 12); m.k++;
+  try { const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.12, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.25); o.connect(g); g.connect(m.g); g.connect(m.dl); o.start(); o.stop(AC.currentTime + 0.3); } catch (_) {} }
+function startTrip() { if (STATE !== 'play' || P.tripDone) return; P.tripDone = true; buildTrip(); STATE = 'trip'; TRIP.t = 0; TRIP.skip = false; TRIP.phase = 0; TRIP.sc0 = P.a.n.scale.x; TRIP.camPos = camera.position.clone(); TRIP.look = cam.target.clone();
+  sfx('flush'); flushFx(); bigText('¡Me absorbe!', 1.2); layer.style.display = 'none'; $('hud').classList.remove('on'); joy.id = null; joyEl.style.display = 'none'; }
+function enterGalaxy() { TRIP.phase = 1; const n = P.a.n; TRIP.scene.add(n); n.position.set(0, -0.6, -4.2); n.scale.setScalar(TRIP.sc0); layer.style.display = 'none'; tripEl.classList.add('on'); sfx('warp'); tripMusic(true);
+  if (!LITE) renderer.domElement.style.filter = 'saturate(1.5)'; }
+function endTrip() { const n = P.a.n; scene.add(n); n.scale.setScalar(TRIP.sc0); n.rotation.set(0, 0, 0); tripEl.classList.remove('on'); layer.style.display = ''; renderer.domElement.style.filter = ''; tripMusic(false);
+  const f = $('flash'); f.style.transition = 'none'; f.style.opacity = '1'; requestAnimationFrame(() => { f.style.transition = 'opacity .7s'; f.style.opacity = '0'; });
+  P.sit = false; P.a.seat = null; P.a.pose.sit = 0; P.a.pw.sit = 0; const LP = TRIP_LAND; P.pos.set(LP.x, groundAt(LP.x, LP.z) + 2.4, LP.z); P.vel.set(0, 0, 0); P.vy = -1; P.grounded = false; P.bounce = 1; P.yaw = 0.6;
+  for (let i = BUBS.length - 1; i >= 0; i--) if (BUBS[i].a === P.a) { BUBS[i].el.remove(); BUBS.splice(i, 1); } cam.yaw = 0.15; cam.pitch = Math.max(cam.pitch, 0.5); lastManual = -99; cam.target.copy(P.pos).add(V3(0, 1.15, 0)); camDist = 4.5; STATE = 'play'; $('hud').classList.add('on');
+  const pts = 777; score += pts; stats.pranks++; bigText('¡Viaje astral! +' + pts, 2.2); popText(V3(LP.x, groundAt(LP.x, LP.z), LP.z), '+' + pts + ' ✨', '#9ff3ff'); }
+const TRIP_LAND = V3(2.45, 0, -3.95);
+function updTrip(dt) { TRIP.t += dt; const t = TRIP.t, n = P.a.n;
+  if (TRIP.phase === 0) { // remolino en el baño: el personaje gira y se encoge hacia la taza
+    const k = clamp(t / TRIP.sw, 0, 1), b = BTH.bowl; n.rotation.set(0, P.yaw + k * k * 26, 0); n.scale.setScalar(TRIP.sc0 * (1 - 0.9 * k * k)); n.position.set(P.pos.x + (b.x - P.pos.x) * k, P.pos.y + 0.12 * Math.sin(k * Math.PI) + (b.y - 0.1 - P.pos.y) * k * k, P.pos.z + (b.z - P.pos.z) * k);
+    n.userData.update(dt, { speed: 0, grounded: false, vy: 2, wave: true }); applyPose(P.a, dt);
+    if (Math.random() < 0.5) flushFx(); updParts(dt); camera.position.lerp(V3(b.x - 0.45, b.y + 1.75, b.z + 1.05), Math.min(1, dt * 3)); camera.near = 0.05; camera.updateProjectionMatrix(); camera.lookAt(b); updDOM(dt);
+    renderer.render(scene, camera); if (t >= TRIP.sw || TRIP.skip) enterGalaxy(); return; }
+  const g = t - TRIP.sw, end = TRIP.dur; if (TRIP.skip && g < end - 0.35) TRIP.t = TRIP.sw + end - 0.35;
+  const C = TRIP.cam; C.aspect = innerWidth / innerHeight; C.fov = C.aspect < 1 ? 82 : 70; C.updateProjectionMatrix(); C.position.set(Math.sin(g * 0.7) * 0.6, Math.cos(g * 0.5) * 0.4, 0); C.rotation.set(0, 0, g * 0.35); 
+  const speed = 40 + 120 * smooth(clamp(g / 2, 0, 1)) * (1 - 0.6 * smooth(clamp((g - end + 2) / 2, 0, 1)));
+  const lp = TRIP.lines.geometry.attributes.position.array, lc = TRIP.lines.geometry.attributes.color.array, pp = TRIP.pts.geometry.attributes.position.array, pc = TRIP.pts.geometry.attributes.color.array, col = new THREE.Color(), len = speed * 0.035;
+  for (let i = 0; i < TRIP.N; i++) { const s = TRIP.st[i]; s.z += speed * dt; if (s.z > 2) s.z -= 300; const k = i * 6; lp[k] = s.x; lp[k + 1] = s.y; lp[k + 2] = s.z; lp[k + 3] = s.x; lp[k + 4] = s.y; lp[k + 5] = s.z - len;
+    col.setHSL((s.h + g * 0.25) % 1, 1, 0.62); lc[k] = col.r; lc[k + 1] = col.g; lc[k + 2] = col.b; lc[k + 3] = col.r * 0.1; lc[k + 4] = col.g * 0.1; lc[k + 5] = col.b * 0.1; pp[i * 3] = s.x; pp[i * 3 + 1] = s.y; pp[i * 3 + 2] = s.z; pc[i * 3] = col.r; pc[i * 3 + 1] = col.g; pc[i * 3 + 2] = col.b; }
+  TRIP.lines.geometry.attributes.position.needsUpdate = TRIP.lines.geometry.attributes.color.needsUpdate = TRIP.pts.geometry.attributes.position.needsUpdate = TRIP.pts.geometry.attributes.color.needsUpdate = true;
+  TRIP.rings.forEach((r, i) => { r.position.z += speed * 0.5 * dt; if (r.position.z > 3) r.position.z -= 14 * 22; r.material.color.setHSL((i * 0.07 + g * 0.4) % 1, 1, 0.6); r.rotation.z = g * (i % 2 ? 1 : -1) * 0.6; const w = 1 + 0.25 * Math.sin(g * 3 + i); r.scale.set(w, 1 / w, 1); });
+  TRIP.nebs.forEach((s, i) => { s.material.color.setHSL((s.userData.h + g * 0.15) % 1, 1, 0.5); s.position.z += speed * 0.15 * dt; if (s.position.z > -20) s.position.z -= 200; s.material.rotation = g * 0.2 * (i % 2 ? 1 : -1); });
+  TRIP.planets.forEach((p, i) => { p.rotation.y += dt * p.userData.sp * 2; p.rotation.z = 0.3 * Math.sin(g + i); const h = p.userData.home; p.position.set(h.x * Math.cos(g * 0.25 + i) - h.y * Math.sin(g * 0.25 + i), h.x * Math.sin(g * 0.25 + i) + h.y * Math.cos(g * 0.25 + i), h.z + g * 2.2); if (p.userData.ring) p.userData.ring.rotation.z += dt; });
+  TRIP.l1.color.setHSL((g * 0.3) % 1, 1, 0.6); TRIP.l2.color.setHSL((g * 0.3 + 0.5) % 1, 1, 0.6); TRIP.scene.background.setHSL(0.68 + 0.18 * Math.sin(g * 0.6), 0.9, 0.012 + 0.006 * Math.sin(g * 2));
+  // el personaje flota y da volteretas
+  const appear = smooth(clamp(g / 0.8, 0, 1)); n.scale.setScalar(TRIP.sc0 * appear); n.position.set(Math.sin(g * 1.3) * 0.4, -0.6 + Math.sin(g * 1.9) * 0.3, -3.1 + Math.sin(g * 0.8) * 0.3); n.rotation.set(g * 1.7, g * 2.3, Math.sin(g * 1.1) * 0.8);
+  P.a.wave = 1; n.userData.update(dt, { speed: 0.6, grounded: false, vy: 3, wave: true, dance: true }); applyPose(P.a, dt);
+  tripEl.style.setProperty('--h', ((g * 90) % 360).toFixed(0)); tripArp(dt);
+  renderer.render(TRIP.scene, C); if (g >= end) endTrip(); }
+const skipTrip = () => { if (STATE === 'trip') TRIP.skip = true; };
+tripEl.addEventListener('pointerdown', e => { e.preventDefault(); skipTrip(); });
+
+// ---------- separación entre personajes (radio según la cabeza Pop) ----------
+function sepAgents(dt, init) {
+  const L3 = AG.filter(a => a.visible && a !== P.a && a.trip <= 0);
+  if (P.a && (STATE === 'play' || STATE === 'caught') && !P.sit) L3.push(P.a);
+  const moved = new Set();
+  for (let i = 0; i < L3.length; i++) { const a = L3[i]; for (let j = i + 1; j < L3.length; j++) { const b = L3[j];
+    const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z; const m = a.radius * (a.seat ? 0.85 : 1) + b.radius * (b.seat ? 0.85 : 1); if (Math.abs(dx) > m || Math.abs(dz) > m) continue; const d = Math.hypot(dx, dz); if (d >= m) continue;
+    const pin = q => q === P.a || !!q.seat || q.cyc === 'inside' || (q.kind === 'waiter' && q.alert > 0) ? 0 : (q.path ? 0.35 : 1);
+    let wa = pin(a), wb = pin(b); if (wa + wb === 0) { const free = q => !q.seat && q.cyc !== 'inside'; if (STATE === 'play' && a === P.a && free(b)) wa = 1; else if (STATE === 'play' && b === P.a && free(a)) wb = 1; else continue; } /* jugador contra alguien fijo (camarero en alerta): se aparta el jugador */ const o = (m - d) * (init ? 1 : Math.min(1, dt * 10)); const nx = d > 1e-4 ? dx / d : 1, nz = d > 1e-4 ? dz / d : 0;
+    a.pos.x -= nx * o * wa / (wa + wb); a.pos.z -= nz * o * wa / (wa + wb); b.pos.x += nx * o * wb / (wa + wb); b.pos.z += nz * o * wb / (wa + wb); if (wa) moved.add(a); if (wb) moved.add(b); } }
+  for (const a of moved) if (!a.path) collideBoxes(a.pos, 0.3);
+  // si el otro no puede apartarse (pared, mesa), se aparta el jugador
+  if (P.a && STATE === 'play' && L3.includes(P.a)) { const me = P.a; for (const b of L3) { if (b === me || b.seat || b.cyc === 'inside') continue; const dx = me.pos.x - b.pos.x, dz = me.pos.z - b.pos.z, m = me.radius + b.radius; if (Math.abs(dx) > m || Math.abs(dz) > m) continue; const d = Math.hypot(dx, dz); if (d >= m - 0.01 || d < 1e-4) continue;
+      const o = (m - d) * (init ? 1 : Math.min(1, dt * 10)); me.pos.x += dx / d * o; me.pos.z += dz / d * o; moved.add(me); } if (moved.has(me)) collideBoxes(me.pos, 0.3); }
+  if (P.a && moved.has(P.a)) { P.pos.x = P.a.pos.x; P.pos.z = P.a.pos.z; } }
+for (let k = 0; k < 40; k++) sepAgents(1 / 30, true);
+for (const a of AG) if (!a.seat) { collideBoxes(a.pos, 0.3); a.pos.y = groundAt(a.pos.x, a.pos.z); place(a); }
+
+// ---------- desvanecer personajes que tapan la cámara ----------
+function fadeChar(a, v) {
+  if (v >= 0.99) { if (a.fm) { for (const [m, orig, ol] of a.fm) { if (ol) m.visible = true; else { m.material.dispose(); m.material = orig; } } a.fm = null; } return; }
+  if (!a.fm) { a.fm = []; a.n.traverse(o => { if (!o.isMesh) return; const orig = o.material; if (orig.type === 'ShaderMaterial') { a.fm.push([o, orig, true]); return; } const c = orig.clone(); c.transparent = true; o.material = c; a.fm.push([o, orig, false]); }); }
+  for (const [m, orig, ol] of a.fm) { if (ol) m.visible = false; else { m.material.opacity = v; m.material.depthWrite = v > 0.7; } } }
 // ---------- charla ambiente ----------
 let ambT = 3;
 function updAmbient(dt) { ambT -= dt; if (ambT > 0) return; ambT = rnd(3.5, 6);
@@ -1631,7 +1937,7 @@ $('howto').innerHTML = HOWTO; $('howBtn').onclick = () => $('howto').classList.t
 $('play').onclick = () => { audioOn(); startGame(selIdx); };
 $('again').onclick = () => { audioOn(); startGame(selIdx); }; $('change').onclick = () => showMenu();
 const showBest = () => { $('best').textContent = best > 0 ? 'Récord: ' + best + ' puntos' : ''; };
-function showMenu() { STATE = 'menu'; $('menu').classList.add('on'); $('end').classList.remove('on'); $('hud').classList.remove('on'); showBest(); if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); P.a = null; } }
+function showMenu() { if (STATE === 'trip') endTrip(); STATE = 'menu'; P.sit = false; hideTripQ(); $('menu').classList.add('on'); $('end').classList.remove('on'); $('hud').classList.remove('on'); showBest(); if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); P.a = null; } }
 function resetRound() { for (const T of TABLES) if (T.state !== 'up') { T.state = 'up'; T.thudd = 0; T.root.quaternion.identity(); T.root.position.set(T.x, T.y, T.z); T.inner.position.set(0, 0, 0); if (!W.COLL.includes(T.coll)) W.COLL.push(T.coll); fillTable(T); }
   for (const p of PARTS) if (p.m.parent) p.m.parent.remove(p.m); PARTS.length = 0; TIMERS.length = 0; for (const b of BUBS) b.el.remove(); BUBS.length = 0;
   for (const a of AG) { a.trip = 0; a.untied = 0; a.wet = 0; a.cd = 0; a.n.rotation.set(0, a.yaw, 0); for (const k of ['complain', 'startle', 'push', 'crouch', 'pour', 'drink', 'pose', 'scratch']) { a.pose[k] = 0; } if (a.beerHand != null && a.kind !== 'waiter' && !a.selfie) giveBeer(a); }
@@ -1640,7 +1946,7 @@ function resetRound() { for (const T of TABLES) if (T.state !== 'up') { T.state 
 GANG_A.forEach(a => { a.tagT = TAGS.find(t => t.a === a); });
 function startGame(i) { if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); } selIdx = i; store.set('lacurva_pj', i);
   resetRound(); const a = GANG_A[i]; P.a = a; for (const T of TABLES) T.seated = T.seated.filter(x => x !== a); a.seat = null; a.pose.sit = 0; a.pw.sit = 0; takeBeer(a); P.beer = null; a.tagT.el.classList.add('me');
-  P.pos.copy(SPAWN); P.pos.y = groundAt(SPAWN.x, SPAWN.z); P.vel.set(0, 0, 0); P.vy = 0; P.yaw = Math.PI + 0.45; P.flung = 0; P.lock = 0; P.inQueue = 0; cam.yaw = 0.45; cam.pitch = portrait() ? 0.48 : 0.42; cam.target.copy(P.pos).add(V3(0, 1.2, 0)); camDist = 6; lastManual = -99;
+  P.pos.copy(SPAWN); P.pos.y = groundAt(SPAWN.x, SPAWN.z); P.vel.set(0, 0, 0); P.vy = 0; P.yaw = Math.PI + 0.45; P.flung = 0; P.lock = 0; P.inQueue = 0; P.sit = false; P.tripDone = false; P.askT = -1; P.bounce = 0; hideTripQ(); a.radius = a.radius || RAD; cam.yaw = 0.45; cam.pitch = portrait() ? 0.48 : 0.42; cam.target.copy(P.pos).add(V3(0, 1.2, 0)); camDist = 6; lastManual = -99;
   for (const T of TABLES) T.seated = T.seated.filter(x => x.seat);
   $('menu').classList.remove('on'); $('end').classList.remove('on'); $('hud').classList.add('on'); STATE = 'play'; gameT = 0; bigText('¡A liarla, ' + a.name + '!', 1.6); }
 const TITLES = [[0, 'Pringao de La Curva'], [700, 'Aprendiz de gamberro'], [1600, 'Liante de barrio'], [2800, 'Terror de las terrazas'], [4200, 'Leyenda del Último Tango'], [6000, 'Rey de La Curva']];
@@ -1648,7 +1954,7 @@ const titleFor = s => TITLES.filter(t => s >= t[0]).pop()[1];
 function endGame(expelled) { if (STATE === 'end') return; STATE = 'end'; const nb = score > best; if (nb) { best = score; store.set('lacurva_best', best); }
   $('endWhy').textContent = expelled ? '¡Te han echado del bar! 🚪' : '¡Se acabó la noche! 🌙'; $('endTitle').textContent = (expelled ? 'Vetado · ' : '') + titleFor(score); $('endScore').textContent = score;
   $('endStats').innerHTML = `${P.a.name} · ${stats.pranks} bromas · ${stats.tables} mesas por los suelos · ${stats.beers} cañas robadas · combo máx. x${stats.maxCombo}<br>${nb ? '🏆 ¡NUEVO RÉCORD!' : 'Récord: ' + best}`;
-  $('hud').classList.remove('on'); setTimeoutG(() => {}, 0); setTimeout(() => $('end').classList.add('on'), MANUAL ? 0 : 600); joy.id = null; joyEl.style.display = 'none'; }
+  hideTripQ(); $('hud').classList.remove('on'); setTimeoutG(() => {}, 0); setTimeout(() => $('end').classList.add('on'), MANUAL ? 0 : 600); joy.id = null; joyEl.style.display = 'none'; }
 let paused = false; function togglePause() { if (STATE === 'play') { STATE = 'pause'; bigText('PAUSA', 9999); } else if (STATE === 'pause') { STATE = 'play'; bigText('¡Sigue!', 0.6); } }
 // ---------- HUD ----------
 const hud = { s: -1, t: -1, c: -1, p: -1, k: '' };
@@ -1659,23 +1965,30 @@ function updHUD() { if (score !== hud.s) { hud.s = score; $('score').textContent
 let menuA = 0;
 function frame(dt, noRender) {
   if (STATE === 'pause') { updDOM(0); renderer.render(scene, camera); return; }
+  if (STATE === 'trip') { updTrip(dt); return; }
   gameT += dt;
   if (STATE === 'play' || STATE === 'caught') {
     if (STATE === 'play') { timeLeft -= dt; if (timeLeft <= 0) { timeLeft = 0; endGame(false); } }
     stepPlayer(dt);
     if (STATE === 'play') { prankScan -= dt; if (prankScan <= 0) { prankScan = 0.1; curPrank = findPrank(); } if (prankQ) { prankQ = false; if (curPrank) { doPrank(curPrank); curPrank = null; prankScan = 0.25; } } } else curPrank = null;
     if (STATE === 'caught') updCaught(dt);
-    seenT += dt; if (seenT > 5 && pillado > 0) pillado = Math.max(0, pillado - dt * 4); comboT -= dt; if (comboT <= 0) combo = 1;
-    updCamera(dt); updAmbient(dt);
+    seenT += dt; if (seenT > 5 && pillado > 0) pillado = Math.max(0, pillado - dt * 4); if (P.sit && pillado > 0) pillado = Math.max(0, pillado - dt * 6); comboT -= dt; if (comboT <= 0) combo = 1;
+    updCamera(dt); updAmbient(dt); if (tripQOpen() && !P.sit) hideTripQ();
   } else if (!window.__camLock) { if (camera.near !== 0.1) { camera.near = 0.1; camera.updateProjectionMatrix(); } menuA += dt * 0.12; const c = V3(0.2, 1.6, -0.5); camera.position.set(c.x + Math.sin(menuA * 0.7) * 3.5, 3.0 + Math.sin(menuA * 0.5) * 0.4, 9.5 + Math.cos(menuA * 0.6) * 1.2); camera.lookAt(c); prankQ = false; }
   for (const a of AG) { if (a === P.a) continue; if (a.cd > 0 && a.look <= 0 && a.seat) a.faceYaw = a.seat.yaw; updAgent(a, dt); }
-  updWaiters(dt); updBath(dt); updTables(dt); updParts(dt); updTimers(dt);
+  updWaiters(dt); updBath(dt); updDoor(dt); sepAgents(dt); updBathFade(); updTables(dt); updParts(dt); updTimers(dt);
   for (const d of DOGS) { d.t += dt; d.tail.rotation.z = Math.sin(d.t * 18) * 0.6; d.head.rotation.y = Math.sin(d.t * 0.6) * 0.3; }
   if (window.__fan) window.__fan.rotation.y += dt * 3;
   if (noRender) return;
   if (P.a && (STATE === 'play' || STATE === 'caught' || STATE === 'pause')) { const c = camera.position, t = cam.target, sv = t.clone().sub(c), L2 = sv.lengthSq();
-    for (const a of AG) { if (a === P.a) { a.n.visible = true; continue; } let hide = false; if (a.visible) { const q = V3(a.pos.x, a.pos.y + 1.0, a.pos.z); const k = clamp(q.clone().sub(c).dot(sv) / L2, 0, 1); const dd = q.distanceTo(c.clone().addScaledVector(sv, k)); hide = (k < 0.9 && dd < 0.85) || q.distanceTo(c) < (window.__camLock ? 0.8 : 2.6) || (camera.near > 0.2 && q.distanceTo(c) < camera.near + 0.8); } a.n.visible = a.visible && !hide; a.hidden = hide; } }
-  else for (const a of AG) { a.n.visible = a.visible; a.hidden = false; }
+    for (const a of AG) { if (a === P.a) { a.n.visible = true; continue; } let al = 1; if (a.visible) { const hh = a.n.userData.height * a.n.scale.y; const q = V3(a.pos.x, a.pos.y + hh * 0.72, a.pos.z), r = a.radius;
+        const k = clamp(q.clone().sub(c).dot(sv) / L2, 0, 1); const dd = q.distanceTo(c.clone().addScaledVector(sv, k)); const dc = q.distanceTo(c);
+        if (k < 0.88 && dd < r + 0.25) al = Math.min(al, 0.25); // tapa al jugador
+        if (!window.__camLock) { const tv = Math.tan(camera.fov * Math.PI / 360), fr = r / Math.max(0.1, dc) / Math.min(tv, tv * camera.aspect); if (dc < Math.sqrt(L2) - 0.6 && fr > 0.3) al = Math.min(al, Math.max(0.15, 1 - smooth(clamp((fr - 0.3) / 0.12, 0, 1)))); } // cabezotas pegadas a la cámara: se desvanecen
+        al = Math.min(al, window.__camLock ? (dc < r + 0.3 ? 0 : 1) : smooth(clamp((dc - (r + 0.35)) / 1.3, 0, 1))); if (camera.near > 0.2 && dc < camera.near + r) al = 0; if (cam.bath > 0.5 && !inBath(a.pos) && dc < 3.2) al = Math.min(al, 0.12); }
+      else al = 0; a.fadeA = a.fadeA == null ? al : a.fadeA + (al - a.fadeA) * Math.min(1, dt * 10); if (!a.visible) a.fadeA = 0;
+      const v = a.fadeA; a.n.visible = a.visible && v > 0.04; fadeChar(a, a.n.visible ? (v > 0.97 ? 1 : v) : 1); a.hidden = v < 0.5; } }
+  else for (const a of AG) { a.n.visible = a.visible; a.hidden = false; fadeChar(a, 1); a.fadeA = 1; }
   updDOM(dt); updHUD(); renderer.render(scene, camera);
 }
 let last = performance.now(), fpsAcc = 0, fpsN = 0; window.FPS = 0;
@@ -1685,7 +1998,7 @@ requestAnimationFrame(loop);
 document.addEventListener('visibilitychange', () => { if (document.hidden && STATE === 'play') togglePause(); });
 // ---------- arranque ----------
 prog(1, '¡Listo!'); $('load').classList.remove('on'); showMenu();
-window.GAME = { start: startGame, showMenu, endGame, step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) frame(dt, i < n - 1); }, tick(dt = 1 / 30, dom = false) { frame(dt, true); if (dom) { updDOM(dt); updHUD(); } }, setInput(o) { window.__input = o; }, prank() { prankQ = true; }, jump() { jumpQ = 0.2; }, findPrank, doPrank, knock, witness, P, AG, TABLES, QUEUE, WAITER_A, GANG_A, CROWD_A, BATH, cam, camera, renderer, scene, groundAt, bigText, say, setPose, popText,
+window.GAME = { start: startGame, showMenu, endGame, step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) frame(dt, i < n - 1); }, tick(dt = 1 / 30, dom = false) { frame(dt, true); if (dom) { updDOM(dt); updHUD(); } }, setInput(o) { window.__input = o; }, prank() { prankQ = true; }, sitWC, standWC, tripYes, tripNo, showTripQ, skipTrip, inBath, bathDoor, BTH, TRIP, sepAgents, get tripQ() { return tripQOpen(); }, jump() { jumpQ = 0.2; }, findPrank, doPrank, knock, witness, P, AG, TABLES, QUEUE, WAITER_A, GANG_A, CROWD_A, BATH, cam, camera, renderer, scene, groundAt, bigText, say, setPose, popText,
   get state() { return STATE; }, set state(v) { STATE = v; }, get score() { return score; }, set score(v) { score = v; }, get pillado() { return pillado; }, set pillado(v) { pillado = v; }, get timeLeft() { return timeLeft; }, set timeLeft(v) { timeLeft = v; }, get combo() { return combo; }, get curPrank() { return curPrank; }, stats: () => stats, BAKE, LITE, updCamera };
 window.GAME_READY = 1;
 })().catch(e => { console.error(e); const t = document.getElementById('loadtxt'); if (t) t.textContent = 'Error: ' + e.message; });
