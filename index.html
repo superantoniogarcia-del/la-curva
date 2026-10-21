@@ -1461,6 +1461,3423 @@ barrel(-3.15, 1.05); barrel(4.6, 1.0);
 for (const x of [-3.4, 3.5]) { cyl(0.22, 0.17, 0.42, M.terracotta, x, 0.36, 0.3); const l = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 1), M.leaf); l.position.set(x, 0.85, 0.3); l.castShadow = true; scene.add(l); addColl(x, 0.3, 0.22, 0.22); }
 window.WORLD = { WX, M, box, cyl, std, WIN_MATS, toTD, scene, COLL, OCC, LAMPS, GLOBES, barLights, arcPt, RC, CEN, SW, ROAD1, SW2, BW, BD, BX0, BX1, FLOOR_IN, BH, beer, thMin: TH0 - WALK / RC + 0.03, thMax: TH1 + WALK / RC - 0.03 };
 </script>
+<script type="module">// ===== VIAJE ASTRAL: objetos flotantes (bitcoins, cámaras, chuletón, nigiris, Hangar, caracoles, palas, cervezas, palmeras, PlatoReel, Tinder, Instagram, patinete) =====
+// Todo procedural o embebido (SVG/PNG en base64). Cada tipo se construye una vez, se fusiona por material y se dibuja con InstancedMesh.
+const ASTRAL = (() => {
+const THREE = window.THREE;
+const SVGLoader = (() => {const {Box2,BufferGeometry,FileLoader,Float32BufferAttribute,Loader,Matrix3,Path,Shape,ShapePath,ShapeUtils,SRGBColorSpace,Vector2,Vector3} = window.THREE;
+
+const COLOR_SPACE_SVG = SRGBColorSpace;
+
+class SVGLoader extends Loader {
+
+	constructor( manager ) {
+
+		super( manager );
+
+		// Default dots per inch
+		this.defaultDPI = 90;
+
+		// Accepted units: 'mm', 'cm', 'in', 'pt', 'pc', 'px'
+		this.defaultUnit = 'px';
+
+	}
+
+	load( url, onLoad, onProgress, onError ) {
+
+		const scope = this;
+
+		const loader = new FileLoader( scope.manager );
+		loader.setPath( scope.path );
+		loader.setRequestHeader( scope.requestHeader );
+		loader.setWithCredentials( scope.withCredentials );
+		loader.load( url, function ( text ) {
+
+			try {
+
+				onLoad( scope.parse( text ) );
+
+			} catch ( e ) {
+
+				if ( onError ) {
+
+					onError( e );
+
+				} else {
+
+					console.error( e );
+
+				}
+
+				scope.manager.itemError( url );
+
+			}
+
+		}, onProgress, onError );
+
+	}
+
+	parse( text ) {
+
+		const scope = this;
+
+		function parseNode( node, style ) {
+
+			if ( node.nodeType !== 1 ) return;
+
+			const transform = getNodeTransform( node );
+
+			let isDefsNode = false;
+
+			let path = null;
+
+			switch ( node.nodeName ) {
+
+				case 'svg':
+					style = parseStyle( node, style );
+					break;
+
+				case 'style':
+					parseCSSStylesheet( node );
+					break;
+
+				case 'g':
+					style = parseStyle( node, style );
+					break;
+
+				case 'path':
+					style = parseStyle( node, style );
+					if ( node.hasAttribute( 'd' ) ) path = parsePathNode( node );
+					break;
+
+				case 'rect':
+					style = parseStyle( node, style );
+					path = parseRectNode( node );
+					break;
+
+				case 'polygon':
+					style = parseStyle( node, style );
+					path = parsePolygonNode( node );
+					break;
+
+				case 'polyline':
+					style = parseStyle( node, style );
+					path = parsePolylineNode( node );
+					break;
+
+				case 'circle':
+					style = parseStyle( node, style );
+					path = parseCircleNode( node );
+					break;
+
+				case 'ellipse':
+					style = parseStyle( node, style );
+					path = parseEllipseNode( node );
+					break;
+
+				case 'line':
+					style = parseStyle( node, style );
+					path = parseLineNode( node );
+					break;
+
+				case 'defs':
+					isDefsNode = true;
+					break;
+
+				case 'use':
+					style = parseStyle( node, style );
+
+					const href = node.getAttributeNS( 'http://www.w3.org/1999/xlink', 'href' ) || '';
+					const usedNodeId = href.substring( 1 );
+					const usedNode = node.viewportElement.getElementById( usedNodeId );
+					if ( usedNode ) {
+
+						parseNode( usedNode, style );
+
+					} else {
+
+						console.warn( 'SVGLoader: \'use node\' references non-existent node id: ' + usedNodeId );
+
+					}
+
+					break;
+
+				default:
+					// console.log( node );
+
+			}
+
+			if ( path ) {
+
+				if ( style.fill !== undefined && style.fill !== 'none' ) {
+
+					path.color.setStyle( style.fill, COLOR_SPACE_SVG );
+
+				}
+
+				transformPath( path, currentTransform );
+
+				paths.push( path );
+
+				path.userData = { node: node, style: style };
+
+			}
+
+			const childNodes = node.childNodes;
+
+			for ( let i = 0; i < childNodes.length; i ++ ) {
+
+				const node = childNodes[ i ];
+
+				if ( isDefsNode && node.nodeName !== 'style' && node.nodeName !== 'defs' ) {
+
+					// Ignore everything in defs except CSS style definitions
+					// and nested defs, because it is OK by the standard to have
+					// <style/> there.
+					continue;
+
+				}
+
+				parseNode( node, style );
+
+			}
+
+
+			if ( transform ) {
+
+				transformStack.pop();
+
+				if ( transformStack.length > 0 ) {
+
+					currentTransform.copy( transformStack[ transformStack.length - 1 ] );
+
+				} else {
+
+					currentTransform.identity();
+
+				}
+
+			}
+
+		}
+
+		function parsePathNode( node ) {
+
+			const path = new ShapePath();
+
+			const point = new Vector2();
+			const control = new Vector2();
+
+			const firstPoint = new Vector2();
+			let isFirstPoint = true;
+			let doSetFirstPoint = false;
+
+			const d = node.getAttribute( 'd' );
+
+			if ( d === '' || d === 'none' ) return null;
+
+			// console.log( d );
+
+			const commands = d.match( /[a-df-z][^a-df-z]*/ig );
+
+			for ( let i = 0, l = commands.length; i < l; i ++ ) {
+
+				const command = commands[ i ];
+
+				const type = command.charAt( 0 );
+				const data = command.slice( 1 ).trim();
+
+				if ( isFirstPoint === true ) {
+
+					doSetFirstPoint = true;
+					isFirstPoint = false;
+
+				}
+
+				let numbers;
+
+				switch ( type ) {
+
+					case 'M':
+						numbers = parseFloats( data );
+						for ( let j = 0, jl = numbers.length; j < jl; j += 2 ) {
+
+							point.x = numbers[ j + 0 ];
+							point.y = numbers[ j + 1 ];
+							control.x = point.x;
+							control.y = point.y;
+
+							if ( j === 0 ) {
+
+								path.moveTo( point.x, point.y );
+
+							} else {
+
+								path.lineTo( point.x, point.y );
+
+							}
+
+							if ( j === 0 ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'H':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j ++ ) {
+
+							point.x = numbers[ j ];
+							control.x = point.x;
+							control.y = point.y;
+							path.lineTo( point.x, point.y );
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'V':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j ++ ) {
+
+							point.y = numbers[ j ];
+							control.x = point.x;
+							control.y = point.y;
+							path.lineTo( point.x, point.y );
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'L':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 2 ) {
+
+							point.x = numbers[ j + 0 ];
+							point.y = numbers[ j + 1 ];
+							control.x = point.x;
+							control.y = point.y;
+							path.lineTo( point.x, point.y );
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'C':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 6 ) {
+
+							path.bezierCurveTo(
+								numbers[ j + 0 ],
+								numbers[ j + 1 ],
+								numbers[ j + 2 ],
+								numbers[ j + 3 ],
+								numbers[ j + 4 ],
+								numbers[ j + 5 ]
+							);
+							control.x = numbers[ j + 2 ];
+							control.y = numbers[ j + 3 ];
+							point.x = numbers[ j + 4 ];
+							point.y = numbers[ j + 5 ];
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'S':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 4 ) {
+
+							path.bezierCurveTo(
+								getReflection( point.x, control.x ),
+								getReflection( point.y, control.y ),
+								numbers[ j + 0 ],
+								numbers[ j + 1 ],
+								numbers[ j + 2 ],
+								numbers[ j + 3 ]
+							);
+							control.x = numbers[ j + 0 ];
+							control.y = numbers[ j + 1 ];
+							point.x = numbers[ j + 2 ];
+							point.y = numbers[ j + 3 ];
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'Q':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 4 ) {
+
+							path.quadraticCurveTo(
+								numbers[ j + 0 ],
+								numbers[ j + 1 ],
+								numbers[ j + 2 ],
+								numbers[ j + 3 ]
+							);
+							control.x = numbers[ j + 0 ];
+							control.y = numbers[ j + 1 ];
+							point.x = numbers[ j + 2 ];
+							point.y = numbers[ j + 3 ];
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'T':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 2 ) {
+
+							const rx = getReflection( point.x, control.x );
+							const ry = getReflection( point.y, control.y );
+							path.quadraticCurveTo(
+								rx,
+								ry,
+								numbers[ j + 0 ],
+								numbers[ j + 1 ]
+							);
+							control.x = rx;
+							control.y = ry;
+							point.x = numbers[ j + 0 ];
+							point.y = numbers[ j + 1 ];
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'A':
+						numbers = parseFloats( data, [ 3, 4 ], 7 );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 7 ) {
+
+							// skip command if start point == end point
+							if ( numbers[ j + 5 ] == point.x && numbers[ j + 6 ] == point.y ) continue;
+
+							const start = point.clone();
+							point.x = numbers[ j + 5 ];
+							point.y = numbers[ j + 6 ];
+							control.x = point.x;
+							control.y = point.y;
+							parseArcCommand(
+								path, numbers[ j ], numbers[ j + 1 ], numbers[ j + 2 ], numbers[ j + 3 ], numbers[ j + 4 ], start, point
+							);
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'm':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 2 ) {
+
+							point.x += numbers[ j + 0 ];
+							point.y += numbers[ j + 1 ];
+							control.x = point.x;
+							control.y = point.y;
+
+							if ( j === 0 ) {
+
+								path.moveTo( point.x, point.y );
+
+							} else {
+
+								path.lineTo( point.x, point.y );
+
+							}
+
+							if ( j === 0 ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'h':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j ++ ) {
+
+							point.x += numbers[ j ];
+							control.x = point.x;
+							control.y = point.y;
+							path.lineTo( point.x, point.y );
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'v':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j ++ ) {
+
+							point.y += numbers[ j ];
+							control.x = point.x;
+							control.y = point.y;
+							path.lineTo( point.x, point.y );
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'l':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 2 ) {
+
+							point.x += numbers[ j + 0 ];
+							point.y += numbers[ j + 1 ];
+							control.x = point.x;
+							control.y = point.y;
+							path.lineTo( point.x, point.y );
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'c':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 6 ) {
+
+							path.bezierCurveTo(
+								point.x + numbers[ j + 0 ],
+								point.y + numbers[ j + 1 ],
+								point.x + numbers[ j + 2 ],
+								point.y + numbers[ j + 3 ],
+								point.x + numbers[ j + 4 ],
+								point.y + numbers[ j + 5 ]
+							);
+							control.x = point.x + numbers[ j + 2 ];
+							control.y = point.y + numbers[ j + 3 ];
+							point.x += numbers[ j + 4 ];
+							point.y += numbers[ j + 5 ];
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 's':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 4 ) {
+
+							path.bezierCurveTo(
+								getReflection( point.x, control.x ),
+								getReflection( point.y, control.y ),
+								point.x + numbers[ j + 0 ],
+								point.y + numbers[ j + 1 ],
+								point.x + numbers[ j + 2 ],
+								point.y + numbers[ j + 3 ]
+							);
+							control.x = point.x + numbers[ j + 0 ];
+							control.y = point.y + numbers[ j + 1 ];
+							point.x += numbers[ j + 2 ];
+							point.y += numbers[ j + 3 ];
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'q':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 4 ) {
+
+							path.quadraticCurveTo(
+								point.x + numbers[ j + 0 ],
+								point.y + numbers[ j + 1 ],
+								point.x + numbers[ j + 2 ],
+								point.y + numbers[ j + 3 ]
+							);
+							control.x = point.x + numbers[ j + 0 ];
+							control.y = point.y + numbers[ j + 1 ];
+							point.x += numbers[ j + 2 ];
+							point.y += numbers[ j + 3 ];
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 't':
+						numbers = parseFloats( data );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 2 ) {
+
+							const rx = getReflection( point.x, control.x );
+							const ry = getReflection( point.y, control.y );
+							path.quadraticCurveTo(
+								rx,
+								ry,
+								point.x + numbers[ j + 0 ],
+								point.y + numbers[ j + 1 ]
+							);
+							control.x = rx;
+							control.y = ry;
+							point.x = point.x + numbers[ j + 0 ];
+							point.y = point.y + numbers[ j + 1 ];
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'a':
+						numbers = parseFloats( data, [ 3, 4 ], 7 );
+
+						for ( let j = 0, jl = numbers.length; j < jl; j += 7 ) {
+
+							// skip command if no displacement
+							if ( numbers[ j + 5 ] == 0 && numbers[ j + 6 ] == 0 ) continue;
+
+							const start = point.clone();
+							point.x += numbers[ j + 5 ];
+							point.y += numbers[ j + 6 ];
+							control.x = point.x;
+							control.y = point.y;
+							parseArcCommand(
+								path, numbers[ j ], numbers[ j + 1 ], numbers[ j + 2 ], numbers[ j + 3 ], numbers[ j + 4 ], start, point
+							);
+
+							if ( j === 0 && doSetFirstPoint === true ) firstPoint.copy( point );
+
+						}
+
+						break;
+
+					case 'Z':
+					case 'z':
+						path.currentPath.autoClose = true;
+
+						if ( path.currentPath.curves.length > 0 ) {
+
+							// Reset point to beginning of Path
+							point.copy( firstPoint );
+							path.currentPath.currentPoint.copy( point );
+							isFirstPoint = true;
+
+						}
+
+						break;
+
+					default:
+						console.warn( command );
+
+				}
+
+				// console.log( type, parseFloats( data ), parseFloats( data ).length  )
+
+				doSetFirstPoint = false;
+
+			}
+
+			return path;
+
+		}
+
+		function parseCSSStylesheet( node ) {
+
+			if ( ! node.sheet || ! node.sheet.cssRules || ! node.sheet.cssRules.length ) return;
+
+			for ( let i = 0; i < node.sheet.cssRules.length; i ++ ) {
+
+				const stylesheet = node.sheet.cssRules[ i ];
+
+				if ( stylesheet.type !== 1 ) continue;
+
+				const selectorList = stylesheet.selectorText
+					.split( /,/gm )
+					.filter( Boolean )
+					.map( i => i.trim() );
+
+				for ( let j = 0; j < selectorList.length; j ++ ) {
+
+					// Remove empty rules
+					const definitions = Object.fromEntries(
+						Object.entries( stylesheet.style ).filter( ( [ , v ] ) => v !== '' )
+					);
+
+					stylesheets[ selectorList[ j ] ] = Object.assign(
+						stylesheets[ selectorList[ j ] ] || {},
+						definitions
+					);
+
+				}
+
+			}
+
+		}
+
+		/**
+		 * https://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
+		 * https://mortoray.com/2017/02/16/rendering-an-svg-elliptical-arc-as-bezier-curves/ Appendix: Endpoint to center arc conversion
+		 * From
+		 * rx ry x-axis-rotation large-arc-flag sweep-flag x y
+		 * To
+		 * aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation
+		 */
+
+		function parseArcCommand( path, rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, start, end ) {
+
+			if ( rx == 0 || ry == 0 ) {
+
+				// draw a line if either of the radii == 0
+				path.lineTo( end.x, end.y );
+				return;
+
+			}
+
+			x_axis_rotation = x_axis_rotation * Math.PI / 180;
+
+			// Ensure radii are positive
+			rx = Math.abs( rx );
+			ry = Math.abs( ry );
+
+			// Compute (x1', y1')
+			const dx2 = ( start.x - end.x ) / 2.0;
+			const dy2 = ( start.y - end.y ) / 2.0;
+			const x1p = Math.cos( x_axis_rotation ) * dx2 + Math.sin( x_axis_rotation ) * dy2;
+			const y1p = - Math.sin( x_axis_rotation ) * dx2 + Math.cos( x_axis_rotation ) * dy2;
+
+			// Compute (cx', cy')
+			let rxs = rx * rx;
+			let rys = ry * ry;
+			const x1ps = x1p * x1p;
+			const y1ps = y1p * y1p;
+
+			// Ensure radii are large enough
+			const cr = x1ps / rxs + y1ps / rys;
+
+			if ( cr > 1 ) {
+
+				// scale up rx,ry equally so cr == 1
+				const s = Math.sqrt( cr );
+				rx = s * rx;
+				ry = s * ry;
+				rxs = rx * rx;
+				rys = ry * ry;
+
+			}
+
+			const dq = ( rxs * y1ps + rys * x1ps );
+			const pq = ( rxs * rys - dq ) / dq;
+			let q = Math.sqrt( Math.max( 0, pq ) );
+			if ( large_arc_flag === sweep_flag ) q = - q;
+			const cxp = q * rx * y1p / ry;
+			const cyp = - q * ry * x1p / rx;
+
+			// Step 3: Compute (cx, cy) from (cx', cy')
+			const cx = Math.cos( x_axis_rotation ) * cxp - Math.sin( x_axis_rotation ) * cyp + ( start.x + end.x ) / 2;
+			const cy = Math.sin( x_axis_rotation ) * cxp + Math.cos( x_axis_rotation ) * cyp + ( start.y + end.y ) / 2;
+
+			// Step 4: Compute θ1 and Δθ
+			const theta = svgAngle( 1, 0, ( x1p - cxp ) / rx, ( y1p - cyp ) / ry );
+			const delta = svgAngle( ( x1p - cxp ) / rx, ( y1p - cyp ) / ry, ( - x1p - cxp ) / rx, ( - y1p - cyp ) / ry ) % ( Math.PI * 2 );
+
+			path.currentPath.absellipse( cx, cy, rx, ry, theta, theta + delta, sweep_flag === 0, x_axis_rotation );
+
+		}
+
+		function svgAngle( ux, uy, vx, vy ) {
+
+			const dot = ux * vx + uy * vy;
+			const len = Math.sqrt( ux * ux + uy * uy ) * Math.sqrt( vx * vx + vy * vy );
+			let ang = Math.acos( Math.max( - 1, Math.min( 1, dot / len ) ) ); // floating point precision, slightly over values appear
+			if ( ( ux * vy - uy * vx ) < 0 ) ang = - ang;
+			return ang;
+
+		}
+
+		/*
+		* According to https://www.w3.org/TR/SVG/shapes.html#RectElementRXAttribute
+		* rounded corner should be rendered to elliptical arc, but bezier curve does the job well enough
+		*/
+		function parseRectNode( node ) {
+
+			const x = parseFloatWithUnits( node.getAttribute( 'x' ) || 0 );
+			const y = parseFloatWithUnits( node.getAttribute( 'y' ) || 0 );
+			const rx = parseFloatWithUnits( node.getAttribute( 'rx' ) || node.getAttribute( 'ry' ) || 0 );
+			const ry = parseFloatWithUnits( node.getAttribute( 'ry' ) || node.getAttribute( 'rx' ) || 0 );
+			const w = parseFloatWithUnits( node.getAttribute( 'width' ) );
+			const h = parseFloatWithUnits( node.getAttribute( 'height' ) );
+
+			// Ellipse arc to Bezier approximation Coefficient (Inversed). See:
+			// https://spencermortensen.com/articles/bezier-circle/
+			const bci = 1 - 0.551915024494;
+
+			const path = new ShapePath();
+
+			// top left
+			path.moveTo( x + rx, y );
+
+			// top right
+			path.lineTo( x + w - rx, y );
+			if ( rx !== 0 || ry !== 0 ) {
+
+				path.bezierCurveTo(
+					x + w - rx * bci,
+					y,
+					x + w,
+					y + ry * bci,
+					x + w,
+					y + ry
+				);
+
+			}
+
+			// bottom right
+			path.lineTo( x + w, y + h - ry );
+			if ( rx !== 0 || ry !== 0 ) {
+
+				path.bezierCurveTo(
+					x + w,
+					y + h - ry * bci,
+					x + w - rx * bci,
+					y + h,
+					x + w - rx,
+					y + h
+				);
+
+			}
+
+			// bottom left
+			path.lineTo( x + rx, y + h );
+			if ( rx !== 0 || ry !== 0 ) {
+
+				path.bezierCurveTo(
+					x + rx * bci,
+					y + h,
+					x,
+					y + h - ry * bci,
+					x,
+					y + h - ry
+				);
+
+			}
+
+			// back to top left
+			path.lineTo( x, y + ry );
+			if ( rx !== 0 || ry !== 0 ) {
+
+				path.bezierCurveTo( x, y + ry * bci, x + rx * bci, y, x + rx, y );
+
+			}
+
+			return path;
+
+		}
+
+		function parsePolygonNode( node ) {
+
+			function iterator( match, a, b ) {
+
+				const x = parseFloatWithUnits( a );
+				const y = parseFloatWithUnits( b );
+
+				if ( index === 0 ) {
+
+					path.moveTo( x, y );
+
+				} else {
+
+					path.lineTo( x, y );
+
+				}
+
+				index ++;
+
+			}
+
+			const regex = /([+-]?\d*\.?\d+(?:e[+-]?\d+)?)(?:,|\s)([+-]?\d*\.?\d+(?:e[+-]?\d+)?)/g;
+
+			const path = new ShapePath();
+
+			let index = 0;
+
+			node.getAttribute( 'points' ).replace( regex, iterator );
+
+			path.currentPath.autoClose = true;
+
+			return path;
+
+		}
+
+		function parsePolylineNode( node ) {
+
+			function iterator( match, a, b ) {
+
+				const x = parseFloatWithUnits( a );
+				const y = parseFloatWithUnits( b );
+
+				if ( index === 0 ) {
+
+					path.moveTo( x, y );
+
+				} else {
+
+					path.lineTo( x, y );
+
+				}
+
+				index ++;
+
+			}
+
+			const regex = /([+-]?\d*\.?\d+(?:e[+-]?\d+)?)(?:,|\s)([+-]?\d*\.?\d+(?:e[+-]?\d+)?)/g;
+
+			const path = new ShapePath();
+
+			let index = 0;
+
+			node.getAttribute( 'points' ).replace( regex, iterator );
+
+			path.currentPath.autoClose = false;
+
+			return path;
+
+		}
+
+		function parseCircleNode( node ) {
+
+			const x = parseFloatWithUnits( node.getAttribute( 'cx' ) || 0 );
+			const y = parseFloatWithUnits( node.getAttribute( 'cy' ) || 0 );
+			const r = parseFloatWithUnits( node.getAttribute( 'r' ) || 0 );
+
+			const subpath = new Path();
+			subpath.absarc( x, y, r, 0, Math.PI * 2 );
+
+			const path = new ShapePath();
+			path.subPaths.push( subpath );
+
+			return path;
+
+		}
+
+		function parseEllipseNode( node ) {
+
+			const x = parseFloatWithUnits( node.getAttribute( 'cx' ) || 0 );
+			const y = parseFloatWithUnits( node.getAttribute( 'cy' ) || 0 );
+			const rx = parseFloatWithUnits( node.getAttribute( 'rx' ) || 0 );
+			const ry = parseFloatWithUnits( node.getAttribute( 'ry' ) || 0 );
+
+			const subpath = new Path();
+			subpath.absellipse( x, y, rx, ry, 0, Math.PI * 2 );
+
+			const path = new ShapePath();
+			path.subPaths.push( subpath );
+
+			return path;
+
+		}
+
+		function parseLineNode( node ) {
+
+			const x1 = parseFloatWithUnits( node.getAttribute( 'x1' ) || 0 );
+			const y1 = parseFloatWithUnits( node.getAttribute( 'y1' ) || 0 );
+			const x2 = parseFloatWithUnits( node.getAttribute( 'x2' ) || 0 );
+			const y2 = parseFloatWithUnits( node.getAttribute( 'y2' ) || 0 );
+
+			const path = new ShapePath();
+			path.moveTo( x1, y1 );
+			path.lineTo( x2, y2 );
+			path.currentPath.autoClose = false;
+
+			return path;
+
+		}
+
+		//
+
+		function parseStyle( node, style ) {
+
+			style = Object.assign( {}, style ); // clone style
+
+			let stylesheetStyles = {};
+
+			if ( node.hasAttribute( 'class' ) ) {
+
+				const classSelectors = node.getAttribute( 'class' )
+					.split( /\s/ )
+					.filter( Boolean )
+					.map( i => i.trim() );
+
+				for ( let i = 0; i < classSelectors.length; i ++ ) {
+
+					stylesheetStyles = Object.assign( stylesheetStyles, stylesheets[ '.' + classSelectors[ i ] ] );
+
+				}
+
+			}
+
+			if ( node.hasAttribute( 'id' ) ) {
+
+				stylesheetStyles = Object.assign( stylesheetStyles, stylesheets[ '#' + node.getAttribute( 'id' ) ] );
+
+			}
+
+			function addStyle( svgName, jsName, adjustFunction ) {
+
+				if ( adjustFunction === undefined ) adjustFunction = function copy( v ) {
+
+					if ( v.startsWith( 'url' ) ) console.warn( 'SVGLoader: url access in attributes is not implemented.' );
+
+					return v;
+
+				};
+
+				if ( node.hasAttribute( svgName ) ) style[ jsName ] = adjustFunction( node.getAttribute( svgName ) );
+				if ( stylesheetStyles[ svgName ] ) style[ jsName ] = adjustFunction( stylesheetStyles[ svgName ] );
+				if ( node.style && node.style[ svgName ] !== '' ) style[ jsName ] = adjustFunction( node.style[ svgName ] );
+
+			}
+
+			function clamp( v ) {
+
+				return Math.max( 0, Math.min( 1, parseFloatWithUnits( v ) ) );
+
+			}
+
+			function positive( v ) {
+
+				return Math.max( 0, parseFloatWithUnits( v ) );
+
+			}
+
+			addStyle( 'fill', 'fill' );
+			addStyle( 'fill-opacity', 'fillOpacity', clamp );
+			addStyle( 'fill-rule', 'fillRule' );
+			addStyle( 'opacity', 'opacity', clamp );
+			addStyle( 'stroke', 'stroke' );
+			addStyle( 'stroke-opacity', 'strokeOpacity', clamp );
+			addStyle( 'stroke-width', 'strokeWidth', positive );
+			addStyle( 'stroke-linejoin', 'strokeLineJoin' );
+			addStyle( 'stroke-linecap', 'strokeLineCap' );
+			addStyle( 'stroke-miterlimit', 'strokeMiterLimit', positive );
+			addStyle( 'visibility', 'visibility' );
+
+			return style;
+
+		}
+
+		// http://www.w3.org/TR/SVG11/implnote.html#PathElementImplementationNotes
+
+		function getReflection( a, b ) {
+
+			return a - ( b - a );
+
+		}
+
+		// from https://github.com/ppvg/svg-numbers (MIT License)
+
+		function parseFloats( input, flags, stride ) {
+
+			if ( typeof input !== 'string' ) {
+
+				throw new TypeError( 'Invalid input: ' + typeof input );
+
+			}
+
+			// Character groups
+			const RE = {
+				SEPARATOR: /[ \t\r\n\,.\-+]/,
+				WHITESPACE: /[ \t\r\n]/,
+				DIGIT: /[\d]/,
+				SIGN: /[-+]/,
+				POINT: /\./,
+				COMMA: /,/,
+				EXP: /e/i,
+				FLAGS: /[01]/
+			};
+
+			// States
+			const SEP = 0;
+			const INT = 1;
+			const FLOAT = 2;
+			const EXP = 3;
+
+			let state = SEP;
+			let seenComma = true;
+			let number = '', exponent = '';
+			const result = [];
+
+			function throwSyntaxError( current, i, partial ) {
+
+				const error = new SyntaxError( 'Unexpected character "' + current + '" at index ' + i + '.' );
+				error.partial = partial;
+				throw error;
+
+			}
+
+			function newNumber() {
+
+				if ( number !== '' ) {
+
+					if ( exponent === '' ) result.push( Number( number ) );
+					else result.push( Number( number ) * Math.pow( 10, Number( exponent ) ) );
+
+				}
+
+				number = '';
+				exponent = '';
+
+			}
+
+			let current;
+			const length = input.length;
+
+			for ( let i = 0; i < length; i ++ ) {
+
+				current = input[ i ];
+
+				// check for flags
+				if ( Array.isArray( flags ) && flags.includes( result.length % stride ) && RE.FLAGS.test( current ) ) {
+
+					state = INT;
+					number = current;
+					newNumber();
+					continue;
+
+				}
+
+				// parse until next number
+				if ( state === SEP ) {
+
+					// eat whitespace
+					if ( RE.WHITESPACE.test( current ) ) {
+
+						continue;
+
+					}
+
+					// start new number
+					if ( RE.DIGIT.test( current ) || RE.SIGN.test( current ) ) {
+
+						state = INT;
+						number = current;
+						continue;
+
+					}
+
+					if ( RE.POINT.test( current ) ) {
+
+						state = FLOAT;
+						number = current;
+						continue;
+
+					}
+
+					// throw on double commas (e.g. "1, , 2")
+					if ( RE.COMMA.test( current ) ) {
+
+						if ( seenComma ) {
+
+							throwSyntaxError( current, i, result );
+
+						}
+
+						seenComma = true;
+
+					}
+
+				}
+
+				// parse integer part
+				if ( state === INT ) {
+
+					if ( RE.DIGIT.test( current ) ) {
+
+						number += current;
+						continue;
+
+					}
+
+					if ( RE.POINT.test( current ) ) {
+
+						number += current;
+						state = FLOAT;
+						continue;
+
+					}
+
+					if ( RE.EXP.test( current ) ) {
+
+						state = EXP;
+						continue;
+
+					}
+
+					// throw on double signs ("-+1"), but not on sign as separator ("-1-2")
+					if ( RE.SIGN.test( current )
+							&& number.length === 1
+							&& RE.SIGN.test( number[ 0 ] ) ) {
+
+						throwSyntaxError( current, i, result );
+
+					}
+
+				}
+
+				// parse decimal part
+				if ( state === FLOAT ) {
+
+					if ( RE.DIGIT.test( current ) ) {
+
+						number += current;
+						continue;
+
+					}
+
+					if ( RE.EXP.test( current ) ) {
+
+						state = EXP;
+						continue;
+
+					}
+
+					// throw on double decimal points (e.g. "1..2")
+					if ( RE.POINT.test( current ) && number[ number.length - 1 ] === '.' ) {
+
+						throwSyntaxError( current, i, result );
+
+					}
+
+				}
+
+				// parse exponent part
+				if ( state === EXP ) {
+
+					if ( RE.DIGIT.test( current ) ) {
+
+						exponent += current;
+						continue;
+
+					}
+
+					if ( RE.SIGN.test( current ) ) {
+
+						if ( exponent === '' ) {
+
+							exponent += current;
+							continue;
+
+						}
+
+						if ( exponent.length === 1 && RE.SIGN.test( exponent ) ) {
+
+							throwSyntaxError( current, i, result );
+
+						}
+
+					}
+
+				}
+
+
+				// end of number
+				if ( RE.WHITESPACE.test( current ) ) {
+
+					newNumber();
+					state = SEP;
+					seenComma = false;
+
+				} else if ( RE.COMMA.test( current ) ) {
+
+					newNumber();
+					state = SEP;
+					seenComma = true;
+
+				} else if ( RE.SIGN.test( current ) ) {
+
+					newNumber();
+					state = INT;
+					number = current;
+
+				} else if ( RE.POINT.test( current ) ) {
+
+					newNumber();
+					state = FLOAT;
+					number = current;
+
+				} else {
+
+					throwSyntaxError( current, i, result );
+
+				}
+
+			}
+
+			// add the last number found (if any)
+			newNumber();
+
+			return result;
+
+		}
+
+		// Units
+
+		const units = [ 'mm', 'cm', 'in', 'pt', 'pc', 'px' ];
+
+		// Conversion: [ fromUnit ][ toUnit ] (-1 means dpi dependent)
+		const unitConversion = {
+
+			'mm': {
+				'mm': 1,
+				'cm': 0.1,
+				'in': 1 / 25.4,
+				'pt': 72 / 25.4,
+				'pc': 6 / 25.4,
+				'px': - 1
+			},
+			'cm': {
+				'mm': 10,
+				'cm': 1,
+				'in': 1 / 2.54,
+				'pt': 72 / 2.54,
+				'pc': 6 / 2.54,
+				'px': - 1
+			},
+			'in': {
+				'mm': 25.4,
+				'cm': 2.54,
+				'in': 1,
+				'pt': 72,
+				'pc': 6,
+				'px': - 1
+			},
+			'pt': {
+				'mm': 25.4 / 72,
+				'cm': 2.54 / 72,
+				'in': 1 / 72,
+				'pt': 1,
+				'pc': 6 / 72,
+				'px': - 1
+			},
+			'pc': {
+				'mm': 25.4 / 6,
+				'cm': 2.54 / 6,
+				'in': 1 / 6,
+				'pt': 72 / 6,
+				'pc': 1,
+				'px': - 1
+			},
+			'px': {
+				'px': 1
+			}
+
+		};
+
+		function parseFloatWithUnits( string ) {
+
+			let theUnit = 'px';
+
+			if ( typeof string === 'string' || string instanceof String ) {
+
+				for ( let i = 0, n = units.length; i < n; i ++ ) {
+
+					const u = units[ i ];
+
+					if ( string.endsWith( u ) ) {
+
+						theUnit = u;
+						string = string.substring( 0, string.length - u.length );
+						break;
+
+					}
+
+				}
+
+			}
+
+			let scale = undefined;
+
+			if ( theUnit === 'px' && scope.defaultUnit !== 'px' ) {
+
+				// Conversion scale from  pixels to inches, then to default units
+
+				scale = unitConversion[ 'in' ][ scope.defaultUnit ] / scope.defaultDPI;
+
+			} else {
+
+				scale = unitConversion[ theUnit ][ scope.defaultUnit ];
+
+				if ( scale < 0 ) {
+
+					// Conversion scale to pixels
+
+					scale = unitConversion[ theUnit ][ 'in' ] * scope.defaultDPI;
+
+				}
+
+			}
+
+			return scale * parseFloat( string );
+
+		}
+
+		// Transforms
+
+		function getNodeTransform( node ) {
+
+			if ( ! ( node.hasAttribute( 'transform' ) || ( node.nodeName === 'use' && ( node.hasAttribute( 'x' ) || node.hasAttribute( 'y' ) ) ) ) ) {
+
+				return null;
+
+			}
+
+			const transform = parseNodeTransform( node );
+
+			if ( transformStack.length > 0 ) {
+
+				transform.premultiply( transformStack[ transformStack.length - 1 ] );
+
+			}
+
+			currentTransform.copy( transform );
+			transformStack.push( transform );
+
+			return transform;
+
+		}
+
+		function parseNodeTransform( node ) {
+
+			const transform = new Matrix3();
+			const currentTransform = tempTransform0;
+
+			if ( node.nodeName === 'use' && ( node.hasAttribute( 'x' ) || node.hasAttribute( 'y' ) ) ) {
+
+				const tx = parseFloatWithUnits( node.getAttribute( 'x' ) );
+				const ty = parseFloatWithUnits( node.getAttribute( 'y' ) );
+
+				transform.translate( tx, ty );
+
+			}
+
+			if ( node.hasAttribute( 'transform' ) ) {
+
+				const transformsTexts = node.getAttribute( 'transform' ).split( ')' );
+
+				for ( let tIndex = transformsTexts.length - 1; tIndex >= 0; tIndex -- ) {
+
+					const transformText = transformsTexts[ tIndex ].trim();
+
+					if ( transformText === '' ) continue;
+
+					const openParPos = transformText.indexOf( '(' );
+					const closeParPos = transformText.length;
+
+					if ( openParPos > 0 && openParPos < closeParPos ) {
+
+						const transformType = transformText.slice( 0, openParPos );
+
+						const array = parseFloats( transformText.slice( openParPos + 1 ) );
+
+						currentTransform.identity();
+
+						switch ( transformType ) {
+
+							case 'translate':
+
+								if ( array.length >= 1 ) {
+
+									const tx = array[ 0 ];
+									let ty = 0;
+
+									if ( array.length >= 2 ) {
+
+										ty = array[ 1 ];
+
+									}
+
+									currentTransform.translate( tx, ty );
+
+								}
+
+								break;
+
+							case 'rotate':
+
+								if ( array.length >= 1 ) {
+
+									let angle = 0;
+									let cx = 0;
+									let cy = 0;
+
+									// Angle
+									angle = array[ 0 ] * Math.PI / 180;
+
+									if ( array.length >= 3 ) {
+
+										// Center x, y
+										cx = array[ 1 ];
+										cy = array[ 2 ];
+
+									}
+
+									// Rotate around center (cx, cy)
+									tempTransform1.makeTranslation( - cx, - cy );
+									tempTransform2.makeRotation( angle );
+									tempTransform3.multiplyMatrices( tempTransform2, tempTransform1 );
+									tempTransform1.makeTranslation( cx, cy );
+									currentTransform.multiplyMatrices( tempTransform1, tempTransform3 );
+
+								}
+
+								break;
+
+							case 'scale':
+
+								if ( array.length >= 1 ) {
+
+									const scaleX = array[ 0 ];
+									let scaleY = scaleX;
+
+									if ( array.length >= 2 ) {
+
+										scaleY = array[ 1 ];
+
+									}
+
+									currentTransform.scale( scaleX, scaleY );
+
+								}
+
+								break;
+
+							case 'skewX':
+
+								if ( array.length === 1 ) {
+
+									currentTransform.set(
+										1, Math.tan( array[ 0 ] * Math.PI / 180 ), 0,
+										0, 1, 0,
+										0, 0, 1
+									);
+
+								}
+
+								break;
+
+							case 'skewY':
+
+								if ( array.length === 1 ) {
+
+									currentTransform.set(
+										1, 0, 0,
+										Math.tan( array[ 0 ] * Math.PI / 180 ), 1, 0,
+										0, 0, 1
+									);
+
+								}
+
+								break;
+
+							case 'matrix':
+
+								if ( array.length === 6 ) {
+
+									currentTransform.set(
+										array[ 0 ], array[ 2 ], array[ 4 ],
+										array[ 1 ], array[ 3 ], array[ 5 ],
+										0, 0, 1
+									);
+
+								}
+
+								break;
+
+						}
+
+					}
+
+					transform.premultiply( currentTransform );
+
+				}
+
+			}
+
+			return transform;
+
+		}
+
+		function transformPath( path, m ) {
+
+			function transfVec2( v2 ) {
+
+				tempV3.set( v2.x, v2.y, 1 ).applyMatrix3( m );
+
+				v2.set( tempV3.x, tempV3.y );
+
+			}
+
+			function transfEllipseGeneric( curve ) {
+
+				// For math description see:
+				// https://math.stackexchange.com/questions/4544164
+
+				const a = curve.xRadius;
+				const b = curve.yRadius;
+
+				const cosTheta = Math.cos( curve.aRotation );
+				const sinTheta = Math.sin( curve.aRotation );
+
+				const v1 = new Vector3( a * cosTheta, a * sinTheta, 0 );
+				const v2 = new Vector3( - b * sinTheta, b * cosTheta, 0 );
+
+				const f1 = v1.applyMatrix3( m );
+				const f2 = v2.applyMatrix3( m );
+
+				const mF = tempTransform0.set(
+					f1.x, f2.x, 0,
+					f1.y, f2.y, 0,
+					0, 0, 1,
+				);
+
+				const mFInv = tempTransform1.copy( mF ).invert();
+				const mFInvT = tempTransform2.copy( mFInv ).transpose();
+				const mQ = mFInvT.multiply( mFInv );
+				const mQe = mQ.elements;
+
+				const ed = eigenDecomposition( mQe[ 0 ], mQe[ 1 ], mQe[ 4 ] );
+				const rt1sqrt = Math.sqrt( ed.rt1 );
+				const rt2sqrt = Math.sqrt( ed.rt2 );
+
+				curve.xRadius = 1 / rt1sqrt;
+				curve.yRadius = 1 / rt2sqrt;
+				curve.aRotation = Math.atan2( ed.sn, ed.cs );
+
+				const isFullEllipse =
+					( curve.aEndAngle - curve.aStartAngle ) % ( 2 * Math.PI ) < Number.EPSILON;
+
+				// Do not touch angles of a full ellipse because after transformation they
+				// would converge to a sinle value effectively removing the whole curve
+
+				if ( ! isFullEllipse ) {
+
+					const mDsqrt = tempTransform1.set(
+						rt1sqrt, 0, 0,
+						0, rt2sqrt, 0,
+						0, 0, 1,
+					);
+
+					const mRT = tempTransform2.set(
+						ed.cs, ed.sn, 0,
+						- ed.sn, ed.cs, 0,
+						0, 0, 1,
+					);
+
+					const mDRF = mDsqrt.multiply( mRT ).multiply( mF );
+
+					const transformAngle = phi => {
+
+						const { x: cosR, y: sinR } =
+							new Vector3( Math.cos( phi ), Math.sin( phi ), 0 ).applyMatrix3( mDRF );
+
+						return Math.atan2( sinR, cosR );
+
+					};
+
+					curve.aStartAngle = transformAngle( curve.aStartAngle );
+					curve.aEndAngle = transformAngle( curve.aEndAngle );
+
+					if ( isTransformFlipped( m ) ) {
+
+						curve.aClockwise = ! curve.aClockwise;
+
+					}
+
+				}
+
+			}
+
+			function transfEllipseNoSkew( curve ) {
+
+				// Faster shortcut if no skew is applied
+				// (e.g, a euclidean transform of a group containing the ellipse)
+
+				const sx = getTransformScaleX( m );
+				const sy = getTransformScaleY( m );
+
+				curve.xRadius *= sx;
+				curve.yRadius *= sy;
+
+				// Extract rotation angle from the matrix of form:
+				//
+				//  | cosθ sx   -sinθ sy |
+				//  | sinθ sx    cosθ sy |
+				//
+				// Remembering that tanθ = sinθ / cosθ; and that
+				// `sx`, `sy`, or both might be zero.
+				const theta =
+					sx > Number.EPSILON
+						? Math.atan2( m.elements[ 1 ], m.elements[ 0 ] )
+						: Math.atan2( - m.elements[ 3 ], m.elements[ 4 ] );
+
+				curve.aRotation += theta;
+
+				if ( isTransformFlipped( m ) ) {
+
+					curve.aStartAngle *= - 1;
+					curve.aEndAngle *= - 1;
+					curve.aClockwise = ! curve.aClockwise;
+
+				}
+
+			}
+
+			const subPaths = path.subPaths;
+
+			for ( let i = 0, n = subPaths.length; i < n; i ++ ) {
+
+				const subPath = subPaths[ i ];
+				const curves = subPath.curves;
+
+				for ( let j = 0; j < curves.length; j ++ ) {
+
+					const curve = curves[ j ];
+
+					if ( curve.isLineCurve ) {
+
+						transfVec2( curve.v1 );
+						transfVec2( curve.v2 );
+
+					} else if ( curve.isCubicBezierCurve ) {
+
+						transfVec2( curve.v0 );
+						transfVec2( curve.v1 );
+						transfVec2( curve.v2 );
+						transfVec2( curve.v3 );
+
+					} else if ( curve.isQuadraticBezierCurve ) {
+
+						transfVec2( curve.v0 );
+						transfVec2( curve.v1 );
+						transfVec2( curve.v2 );
+
+					} else if ( curve.isEllipseCurve ) {
+
+						// Transform ellipse center point
+
+						tempV2.set( curve.aX, curve.aY );
+						transfVec2( tempV2 );
+						curve.aX = tempV2.x;
+						curve.aY = tempV2.y;
+
+						// Transform ellipse shape parameters
+
+						if ( isTransformSkewed( m ) ) {
+
+							transfEllipseGeneric( curve );
+
+						} else {
+
+							transfEllipseNoSkew( curve );
+
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
+		function isTransformFlipped( m ) {
+
+			const te = m.elements;
+			return te[ 0 ] * te[ 4 ] - te[ 1 ] * te[ 3 ] < 0;
+
+		}
+
+		function isTransformSkewed( m ) {
+
+			const te = m.elements;
+			const basisDot = te[ 0 ] * te[ 3 ] + te[ 1 ] * te[ 4 ];
+
+			// Shortcut for trivial rotations and transformations
+			if ( basisDot === 0 ) return false;
+
+			const sx = getTransformScaleX( m );
+			const sy = getTransformScaleY( m );
+
+			return Math.abs( basisDot / ( sx * sy ) ) > Number.EPSILON;
+
+		}
+
+		function getTransformScaleX( m ) {
+
+			const te = m.elements;
+			return Math.sqrt( te[ 0 ] * te[ 0 ] + te[ 1 ] * te[ 1 ] );
+
+		}
+
+		function getTransformScaleY( m ) {
+
+			const te = m.elements;
+			return Math.sqrt( te[ 3 ] * te[ 3 ] + te[ 4 ] * te[ 4 ] );
+
+		}
+
+		// Calculates the eigensystem of a real symmetric 2x2 matrix
+		//    [ A  B ]
+		//    [ B  C ]
+		// in the form
+		//    [ A  B ]  =  [ cs  -sn ] [ rt1   0  ] [  cs  sn ]
+		//    [ B  C ]     [ sn   cs ] [  0   rt2 ] [ -sn  cs ]
+		// where rt1 >= rt2.
+		//
+		// Adapted from: https://www.mpi-hd.mpg.de/personalhomes/globes/3x3/index.html
+		// -> Algorithms for real symmetric matrices -> Analytical (2x2 symmetric)
+		function eigenDecomposition( A, B, C ) {
+
+			let rt1, rt2, cs, sn, t;
+			const sm = A + C;
+			const df = A - C;
+			const rt = Math.sqrt( df * df + 4 * B * B );
+
+			if ( sm > 0 ) {
+
+				rt1 = 0.5 * ( sm + rt );
+				t = 1 / rt1;
+				rt2 = A * t * C - B * t * B;
+
+			} else if ( sm < 0 ) {
+
+				rt2 = 0.5 * ( sm - rt );
+
+			} else {
+
+				// This case needs to be treated separately to avoid div by 0
+
+				rt1 = 0.5 * rt;
+				rt2 = - 0.5 * rt;
+
+			}
+
+			// Calculate eigenvectors
+
+			if ( df > 0 ) {
+
+				cs = df + rt;
+
+			} else {
+
+				cs = df - rt;
+
+			}
+
+			if ( Math.abs( cs ) > 2 * Math.abs( B ) ) {
+
+				t = - 2 * B / cs;
+				sn = 1 / Math.sqrt( 1 + t * t );
+				cs = t * sn;
+
+			} else if ( Math.abs( B ) === 0 ) {
+
+				cs = 1;
+				sn = 0;
+
+			} else {
+
+				t = - 0.5 * cs / B;
+				cs = 1 / Math.sqrt( 1 + t * t );
+				sn = t * cs;
+
+			}
+
+			if ( df > 0 ) {
+
+				t = cs;
+				cs = - sn;
+				sn = t;
+
+			}
+
+			return { rt1, rt2, cs, sn };
+
+		}
+
+		//
+
+		const paths = [];
+		const stylesheets = {};
+
+		const transformStack = [];
+
+		const tempTransform0 = new Matrix3();
+		const tempTransform1 = new Matrix3();
+		const tempTransform2 = new Matrix3();
+		const tempTransform3 = new Matrix3();
+		const tempV2 = new Vector2();
+		const tempV3 = new Vector3();
+
+		const currentTransform = new Matrix3();
+
+		const xml = new DOMParser().parseFromString( text, 'image/svg+xml' ); // application/xml
+
+		parseNode( xml.documentElement, {
+			fill: '#000',
+			fillOpacity: 1,
+			strokeOpacity: 1,
+			strokeWidth: 1,
+			strokeLineJoin: 'miter',
+			strokeLineCap: 'butt',
+			strokeMiterLimit: 4
+		} );
+
+		const data = { paths: paths, xml: xml.documentElement };
+
+		// console.log( paths );
+		return data;
+
+	}
+
+	static createShapes( shapePath ) {
+
+		// Param shapePath: a shapepath as returned by the parse function of this class
+		// Returns Shape object
+
+		const BIGNUMBER = 999999999;
+
+		const IntersectionLocationType = {
+			ORIGIN: 0,
+			DESTINATION: 1,
+			BETWEEN: 2,
+			LEFT: 3,
+			RIGHT: 4,
+			BEHIND: 5,
+			BEYOND: 6
+		};
+
+		const classifyResult = {
+			loc: IntersectionLocationType.ORIGIN,
+			t: 0
+		};
+
+		function findEdgeIntersection( a0, a1, b0, b1 ) {
+
+			const x1 = a0.x;
+			const x2 = a1.x;
+			const x3 = b0.x;
+			const x4 = b1.x;
+			const y1 = a0.y;
+			const y2 = a1.y;
+			const y3 = b0.y;
+			const y4 = b1.y;
+			const nom1 = ( x4 - x3 ) * ( y1 - y3 ) - ( y4 - y3 ) * ( x1 - x3 );
+			const nom2 = ( x2 - x1 ) * ( y1 - y3 ) - ( y2 - y1 ) * ( x1 - x3 );
+			const denom = ( y4 - y3 ) * ( x2 - x1 ) - ( x4 - x3 ) * ( y2 - y1 );
+			const t1 = nom1 / denom;
+			const t2 = nom2 / denom;
+
+			if ( ( ( denom === 0 ) && ( nom1 !== 0 ) ) || ( t1 <= 0 ) || ( t1 >= 1 ) || ( t2 < 0 ) || ( t2 > 1 ) ) {
+
+				//1. lines are parallel or edges don't intersect
+
+				return null;
+
+			} else if ( ( nom1 === 0 ) && ( denom === 0 ) ) {
+
+				//2. lines are colinear
+
+				//check if endpoints of edge2 (b0-b1) lies on edge1 (a0-a1)
+				for ( let i = 0; i < 2; i ++ ) {
+
+					classifyPoint( i === 0 ? b0 : b1, a0, a1 );
+					//find position of this endpoints relatively to edge1
+					if ( classifyResult.loc == IntersectionLocationType.ORIGIN ) {
+
+						const point = ( i === 0 ? b0 : b1 );
+						return { x: point.x, y: point.y, t: classifyResult.t };
+
+					} else if ( classifyResult.loc == IntersectionLocationType.BETWEEN ) {
+
+						const x = + ( ( x1 + classifyResult.t * ( x2 - x1 ) ).toPrecision( 10 ) );
+						const y = + ( ( y1 + classifyResult.t * ( y2 - y1 ) ).toPrecision( 10 ) );
+						return { x: x, y: y, t: classifyResult.t, };
+
+					}
+
+				}
+
+				return null;
+
+			} else {
+
+				//3. edges intersect
+
+				for ( let i = 0; i < 2; i ++ ) {
+
+					classifyPoint( i === 0 ? b0 : b1, a0, a1 );
+
+					if ( classifyResult.loc == IntersectionLocationType.ORIGIN ) {
+
+						const point = ( i === 0 ? b0 : b1 );
+						return { x: point.x, y: point.y, t: classifyResult.t };
+
+					}
+
+				}
+
+				const x = + ( ( x1 + t1 * ( x2 - x1 ) ).toPrecision( 10 ) );
+				const y = + ( ( y1 + t1 * ( y2 - y1 ) ).toPrecision( 10 ) );
+				return { x: x, y: y, t: t1 };
+
+			}
+
+		}
+
+		function classifyPoint( p, edgeStart, edgeEnd ) {
+
+			const ax = edgeEnd.x - edgeStart.x;
+			const ay = edgeEnd.y - edgeStart.y;
+			const bx = p.x - edgeStart.x;
+			const by = p.y - edgeStart.y;
+			const sa = ax * by - bx * ay;
+
+			if ( ( p.x === edgeStart.x ) && ( p.y === edgeStart.y ) ) {
+
+				classifyResult.loc = IntersectionLocationType.ORIGIN;
+				classifyResult.t = 0;
+				return;
+
+			}
+
+			if ( ( p.x === edgeEnd.x ) && ( p.y === edgeEnd.y ) ) {
+
+				classifyResult.loc = IntersectionLocationType.DESTINATION;
+				classifyResult.t = 1;
+				return;
+
+			}
+
+			if ( sa < - Number.EPSILON ) {
+
+				classifyResult.loc = IntersectionLocationType.LEFT;
+				return;
+
+			}
+
+			if ( sa > Number.EPSILON ) {
+
+				classifyResult.loc = IntersectionLocationType.RIGHT;
+				return;
+
+
+			}
+
+			if ( ( ( ax * bx ) < 0 ) || ( ( ay * by ) < 0 ) ) {
+
+				classifyResult.loc = IntersectionLocationType.BEHIND;
+				return;
+
+			}
+
+			if ( ( Math.sqrt( ax * ax + ay * ay ) ) < ( Math.sqrt( bx * bx + by * by ) ) ) {
+
+				classifyResult.loc = IntersectionLocationType.BEYOND;
+				return;
+
+			}
+
+			let t;
+
+			if ( ax !== 0 ) {
+
+				t = bx / ax;
+
+			} else {
+
+				t = by / ay;
+
+			}
+
+			classifyResult.loc = IntersectionLocationType.BETWEEN;
+			classifyResult.t = t;
+
+		}
+
+		function getIntersections( path1, path2 ) {
+
+			const intersectionsRaw = [];
+			const intersections = [];
+
+			for ( let index = 1; index < path1.length; index ++ ) {
+
+				const path1EdgeStart = path1[ index - 1 ];
+				const path1EdgeEnd = path1[ index ];
+
+				for ( let index2 = 1; index2 < path2.length; index2 ++ ) {
+
+					const path2EdgeStart = path2[ index2 - 1 ];
+					const path2EdgeEnd = path2[ index2 ];
+
+					const intersection = findEdgeIntersection( path1EdgeStart, path1EdgeEnd, path2EdgeStart, path2EdgeEnd );
+
+					if ( intersection !== null && intersectionsRaw.find( i => i.t <= intersection.t + Number.EPSILON && i.t >= intersection.t - Number.EPSILON ) === undefined ) {
+
+						intersectionsRaw.push( intersection );
+						intersections.push( new Vector2( intersection.x, intersection.y ) );
+
+					}
+
+				}
+
+			}
+
+			return intersections;
+
+		}
+
+		function getScanlineIntersections( scanline, boundingBox, paths ) {
+
+			const center = new Vector2();
+			boundingBox.getCenter( center );
+
+			const allIntersections = [];
+
+			paths.forEach( path => {
+
+				// check if the center of the bounding box is in the bounding box of the paths.
+				// this is a pruning method to limit the search of intersections in paths that can't envelop of the current path.
+				// if a path envelops another path. The center of that oter path, has to be inside the bounding box of the enveloping path.
+				if ( path.boundingBox.containsPoint( center ) ) {
+
+					const intersections = getIntersections( scanline, path.points );
+
+					intersections.forEach( p => {
+
+						allIntersections.push( { identifier: path.identifier, isCW: path.isCW, point: p } );
+
+					} );
+
+				}
+
+			} );
+
+			allIntersections.sort( ( i1, i2 ) => {
+
+				return i1.point.x - i2.point.x;
+
+			} );
+
+			return allIntersections;
+
+		}
+
+		function isHoleTo( simplePath, allPaths, scanlineMinX, scanlineMaxX, _fillRule ) {
+
+			if ( _fillRule === null || _fillRule === undefined || _fillRule === '' ) {
+
+				_fillRule = 'nonzero';
+
+			}
+
+			const centerBoundingBox = new Vector2();
+			simplePath.boundingBox.getCenter( centerBoundingBox );
+
+			const scanline = [ new Vector2( scanlineMinX, centerBoundingBox.y ), new Vector2( scanlineMaxX, centerBoundingBox.y ) ];
+
+			const scanlineIntersections = getScanlineIntersections( scanline, simplePath.boundingBox, allPaths );
+
+			scanlineIntersections.sort( ( i1, i2 ) => {
+
+				return i1.point.x - i2.point.x;
+
+			} );
+
+			const baseIntersections = [];
+			const otherIntersections = [];
+
+			scanlineIntersections.forEach( i => {
+
+				if ( i.identifier === simplePath.identifier ) {
+
+					baseIntersections.push( i );
+
+				} else {
+
+					otherIntersections.push( i );
+
+				}
+
+			} );
+
+			const firstXOfPath = baseIntersections[ 0 ].point.x;
+
+			// build up the path hierarchy
+			const stack = [];
+			let i = 0;
+
+			while ( i < otherIntersections.length && otherIntersections[ i ].point.x < firstXOfPath ) {
+
+				if ( stack.length > 0 && stack[ stack.length - 1 ] === otherIntersections[ i ].identifier ) {
+
+					stack.pop();
+
+				} else {
+
+					stack.push( otherIntersections[ i ].identifier );
+
+				}
+
+				i ++;
+
+			}
+
+			stack.push( simplePath.identifier );
+
+			if ( _fillRule === 'evenodd' ) {
+
+				const isHole = stack.length % 2 === 0 ? true : false;
+				const isHoleFor = stack[ stack.length - 2 ];
+
+				return { identifier: simplePath.identifier, isHole: isHole, for: isHoleFor };
+
+			} else if ( _fillRule === 'nonzero' ) {
+
+				// check if path is a hole by counting the amount of paths with alternating rotations it has to cross.
+				let isHole = true;
+				let isHoleFor = null;
+				let lastCWValue = null;
+
+				for ( let i = 0; i < stack.length; i ++ ) {
+
+					const identifier = stack[ i ];
+					if ( isHole ) {
+
+						lastCWValue = allPaths[ identifier ].isCW;
+						isHole = false;
+						isHoleFor = identifier;
+
+					} else if ( lastCWValue !== allPaths[ identifier ].isCW ) {
+
+						lastCWValue = allPaths[ identifier ].isCW;
+						isHole = true;
+
+					}
+
+				}
+
+				return { identifier: simplePath.identifier, isHole: isHole, for: isHoleFor };
+
+			} else {
+
+				console.warn( 'fill-rule: "' + _fillRule + '" is currently not implemented.' );
+
+			}
+
+		}
+
+		// check for self intersecting paths
+		// TODO
+
+		// check intersecting paths
+		// TODO
+
+		// prepare paths for hole detection
+		let scanlineMinX = BIGNUMBER;
+		let scanlineMaxX = - BIGNUMBER;
+
+		let simplePaths = shapePath.subPaths.map( p => {
+
+			const points = p.getPoints();
+			let maxY = - BIGNUMBER;
+			let minY = BIGNUMBER;
+			let maxX = - BIGNUMBER;
+			let minX = BIGNUMBER;
+
+	      	//points.forEach(p => p.y *= -1);
+
+			for ( let i = 0; i < points.length; i ++ ) {
+
+				const p = points[ i ];
+
+				if ( p.y > maxY ) {
+
+					maxY = p.y;
+
+				}
+
+				if ( p.y < minY ) {
+
+					minY = p.y;
+
+				}
+
+				if ( p.x > maxX ) {
+
+					maxX = p.x;
+
+				}
+
+				if ( p.x < minX ) {
+
+					minX = p.x;
+
+				}
+
+			}
+
+			//
+			if ( scanlineMaxX <= maxX ) {
+
+				scanlineMaxX = maxX + 1;
+
+			}
+
+			if ( scanlineMinX >= minX ) {
+
+				scanlineMinX = minX - 1;
+
+			}
+
+			return { curves: p.curves, points: points, isCW: ShapeUtils.isClockWise( points ), identifier: - 1, boundingBox: new Box2( new Vector2( minX, minY ), new Vector2( maxX, maxY ) ) };
+
+		} );
+
+		simplePaths = simplePaths.filter( sp => sp.points.length > 1 );
+
+		for ( let identifier = 0; identifier < simplePaths.length; identifier ++ ) {
+
+			simplePaths[ identifier ].identifier = identifier;
+
+		}
+
+		// check if path is solid or a hole
+		const isAHole = simplePaths.map( p => isHoleTo( p, simplePaths, scanlineMinX, scanlineMaxX, ( shapePath.userData ? shapePath.userData.style.fillRule : undefined ) ) );
+
+
+		const shapesToReturn = [];
+		simplePaths.forEach( p => {
+
+			const amIAHole = isAHole[ p.identifier ];
+
+			if ( ! amIAHole.isHole ) {
+
+				const shape = new Shape();
+				shape.curves = p.curves;
+				const holes = isAHole.filter( h => h.isHole && h.for === p.identifier );
+				holes.forEach( h => {
+
+					const hole = simplePaths[ h.identifier ];
+					const path = new Path();
+					path.curves = hole.curves;
+					shape.holes.push( path );
+
+				} );
+				shapesToReturn.push( shape );
+
+			}
+
+		} );
+
+		return shapesToReturn;
+
+	}
+
+	static getStrokeStyle( width, color, lineJoin, lineCap, miterLimit ) {
+
+		// Param width: Stroke width
+		// Param color: As returned by THREE.Color.getStyle()
+		// Param lineJoin: One of "round", "bevel", "miter" or "miter-limit"
+		// Param lineCap: One of "round", "square" or "butt"
+		// Param miterLimit: Maximum join length, in multiples of the "width" parameter (join is truncated if it exceeds that distance)
+		// Returns style object
+
+		width = width !== undefined ? width : 1;
+		color = color !== undefined ? color : '#000';
+		lineJoin = lineJoin !== undefined ? lineJoin : 'miter';
+		lineCap = lineCap !== undefined ? lineCap : 'butt';
+		miterLimit = miterLimit !== undefined ? miterLimit : 4;
+
+		return {
+			strokeColor: color,
+			strokeWidth: width,
+			strokeLineJoin: lineJoin,
+			strokeLineCap: lineCap,
+			strokeMiterLimit: miterLimit
+		};
+
+	}
+
+	static pointsToStroke( points, style, arcDivisions, minDistance ) {
+
+		// Generates a stroke with some width around the given path.
+		// The path can be open or closed (last point equals to first point)
+		// Param points: Array of Vector2D (the path). Minimum 2 points.
+		// Param style: Object with SVG properties as returned by SVGLoader.getStrokeStyle(), or SVGLoader.parse() in the path.userData.style object
+		// Params arcDivisions: Arc divisions for round joins and endcaps. (Optional)
+		// Param minDistance: Points closer to this distance will be merged. (Optional)
+		// Returns BufferGeometry with stroke triangles (In plane z = 0). UV coordinates are generated ('u' along path. 'v' across it, from left to right)
+
+		const vertices = [];
+		const normals = [];
+		const uvs = [];
+
+		if ( SVGLoader.pointsToStrokeWithBuffers( points, style, arcDivisions, minDistance, vertices, normals, uvs ) === 0 ) {
+
+			return null;
+
+		}
+
+		const geometry = new BufferGeometry();
+		geometry.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+		geometry.setAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+		geometry.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
+
+		return geometry;
+
+	}
+
+	static pointsToStrokeWithBuffers( points, style, arcDivisions, minDistance, vertices, normals, uvs, vertexOffset ) {
+
+		// This function can be called to update existing arrays or buffers.
+		// Accepts same parameters as pointsToStroke, plus the buffers and optional offset.
+		// Param vertexOffset: Offset vertices to start writing in the buffers (3 elements/vertex for vertices and normals, and 2 elements/vertex for uvs)
+		// Returns number of written vertices / normals / uvs pairs
+		// if 'vertices' parameter is undefined no triangles will be generated, but the returned vertices count will still be valid (useful to preallocate the buffers)
+		// 'normals' and 'uvs' buffers are optional
+
+		const tempV2_1 = new Vector2();
+		const tempV2_2 = new Vector2();
+		const tempV2_3 = new Vector2();
+		const tempV2_4 = new Vector2();
+		const tempV2_5 = new Vector2();
+		const tempV2_6 = new Vector2();
+		const tempV2_7 = new Vector2();
+		const lastPointL = new Vector2();
+		const lastPointR = new Vector2();
+		const point0L = new Vector2();
+		const point0R = new Vector2();
+		const currentPointL = new Vector2();
+		const currentPointR = new Vector2();
+		const nextPointL = new Vector2();
+		const nextPointR = new Vector2();
+		const innerPoint = new Vector2();
+		const outerPoint = new Vector2();
+
+		arcDivisions = arcDivisions !== undefined ? arcDivisions : 12;
+		minDistance = minDistance !== undefined ? minDistance : 0.001;
+		vertexOffset = vertexOffset !== undefined ? vertexOffset : 0;
+
+		// First ensure there are no duplicated points
+		points = removeDuplicatedPoints( points );
+
+		const numPoints = points.length;
+
+		if ( numPoints < 2 ) return 0;
+
+		const isClosed = points[ 0 ].equals( points[ numPoints - 1 ] );
+
+		let currentPoint;
+		let previousPoint = points[ 0 ];
+		let nextPoint;
+
+		const strokeWidth2 = style.strokeWidth / 2;
+
+		const deltaU = 1 / ( numPoints - 1 );
+		let u0 = 0, u1;
+
+		let innerSideModified;
+		let joinIsOnLeftSide;
+		let isMiter;
+		let initialJoinIsOnLeftSide = false;
+
+		let numVertices = 0;
+		let currentCoordinate = vertexOffset * 3;
+		let currentCoordinateUV = vertexOffset * 2;
+
+		// Get initial left and right stroke points
+		getNormal( points[ 0 ], points[ 1 ], tempV2_1 ).multiplyScalar( strokeWidth2 );
+		lastPointL.copy( points[ 0 ] ).sub( tempV2_1 );
+		lastPointR.copy( points[ 0 ] ).add( tempV2_1 );
+		point0L.copy( lastPointL );
+		point0R.copy( lastPointR );
+
+		for ( let iPoint = 1; iPoint < numPoints; iPoint ++ ) {
+
+			currentPoint = points[ iPoint ];
+
+			// Get next point
+			if ( iPoint === numPoints - 1 ) {
+
+				if ( isClosed ) {
+
+					// Skip duplicated initial point
+					nextPoint = points[ 1 ];
+
+				} else nextPoint = undefined;
+
+			} else {
+
+				nextPoint = points[ iPoint + 1 ];
+
+			}
+
+			// Normal of previous segment in tempV2_1
+			const normal1 = tempV2_1;
+			getNormal( previousPoint, currentPoint, normal1 );
+
+			tempV2_3.copy( normal1 ).multiplyScalar( strokeWidth2 );
+			currentPointL.copy( currentPoint ).sub( tempV2_3 );
+			currentPointR.copy( currentPoint ).add( tempV2_3 );
+
+			u1 = u0 + deltaU;
+
+			innerSideModified = false;
+
+			if ( nextPoint !== undefined ) {
+
+				// Normal of next segment in tempV2_2
+				getNormal( currentPoint, nextPoint, tempV2_2 );
+
+				tempV2_3.copy( tempV2_2 ).multiplyScalar( strokeWidth2 );
+				nextPointL.copy( currentPoint ).sub( tempV2_3 );
+				nextPointR.copy( currentPoint ).add( tempV2_3 );
+
+				joinIsOnLeftSide = true;
+				tempV2_3.subVectors( nextPoint, previousPoint );
+				if ( normal1.dot( tempV2_3 ) < 0 ) {
+
+					joinIsOnLeftSide = false;
+
+				}
+
+				if ( iPoint === 1 ) initialJoinIsOnLeftSide = joinIsOnLeftSide;
+
+				tempV2_3.subVectors( nextPoint, currentPoint );
+				tempV2_3.normalize();
+				const dot = Math.abs( normal1.dot( tempV2_3 ) );
+
+				// If path is straight, don't create join
+				if ( dot > Number.EPSILON ) {
+
+					// Compute inner and outer segment intersections
+					const miterSide = strokeWidth2 / dot;
+					tempV2_3.multiplyScalar( - miterSide );
+					tempV2_4.subVectors( currentPoint, previousPoint );
+					tempV2_5.copy( tempV2_4 ).setLength( miterSide ).add( tempV2_3 );
+					innerPoint.copy( tempV2_5 ).negate();
+					const miterLength2 = tempV2_5.length();
+					const segmentLengthPrev = tempV2_4.length();
+					tempV2_4.divideScalar( segmentLengthPrev );
+					tempV2_6.subVectors( nextPoint, currentPoint );
+					const segmentLengthNext = tempV2_6.length();
+					tempV2_6.divideScalar( segmentLengthNext );
+					// Check that previous and next segments doesn't overlap with the innerPoint of intersection
+					if ( tempV2_4.dot( innerPoint ) < segmentLengthPrev && tempV2_6.dot( innerPoint ) < segmentLengthNext ) {
+
+						innerSideModified = true;
+
+					}
+
+					outerPoint.copy( tempV2_5 ).add( currentPoint );
+					innerPoint.add( currentPoint );
+
+					isMiter = false;
+
+					if ( innerSideModified ) {
+
+						if ( joinIsOnLeftSide ) {
+
+							nextPointR.copy( innerPoint );
+							currentPointR.copy( innerPoint );
+
+						} else {
+
+							nextPointL.copy( innerPoint );
+							currentPointL.copy( innerPoint );
+
+						}
+
+					} else {
+
+						// The segment triangles are generated here if there was overlapping
+
+						makeSegmentTriangles();
+
+					}
+
+					switch ( style.strokeLineJoin ) {
+
+						case 'bevel':
+
+							makeSegmentWithBevelJoin( joinIsOnLeftSide, innerSideModified, u1 );
+
+							break;
+
+						case 'round':
+
+							// Segment triangles
+
+							createSegmentTrianglesWithMiddleSection( joinIsOnLeftSide, innerSideModified );
+
+							// Join triangles
+
+							if ( joinIsOnLeftSide ) {
+
+								makeCircularSector( currentPoint, currentPointL, nextPointL, u1, 0 );
+
+							} else {
+
+								makeCircularSector( currentPoint, nextPointR, currentPointR, u1, 1 );
+
+							}
+
+							break;
+
+						case 'miter':
+						case 'miter-clip':
+						default:
+
+							const miterFraction = ( strokeWidth2 * style.strokeMiterLimit ) / miterLength2;
+
+							if ( miterFraction < 1 ) {
+
+								// The join miter length exceeds the miter limit
+
+								if ( style.strokeLineJoin !== 'miter-clip' ) {
+
+									makeSegmentWithBevelJoin( joinIsOnLeftSide, innerSideModified, u1 );
+									break;
+
+								} else {
+
+									// Segment triangles
+
+									createSegmentTrianglesWithMiddleSection( joinIsOnLeftSide, innerSideModified );
+
+									// Miter-clip join triangles
+
+									if ( joinIsOnLeftSide ) {
+
+										tempV2_6.subVectors( outerPoint, currentPointL ).multiplyScalar( miterFraction ).add( currentPointL );
+										tempV2_7.subVectors( outerPoint, nextPointL ).multiplyScalar( miterFraction ).add( nextPointL );
+
+										addVertex( currentPointL, u1, 0 );
+										addVertex( tempV2_6, u1, 0 );
+										addVertex( currentPoint, u1, 0.5 );
+
+										addVertex( currentPoint, u1, 0.5 );
+										addVertex( tempV2_6, u1, 0 );
+										addVertex( tempV2_7, u1, 0 );
+
+										addVertex( currentPoint, u1, 0.5 );
+										addVertex( tempV2_7, u1, 0 );
+										addVertex( nextPointL, u1, 0 );
+
+									} else {
+
+										tempV2_6.subVectors( outerPoint, currentPointR ).multiplyScalar( miterFraction ).add( currentPointR );
+										tempV2_7.subVectors( outerPoint, nextPointR ).multiplyScalar( miterFraction ).add( nextPointR );
+
+										addVertex( currentPointR, u1, 1 );
+										addVertex( tempV2_6, u1, 1 );
+										addVertex( currentPoint, u1, 0.5 );
+
+										addVertex( currentPoint, u1, 0.5 );
+										addVertex( tempV2_6, u1, 1 );
+										addVertex( tempV2_7, u1, 1 );
+
+										addVertex( currentPoint, u1, 0.5 );
+										addVertex( tempV2_7, u1, 1 );
+										addVertex( nextPointR, u1, 1 );
+
+									}
+
+								}
+
+							} else {
+
+								// Miter join segment triangles
+
+								if ( innerSideModified ) {
+
+									// Optimized segment + join triangles
+
+									if ( joinIsOnLeftSide ) {
+
+										addVertex( lastPointR, u0, 1 );
+										addVertex( lastPointL, u0, 0 );
+										addVertex( outerPoint, u1, 0 );
+
+										addVertex( lastPointR, u0, 1 );
+										addVertex( outerPoint, u1, 0 );
+										addVertex( innerPoint, u1, 1 );
+
+									} else {
+
+										addVertex( lastPointR, u0, 1 );
+										addVertex( lastPointL, u0, 0 );
+										addVertex( outerPoint, u1, 1 );
+
+										addVertex( lastPointL, u0, 0 );
+										addVertex( innerPoint, u1, 0 );
+										addVertex( outerPoint, u1, 1 );
+
+									}
+
+
+									if ( joinIsOnLeftSide ) {
+
+										nextPointL.copy( outerPoint );
+
+									} else {
+
+										nextPointR.copy( outerPoint );
+
+									}
+
+
+								} else {
+
+									// Add extra miter join triangles
+
+									if ( joinIsOnLeftSide ) {
+
+										addVertex( currentPointL, u1, 0 );
+										addVertex( outerPoint, u1, 0 );
+										addVertex( currentPoint, u1, 0.5 );
+
+										addVertex( currentPoint, u1, 0.5 );
+										addVertex( outerPoint, u1, 0 );
+										addVertex( nextPointL, u1, 0 );
+
+									} else {
+
+										addVertex( currentPointR, u1, 1 );
+										addVertex( outerPoint, u1, 1 );
+										addVertex( currentPoint, u1, 0.5 );
+
+										addVertex( currentPoint, u1, 0.5 );
+										addVertex( outerPoint, u1, 1 );
+										addVertex( nextPointR, u1, 1 );
+
+									}
+
+								}
+
+								isMiter = true;
+
+							}
+
+							break;
+
+					}
+
+				} else {
+
+					// The segment triangles are generated here when two consecutive points are collinear
+
+					makeSegmentTriangles();
+
+				}
+
+			} else {
+
+				// The segment triangles are generated here if it is the ending segment
+
+				makeSegmentTriangles();
+
+			}
+
+			if ( ! isClosed && iPoint === numPoints - 1 ) {
+
+				// Start line endcap
+				addCapGeometry( points[ 0 ], point0L, point0R, joinIsOnLeftSide, true, u0 );
+
+			}
+
+			// Increment loop variables
+
+			u0 = u1;
+
+			previousPoint = currentPoint;
+
+			lastPointL.copy( nextPointL );
+			lastPointR.copy( nextPointR );
+
+		}
+
+		if ( ! isClosed ) {
+
+			// Ending line endcap
+			addCapGeometry( currentPoint, currentPointL, currentPointR, joinIsOnLeftSide, false, u1 );
+
+		} else if ( innerSideModified && vertices ) {
+
+			// Modify path first segment vertices to adjust to the segments inner and outer intersections
+
+			let lastOuter = outerPoint;
+			let lastInner = innerPoint;
+
+			if ( initialJoinIsOnLeftSide !== joinIsOnLeftSide ) {
+
+				lastOuter = innerPoint;
+				lastInner = outerPoint;
+
+			}
+
+			if ( joinIsOnLeftSide ) {
+
+				if ( isMiter || initialJoinIsOnLeftSide ) {
+
+					lastInner.toArray( vertices, 0 * 3 );
+					lastInner.toArray( vertices, 3 * 3 );
+
+					if ( isMiter ) {
+
+						lastOuter.toArray( vertices, 1 * 3 );
+
+					}
+
+				}
+
+			} else {
+
+				if ( isMiter || ! initialJoinIsOnLeftSide ) {
+
+					lastInner.toArray( vertices, 1 * 3 );
+					lastInner.toArray( vertices, 3 * 3 );
+
+					if ( isMiter ) {
+
+						lastOuter.toArray( vertices, 0 * 3 );
+
+					}
+
+				}
+
+			}
+
+		}
+
+		return numVertices;
+
+		// -- End of algorithm
+
+		// -- Functions
+
+		function getNormal( p1, p2, result ) {
+
+			result.subVectors( p2, p1 );
+			return result.set( - result.y, result.x ).normalize();
+
+		}
+
+		function addVertex( position, u, v ) {
+
+			if ( vertices ) {
+
+				vertices[ currentCoordinate ] = position.x;
+				vertices[ currentCoordinate + 1 ] = position.y;
+				vertices[ currentCoordinate + 2 ] = 0;
+
+				if ( normals ) {
+
+					normals[ currentCoordinate ] = 0;
+					normals[ currentCoordinate + 1 ] = 0;
+					normals[ currentCoordinate + 2 ] = 1;
+
+				}
+
+				currentCoordinate += 3;
+
+				if ( uvs ) {
+
+					uvs[ currentCoordinateUV ] = u;
+					uvs[ currentCoordinateUV + 1 ] = v;
+
+					currentCoordinateUV += 2;
+
+				}
+
+			}
+
+			numVertices += 3;
+
+		}
+
+		function makeCircularSector( center, p1, p2, u, v ) {
+
+			// param p1, p2: Points in the circle arc.
+			// p1 and p2 are in clockwise direction.
+
+			tempV2_1.copy( p1 ).sub( center ).normalize();
+			tempV2_2.copy( p2 ).sub( center ).normalize();
+
+			let angle = Math.PI;
+			const dot = tempV2_1.dot( tempV2_2 );
+			if ( Math.abs( dot ) < 1 ) angle = Math.abs( Math.acos( dot ) );
+
+			angle /= arcDivisions;
+
+			tempV2_3.copy( p1 );
+
+			for ( let i = 0, il = arcDivisions - 1; i < il; i ++ ) {
+
+				tempV2_4.copy( tempV2_3 ).rotateAround( center, angle );
+
+				addVertex( tempV2_3, u, v );
+				addVertex( tempV2_4, u, v );
+				addVertex( center, u, 0.5 );
+
+				tempV2_3.copy( tempV2_4 );
+
+			}
+
+			addVertex( tempV2_4, u, v );
+			addVertex( p2, u, v );
+			addVertex( center, u, 0.5 );
+
+		}
+
+		function makeSegmentTriangles() {
+
+			addVertex( lastPointR, u0, 1 );
+			addVertex( lastPointL, u0, 0 );
+			addVertex( currentPointL, u1, 0 );
+
+			addVertex( lastPointR, u0, 1 );
+			addVertex( currentPointL, u1, 1 );
+			addVertex( currentPointR, u1, 0 );
+
+		}
+
+		function makeSegmentWithBevelJoin( joinIsOnLeftSide, innerSideModified, u ) {
+
+			if ( innerSideModified ) {
+
+				// Optimized segment + bevel triangles
+
+				if ( joinIsOnLeftSide ) {
+
+					// Path segments triangles
+
+					addVertex( lastPointR, u0, 1 );
+					addVertex( lastPointL, u0, 0 );
+					addVertex( currentPointL, u1, 0 );
+
+					addVertex( lastPointR, u0, 1 );
+					addVertex( currentPointL, u1, 0 );
+					addVertex( innerPoint, u1, 1 );
+
+					// Bevel join triangle
+
+					addVertex( currentPointL, u, 0 );
+					addVertex( nextPointL, u, 0 );
+					addVertex( innerPoint, u, 0.5 );
+
+				} else {
+
+					// Path segments triangles
+
+					addVertex( lastPointR, u0, 1 );
+					addVertex( lastPointL, u0, 0 );
+					addVertex( currentPointR, u1, 1 );
+
+					addVertex( lastPointL, u0, 0 );
+					addVertex( innerPoint, u1, 0 );
+					addVertex( currentPointR, u1, 1 );
+
+					// Bevel join triangle
+
+					addVertex( currentPointR, u, 1 );
+					addVertex( innerPoint, u, 0 );
+					addVertex( nextPointR, u, 1 );
+
+				}
+
+			} else {
+
+				// Bevel join triangle. The segment triangles are done in the main loop
+
+				if ( joinIsOnLeftSide ) {
+
+					addVertex( currentPointL, u, 0 );
+					addVertex( nextPointL, u, 0 );
+					addVertex( currentPoint, u, 0.5 );
+
+				} else {
+
+					addVertex( currentPointR, u, 1 );
+					addVertex( nextPointR, u, 0 );
+					addVertex( currentPoint, u, 0.5 );
+
+				}
+
+			}
+
+		}
+
+		function createSegmentTrianglesWithMiddleSection( joinIsOnLeftSide, innerSideModified ) {
+
+			if ( innerSideModified ) {
+
+				if ( joinIsOnLeftSide ) {
+
+					addVertex( lastPointR, u0, 1 );
+					addVertex( lastPointL, u0, 0 );
+					addVertex( currentPointL, u1, 0 );
+
+					addVertex( lastPointR, u0, 1 );
+					addVertex( currentPointL, u1, 0 );
+					addVertex( innerPoint, u1, 1 );
+
+					addVertex( currentPointL, u0, 0 );
+					addVertex( currentPoint, u1, 0.5 );
+					addVertex( innerPoint, u1, 1 );
+
+					addVertex( currentPoint, u1, 0.5 );
+					addVertex( nextPointL, u0, 0 );
+					addVertex( innerPoint, u1, 1 );
+
+				} else {
+
+					addVertex( lastPointR, u0, 1 );
+					addVertex( lastPointL, u0, 0 );
+					addVertex( currentPointR, u1, 1 );
+
+					addVertex( lastPointL, u0, 0 );
+					addVertex( innerPoint, u1, 0 );
+					addVertex( currentPointR, u1, 1 );
+
+					addVertex( currentPointR, u0, 1 );
+					addVertex( innerPoint, u1, 0 );
+					addVertex( currentPoint, u1, 0.5 );
+
+					addVertex( currentPoint, u1, 0.5 );
+					addVertex( innerPoint, u1, 0 );
+					addVertex( nextPointR, u0, 1 );
+
+				}
+
+			}
+
+		}
+
+		function addCapGeometry( center, p1, p2, joinIsOnLeftSide, start, u ) {
+
+			// param center: End point of the path
+			// param p1, p2: Left and right cap points
+
+			switch ( style.strokeLineCap ) {
+
+				case 'round':
+
+					if ( start ) {
+
+						makeCircularSector( center, p2, p1, u, 0.5 );
+
+					} else {
+
+						makeCircularSector( center, p1, p2, u, 0.5 );
+
+					}
+
+					break;
+
+				case 'square':
+
+					if ( start ) {
+
+						tempV2_1.subVectors( p1, center );
+						tempV2_2.set( tempV2_1.y, - tempV2_1.x );
+
+						tempV2_3.addVectors( tempV2_1, tempV2_2 ).add( center );
+						tempV2_4.subVectors( tempV2_2, tempV2_1 ).add( center );
+
+						// Modify already existing vertices
+						if ( joinIsOnLeftSide ) {
+
+							tempV2_3.toArray( vertices, 1 * 3 );
+							tempV2_4.toArray( vertices, 0 * 3 );
+							tempV2_4.toArray( vertices, 3 * 3 );
+
+						} else {
+
+							tempV2_3.toArray( vertices, 1 * 3 );
+							tempV2_3.toArray( vertices, 3 * 3 );
+							tempV2_4.toArray( vertices, 0 * 3 );
+
+						}
+
+					} else {
+
+						tempV2_1.subVectors( p2, center );
+						tempV2_2.set( tempV2_1.y, - tempV2_1.x );
+
+						tempV2_3.addVectors( tempV2_1, tempV2_2 ).add( center );
+						tempV2_4.subVectors( tempV2_2, tempV2_1 ).add( center );
+
+						const vl = vertices.length;
+
+						// Modify already existing vertices
+						if ( joinIsOnLeftSide ) {
+
+							tempV2_3.toArray( vertices, vl - 1 * 3 );
+							tempV2_4.toArray( vertices, vl - 2 * 3 );
+							tempV2_4.toArray( vertices, vl - 4 * 3 );
+
+						} else {
+
+							tempV2_4.toArray( vertices, vl - 2 * 3 );
+							tempV2_3.toArray( vertices, vl - 1 * 3 );
+							tempV2_4.toArray( vertices, vl - 4 * 3 );
+
+						}
+
+					}
+
+					break;
+
+				case 'butt':
+				default:
+
+					// Nothing to do here
+					break;
+
+			}
+
+		}
+
+		function removeDuplicatedPoints( points ) {
+
+			// Creates a new array if necessary with duplicated points removed.
+			// This does not remove duplicated initial and ending points of a closed path.
+
+			let dupPoints = false;
+			for ( let i = 1, n = points.length - 1; i < n; i ++ ) {
+
+				if ( points[ i ].distanceTo( points[ i + 1 ] ) < minDistance ) {
+
+					dupPoints = true;
+					break;
+
+				}
+
+			}
+
+			if ( ! dupPoints ) return points;
+
+			const newPoints = [];
+			newPoints.push( points[ 0 ] );
+
+			for ( let i = 1, n = points.length - 1; i < n; i ++ ) {
+
+				if ( points[ i ].distanceTo( points[ i + 1 ] ) >= minDistance ) {
+
+					newPoints.push( points[ i ] );
+
+				}
+
+			}
+
+			newPoints.push( points[ points.length - 1 ] );
+
+			return newPoints;
+
+		}
+
+	}
+
+
+}
+
+
+
+return SVGLoader; })();
+const ASSETS = {"bitcoin": "<svg role=\"img\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><title>Bitcoin</title><path d=\"M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002zm-6.35-4.613c.24-1.59-.974-2.45-2.64-3.03l.54-2.153-1.315-.33-.525 2.107c-.345-.087-.705-.167-1.064-.25l.526-2.127-1.32-.33-.54 2.165c-.285-.067-.565-.132-.84-.2l-1.815-.45-.35 1.407s.975.225.955.236c.535.136.63.486.615.766l-1.477 5.92c-.075.166-.24.406-.614.314.015.02-.96-.24-.96-.24l-.66 1.51 1.71.426.93.242-.54 2.19 1.32.327.54-2.17c.36.1.705.19 1.05.273l-.51 2.154 1.32.33.545-2.19c2.24.427 3.93.257 4.64-1.774.57-1.637-.03-2.58-1.217-3.196.854-.193 1.5-.76 1.68-1.93h.01zm-3.01 4.22c-.404 1.64-3.157.75-4.05.53l.72-2.9c.896.23 3.757.67 3.33 2.37zm.41-4.24c-.37 1.49-2.662.735-3.405.55l.654-2.64c.744.18 3.137.524 2.75 2.084v.006z\"/></svg>", "tinder": "<svg role=\"img\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><title>Tinder</title><path d=\"M9.317 9.451c.045.073.123.12.212.12.06 0 .116-.021.158-.057l.015-.012c.39-.325.741-.66 1.071-1.017 3.209-3.483 1.335-7.759 1.32-7.799-.09-.21-.03-.459.15-.594.195-.135.435-.12.615.033 10.875 10.114 7.995 17.818 7.785 18.337-.87 3.141-4.335 5.414-8.444 5.53-.138.008-.242.008-.363.008-4.852 0-8.977-2.989-8.977-6.807v-.06c0-5.297 4.795-10.522 5.009-10.744.136-.149.345-.195.525-.105.18.076.297.255.291.451-.043 1.036.167 1.935.631 2.7v.015l.002.001z\"/></svg>", "instagram": "<svg role=\"img\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><title>Instagram</title><path d=\"M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077\"/></svg>", "hangar_badge": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"221 121 301 301\"><title>Hangar Córdoba badge only (vector trace of official profile picture)</title><path fill=\"#ffffff\" fill-rule=\"evenodd\" d=\"M357.50 418.25C348.31 417.34 338.72 415.56 331.75 413.47C329.82 412.89 327.57 412.24 326.75 412.03C323.82 411.27 315.17 407.85 310.06 405.44C307.21 404.10 304.80 403.00 304.71 403.00C304.62 403.00 301.78 401.39 298.40 399.43C277.34 387.21 259.39 369.84 246.82 349.54C239.07 337.02 234.61 326.76 229.53 309.75C226.34 299.07 224.14 279.01 224.75 266.25C225.38 253.09 228.28 236.20 231.49 227.00C234.83 217.45 235.80 215.04 239.36 207.54C242.24 201.46 248.04 191.67 251.51 187.00C255.44 181.73 256.51 180.34 258.52 177.91C262.38 173.24 272.58 163.04 277.75 158.68C283.09 154.17 296.14 145.27 301.50 142.49C313.72 136.15 320.98 133.20 331.09 130.50C334.20 129.66 337.43 128.77 338.25 128.51C343.21 126.96 358.50 125.09 368.25 124.83C401.41 123.94 433.18 134.07 459.75 154.01C488.05 175.24 507.18 204.48 515.05 238.50C516.85 246.31 517.32 249.30 518.25 259.00C519.19 268.83 519.19 275.32 518.25 284.75C517.12 296.15 515.83 303.18 513.03 313.25C508.89 328.09 500.13 345.85 490.69 358.53C481.70 370.61 468.57 383.77 458.79 390.50C457.40 391.46 455.85 392.61 455.36 393.05C453.52 394.70 441.45 401.59 434.97 404.68C410.99 416.15 383.98 420.87 357.50 418.25ZM390.57 414.99C430.66 409.71 465.98 388.39 489.58 355.25C507.14 330.59 515.98 302.71 516.00 271.92C516.02 233.00 501.63 197.96 474.26 170.30C457.50 153.35 435.56 140.00 414.25 133.77C412.60 133.29 410.69 132.71 410.00 132.48C405.41 130.95 392.22 128.66 384.25 128.01C353.20 125.46 323.48 132.35 297.25 148.18C273.87 162.28 254.82 182.92 242.63 207.34C235.09 222.45 231.03 235.72 228.41 253.75C227.53 259.83 227.53 283.13 228.42 289.75C229.75 299.77 233.11 314.03 235.49 319.75C235.72 320.30 236.40 322.10 237.01 323.75C246.46 349.30 265.88 374.02 289.50 390.57C302.50 399.68 317.32 406.54 334.75 411.50C337.19 412.19 345.48 413.90 349.25 414.49C357.06 415.70 359.74 415.88 371.07 415.94C380.34 415.99 384.53 415.78 390.57 414.99ZM360.00 409.01C320.64 405.88 283.26 384.53 259.67 351.73C249.74 337.92 242.13 321.19 237.98 304.06C235.63 294.39 234.03 281.67 234.03 272.75C234.03 266.65 235.16 253.86 236.24 247.75C242.68 211.33 264.35 178.11 295.08 157.57C330.33 134.01 374.61 127.86 414.50 140.99C467.31 158.38 504.63 205.79 508.98 260.99C510.26 277.22 508.28 295.72 503.59 311.26C493.69 344.14 472.31 371.76 443.00 389.58C426.77 399.44 409.59 405.51 390.06 408.26C383.68 409.16 367.09 409.58 360.00 409.01ZM373.05 399.23C376.81 397.28 375.65 392.00 371.46 392.00C370.02 392.00 369.33 392.31 368.54 393.32C366.82 395.50 367.36 397.85 369.89 399.22C371.58 400.14 371.28 400.14 373.05 399.23ZM386.18 383.49C397.29 381.92 408.25 378.92 416.25 375.27C422.70 372.32 424.09 371.61 429.03 368.69C446.10 358.62 461.40 342.75 470.68 325.50C471.20 324.54 472.12 322.85 472.72 321.75C474.96 317.67 478.94 307.04 480.49 301.00C483.55 289.03 484.17 283.15 483.86 268.78C483.63 257.85 483.47 256.11 482.10 249.75C478.85 234.70 474.03 222.92 466.12 210.75C461.57 203.75 458.64 200.11 452.28 193.57C434.76 175.58 415.03 165.28 389.25 160.67C382.92 159.53 361.99 159.38 355.75 160.42C342.73 162.58 334.10 165.26 323.11 170.53C300.89 181.19 282.72 199.01 271.39 221.25C257.51 248.49 255.46 279.61 265.59 309.25C269.11 319.57 277.00 333.66 284.20 342.50C300.93 363.05 323.90 376.98 349.75 382.23C352.81 382.85 358.01 383.54 364.75 384.21C367.93 384.52 382.26 384.04 386.18 383.49ZM362.25 377.22C361.43 377.11 358.84 376.77 356.50 376.47C354.16 376.16 349.66 375.27 346.50 374.49C320.80 368.09 298.40 352.35 283.90 330.50C276.10 318.75 270.57 305.50 268.03 292.50C263.80 270.85 266.42 247.92 275.31 228.58C276.24 226.56 277.00 224.84 277.00 224.74C277.00 224.32 282.15 215.74 284.52 212.20C289.72 204.46 299.67 193.83 306.75 188.45C322.89 176.19 340.51 169.01 360.00 166.78C391.29 163.18 422.80 174.02 445.44 196.15C462.07 212.41 472.27 232.09 476.32 255.75C477.42 262.18 477.57 280.27 476.57 286.50C473.93 302.99 468.47 317.28 459.96 329.98C455.40 336.79 449.34 344.15 444.96 348.20C428.74 363.22 410.60 372.32 389.00 376.27C384.95 377.01 365.75 377.69 362.25 377.22ZM381.05 358.46C401.74 355.83 419.06 347.51 433.04 333.50C448.73 317.77 457.36 298.42 458.78 275.75C459.35 266.66 457.78 255.11 454.64 245.28C450.51 232.35 443.63 221.02 433.85 211.06C419.87 196.80 403.56 188.61 382.93 185.46C377.12 184.58 360.44 185.15 354.75 186.43C344.69 188.69 340.63 190.13 331.75 194.60C316.38 202.34 302.13 216.68 294.30 232.29C287.54 245.79 284.97 256.70 284.95 271.98C284.94 286.24 287.30 296.85 293.27 309.29C301.75 327.00 315.71 341.14 333.16 349.70C343.62 354.83 351.83 357.24 363.75 358.67C367.18 359.08 377.13 358.96 381.05 358.46ZM361.50 353.18C353.58 352.22 344.14 349.31 335.75 345.25C314.29 334.85 298.26 315.11 292.30 291.75C290.13 283.24 289.39 270.56 290.52 261.45C294.39 230.45 316.49 203.81 346.49 193.99C355.53 191.03 360.73 190.26 371.75 190.26C382.82 190.26 387.97 191.03 397.18 194.05C421.62 202.05 441.01 221.19 449.27 245.47C452.57 255.20 453.21 259.44 453.23 271.75C453.24 279.19 453.04 283.64 452.59 285.50C452.23 287.01 451.60 289.71 451.19 291.50C449.40 299.36 444.94 309.64 440.35 316.50C427.77 335.32 409.23 347.82 387.25 352.30C383.37 353.09 365.73 353.70 361.50 353.18ZM354.88 306.53C354.98 290.41 355.16 285.21 355.62 284.92C356.70 284.26 387.43 284.56 387.99 285.24C388.30 285.61 388.54 293.93 388.62 306.79L388.75 327.75L405.50 327.86C414.71 327.91 422.64 327.84 423.12 327.70C423.95 327.45 424.00 324.37 424.00 272.22L424.00 217.00L406.26 217.00L388.51 217.00L388.38 235.62L388.25 254.25L371.75 254.25L355.25 254.25L355.12 235.62L354.99 216.99L337.37 217.12L319.75 217.25L319.62 272.00C319.55 302.11 319.60 327.03 319.73 327.38C319.92 327.88 323.72 327.98 337.36 327.88L354.75 327.75L354.88 306.53ZM251.25 303.50C252.42 301.65 252.68 301.50 254.76 301.50C257.38 301.50 257.65 300.78 255.71 298.96C254.40 297.73 254.33 296.91 255.29 293.62C255.69 292.24 254.78 292.14 252.33 293.31C250.68 294.10 250.57 294.08 248.73 292.83C247.69 292.12 246.66 291.65 246.44 291.79C246.23 291.92 246.16 293.09 246.30 294.39C246.54 296.64 246.47 296.81 244.79 298.00C243.82 298.69 243.09 299.46 243.17 299.71C243.25 299.97 244.20 300.42 245.28 300.71C246.89 301.15 247.44 301.64 248.25 303.36C248.80 304.52 249.42 305.47 249.62 305.48C249.82 305.49 250.56 304.60 251.25 303.50ZM495.77 303.27C496.60 301.29 497.79 300.50 499.94 300.50C502.12 300.50 502.19 299.88 500.23 297.98C498.59 296.39 498.51 296.16 498.81 293.90C499.15 291.33 498.94 291.14 497.00 292.25C495.39 293.17 493.51 293.16 492.28 292.23C490.43 290.84 489.88 291.27 490.21 293.88C490.49 296.03 490.38 296.41 489.01 297.94C487.09 300.09 487.11 300.50 489.14 300.50C491.19 300.50 492.68 301.52 493.49 303.48C494.31 305.45 494.88 305.40 495.77 303.27ZM245.70 277.60C246.56 276.51 246.89 276.43 249.32 276.74C250.80 276.92 252.00 276.89 252.00 276.66C252.00 276.43 251.51 275.33 250.92 274.20L249.83 272.15L250.96 270.55C252.59 268.27 252.11 267.47 249.45 268.07C247.43 268.52 247.26 268.46 245.51 266.76C243.54 264.84 243.00 264.90 243.00 267.04C243.00 269.22 242.51 269.97 240.44 271.03C238.30 272.12 238.01 272.78 239.46 273.24C241.54 273.90 243.00 275.53 243.00 277.20C243.00 279.86 243.81 279.98 245.70 277.60ZM501.09 275.26C501.23 273.49 501.49 273.13 503.38 272.09C504.54 271.45 505.50 270.74 505.50 270.52C505.50 270.29 504.63 269.76 503.57 269.33C501.50 268.51 501.00 267.76 501.00 265.49C501.00 263.38 500.16 263.22 498.48 265.03C497.07 266.53 496.84 266.61 494.49 266.30C491.64 265.92 491.53 266.12 493.02 269.04L494.04 271.04L493.02 272.47C491.74 274.27 491.67 275.66 492.88 275.32C496.34 274.34 496.76 274.42 498.46 276.28C500.32 278.33 500.86 278.12 501.09 275.26ZM247.64 250.50L249.34 249.50L251.39 250.62C252.51 251.23 253.57 251.60 253.73 251.43C253.90 251.27 253.82 250.17 253.56 249.00C253.10 246.97 253.16 246.79 254.78 245.12C256.68 243.16 256.61 242.50 254.51 242.50C252.24 242.50 251.49 242.00 250.67 239.93C250.24 238.87 249.71 238.00 249.48 238.00C249.26 238.00 248.55 238.96 247.91 240.12C246.92 241.92 246.47 242.27 244.99 242.39C241.86 242.65 241.76 242.86 243.70 245.01C245.50 247.00 245.60 247.50 244.74 250.33C244.55 250.95 244.93 251.50 245.55 251.50C245.77 251.50 246.71 251.05 247.64 250.50ZM497.58 248.88C497.43 246.77 497.57 246.45 499.32 244.84L501.23 243.10L498.77 242.38C496.57 241.74 496.23 241.44 495.55 239.58C495.13 238.44 494.62 237.50 494.40 237.50C494.19 237.50 493.42 238.40 492.69 239.50C491.48 241.33 491.18 241.50 489.18 241.50C486.63 241.50 486.48 241.98 488.31 244.38C489.51 245.95 489.58 246.27 489.06 247.98C488.75 249.02 488.50 250.01 488.50 250.18C488.50 250.75 489.92 250.52 491.71 249.67C493.42 248.85 493.49 248.86 495.10 250.14C496.01 250.86 496.98 251.39 497.25 251.31C497.52 251.23 497.68 250.13 497.58 248.88ZM374.04 150.04C374.84 149.23 375.50 148.09 375.50 147.50C375.50 146.18 372.92 143.50 371.65 143.50C370.47 143.50 368.67 144.75 367.97 146.05C367.16 147.57 367.88 149.90 369.42 150.74C371.40 151.81 372.42 151.66 374.04 150.04Z\"/></svg>", "hangar_logo": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"101 120 533 475\"><title>Hangar Córdoba (vector trace of official profile picture)</title><path fill=\"#ffffff\" fill-rule=\"evenodd\" d=\"M378.73 590.56C378.46 590.32 375.92 588.91 373.07 587.44L367.89 584.77L362.23 587.75C359.11 589.39 356.40 590.57 356.20 590.36C356.00 590.16 356.20 588.03 356.65 585.62C358.29 576.82 358.67 578.33 353.42 573.13C350.40 570.15 348.94 568.37 349.26 568.06C349.53 567.79 352.30 567.23 355.41 566.80C358.52 566.37 361.28 565.89 361.55 565.72C361.81 565.56 363.26 562.96 364.77 559.96C366.28 556.96 367.73 554.50 368.00 554.50C368.27 554.50 369.72 557.06 371.23 560.19C374.34 566.63 373.37 566.00 381.75 567.01C384.23 567.31 386.47 567.78 386.74 568.05C387.06 568.37 385.64 570.06 382.62 572.94C380.08 575.36 378.00 577.62 378.00 577.96C378.00 578.30 378.46 581.18 379.02 584.37C379.97 589.75 379.88 591.63 378.73 590.56ZM394.19 581.40C393.96 581.03 396.84 574.20 397.71 573.05C398.17 572.44 407.42 572.39 461.75 572.68C496.68 572.86 528.62 573.13 532.75 573.27C536.88 573.41 549.36 573.75 560.50 574.03C591.70 574.79 623.63 576.19 625.34 576.86C626.79 577.44 623.98 577.87 618.43 577.94C615.78 577.97 609.70 578.21 604.93 578.47C592.89 579.13 570.81 579.89 544.25 580.55C517.87 581.21 394.50 581.91 394.19 581.40ZM216.50 580.95C189.29 580.55 158.38 579.73 143.00 579.00C137.36 578.73 129.15 578.38 124.75 578.23C108.22 577.66 107.25 576.80 122.26 576.00C163.37 573.82 229.19 572.52 300.15 572.51L339.04 572.50L340.53 575.81C341.34 577.63 342.15 579.66 342.31 580.32L342.61 581.52L291.68 581.41C263.67 581.35 229.84 581.14 216.50 580.95ZM403.00 539.21C389.75 536.88 379.87 528.27 375.24 515.00C373.33 509.52 372.79 505.39 372.82 496.25C372.84 486.31 373.71 481.39 376.51 475.16C383.26 460.18 397.98 452.25 417.34 453.15C423.33 453.43 429.44 454.40 431.75 455.43C437.90 458.18 440.02 459.54 443.51 463.00C445.59 465.06 447.99 468.00 448.84 469.52C450.62 472.70 453.00 479.85 453.00 482.03L453.00 483.50L440.54 483.50L428.08 483.50L427.54 481.86C426.76 479.51 424.29 476.71 421.59 475.13C419.54 473.92 418.73 473.75 415.00 473.75C409.82 473.75 406.91 474.97 404.20 478.28C398.03 485.80 397.51 506.77 403.30 514.36C405.55 517.30 408.19 518.86 412.07 519.51C419.59 520.78 426.30 517.88 429.21 512.12C430.25 510.06 430.22 510.05 423.50 509.88L418.25 509.75L418.25 501.00L418.25 492.25L436.00 492.25L453.75 492.25L454.00 514.42C454.18 530.60 454.10 536.71 453.68 537.06C453.37 537.32 449.63 537.47 445.19 537.39L437.27 537.25L436.61 534.27C436.25 532.63 435.85 531.19 435.74 531.07C435.62 530.95 434.56 531.63 433.39 532.58C427.21 537.57 422.52 539.03 412.00 539.26C407.74 539.35 403.69 539.33 403.00 539.21ZM106.23 536.88C106.10 536.54 106.05 518.02 106.12 495.75L106.25 455.25L119.25 455.25L132.25 455.25L132.50 469.00L132.75 482.75L144.87 482.88L156.98 483.02L157.12 469.13L157.25 455.25L170.37 455.12L183.49 454.98L183.62 495.78C183.71 525.51 183.60 536.71 183.19 537.05C182.86 537.32 177.26 537.46 169.94 537.38L157.25 537.25L157.00 521.50L156.75 505.75L144.75 505.75L132.75 505.75L132.50 521.50L132.25 537.25L119.36 537.38C109.32 537.49 106.42 537.38 106.23 536.88ZM191.24 536.98C191.06 536.69 191.11 536.18 191.35 535.85C191.59 535.52 192.05 534.46 192.36 533.50C192.90 531.85 195.79 523.59 202.60 504.25C204.24 499.57 205.77 495.19 206.00 494.50C206.50 493.00 211.40 479.07 214.97 469.00C216.39 465.01 218.00 460.35 218.54 458.63C219.30 456.26 219.80 455.44 220.64 455.24C221.25 455.09 227.36 455.03 234.22 455.11L246.68 455.25L247.56 457.75C248.04 459.12 249.36 462.84 250.50 466.00C251.63 469.16 253.21 473.66 254.01 476.00C254.80 478.34 256.61 483.51 258.02 487.50C259.44 491.49 261.46 497.23 262.52 500.25C263.57 503.27 265.59 509.01 267.00 513.00C268.41 516.99 269.98 521.49 270.50 523.00C271.01 524.51 272.25 528.00 273.25 530.75C274.25 533.50 275.11 536.09 275.16 536.50C275.24 537.15 273.52 537.25 262.29 537.25L249.33 537.25L248.73 535.25C248.39 534.15 247.85 532.24 247.51 531.00C247.17 529.76 246.70 528.24 246.46 527.62L246.02 526.50L233.28 526.50C218.65 526.50 220.27 525.87 218.50 532.25C217.89 534.45 217.16 536.53 216.88 536.88C216.23 537.69 191.74 537.78 191.24 536.98ZM283.23 536.88C283.10 536.54 283.05 518.02 283.12 495.75L283.25 455.25L295.75 455.25L308.25 455.25L315.36 467.00C319.28 473.46 322.79 479.31 323.16 480.00C323.54 480.69 325.83 484.51 328.25 488.49C330.68 492.48 333.02 496.75 333.47 497.99C333.91 499.23 334.50 500.63 334.76 501.09C335.08 501.64 335.19 494.27 335.08 479.68C334.99 467.44 335.05 456.87 335.22 456.20L335.52 454.98L347.89 455.12L360.25 455.25L360.25 496.25L360.25 537.25L347.90 537.38C335.58 537.52 335.56 537.52 334.75 536.38C333.90 535.21 324.51 519.94 321.48 514.81C320.53 513.20 319.39 511.30 318.95 510.57C313.23 501.18 311.05 497.38 310.29 495.50C309.80 494.26 309.14 492.69 308.82 492.00C308.38 491.03 308.19 495.99 308.00 514.00L307.75 537.25L295.61 537.38C286.17 537.49 283.42 537.38 283.23 536.88ZM461.41 537.24C461.27 537.10 463.38 530.63 466.12 522.87C468.85 515.10 471.99 506.16 473.09 503.00C474.20 499.84 475.29 496.80 475.51 496.25C475.74 495.70 476.49 493.56 477.18 491.50C477.88 489.44 479.38 485.16 480.52 482.00C481.65 478.84 483.71 472.99 485.09 469.00C486.46 465.01 488.04 460.47 488.58 458.91C489.12 457.34 489.86 455.82 490.22 455.52C490.66 455.16 495.08 455.03 503.80 455.12L516.72 455.25L517.66 457.75C518.18 459.12 520.13 464.64 522.00 470.00C523.86 475.36 525.96 481.32 526.66 483.25C528.46 488.20 537.42 513.70 538.51 517.00C539.81 520.90 541.99 527.07 542.50 528.25C543.75 531.16 545.45 536.68 545.21 537.06C545.06 537.30 539.36 537.50 532.53 537.50C522.92 537.50 520.00 537.35 519.58 536.85C519.09 536.25 517.80 532.14 517.13 529.00C516.59 526.48 516.69 526.50 503.22 526.50C496.06 526.50 490.44 526.70 490.28 526.96C490.12 527.21 489.42 529.40 488.72 531.82C488.01 534.24 487.20 536.51 486.91 536.86C486.50 537.35 483.46 537.50 474.02 537.50C467.23 537.50 461.55 537.38 461.41 537.24ZM553.23 536.88C553.10 536.53 553.05 518.02 553.12 495.75L553.25 455.25L575.47 455.12C592.71 455.02 598.93 455.15 603.22 455.72C618.99 457.80 625.22 463.15 626.73 475.90C627.17 479.66 626.16 486.28 624.68 489.25C623.19 492.25 619.46 496.21 616.88 497.55C614.84 498.60 614.50 499.38 615.88 499.80C621.13 501.43 624.79 505.26 626.09 510.50C626.33 511.46 626.74 516.63 627.00 521.99C627.40 530.16 627.62 531.92 628.40 532.99C629.76 534.86 630.09 536.04 629.45 536.81C628.70 537.71 603.77 537.83 603.21 536.94C602.38 535.59 601.94 532.17 601.53 524.00C601.29 519.19 600.81 514.55 600.47 513.71C599.72 511.86 597.27 510.07 594.65 509.47C592.33 508.93 579.50 508.85 579.49 509.38C579.49 509.58 579.48 515.71 579.46 522.99C579.45 531.54 579.25 536.45 578.91 536.86C578.15 537.78 553.58 537.79 553.23 536.88ZM241.00 508.20C241.00 507.76 240.35 505.23 239.55 502.58C238.75 499.92 237.17 494.49 236.02 490.50C233.37 481.27 233.54 481.75 233.06 482.29C232.83 482.54 231.06 488.26 229.12 495.00C227.18 501.74 225.44 507.64 225.24 508.12C224.92 508.94 225.48 509.00 232.95 509.00C239.98 509.00 241.00 508.90 241.00 508.20ZM511.27 508.13C511.09 507.66 509.34 501.64 507.39 494.76C505.43 487.88 503.75 482.16 503.66 482.04C503.24 481.50 502.70 483.16 497.67 500.50C497.23 502.01 496.56 504.21 496.18 505.39C494.97 509.19 494.58 509.00 503.55 509.00C510.99 509.00 511.58 508.93 511.27 508.13ZM598.80 489.37C601.15 488.13 602.10 486.31 602.13 483.00C602.17 479.25 600.96 477.11 598.25 476.11C595.76 475.19 580.82 474.61 579.87 475.40C579.32 475.86 579.22 479.43 579.49 490.19C579.50 490.43 583.48 490.53 588.38 490.40C595.29 490.23 597.59 490.00 598.80 489.37ZM357.50 418.25C348.31 417.34 338.72 415.56 331.75 413.47C329.82 412.89 327.57 412.24 326.75 412.03C323.82 411.27 315.17 407.85 310.06 405.44C307.21 404.10 304.80 403.00 304.71 403.00C304.62 403.00 301.78 401.39 298.40 399.43C277.34 387.21 259.39 369.84 246.82 349.54C239.07 337.02 234.61 326.76 229.53 309.75C226.34 299.07 224.14 279.01 224.75 266.25C225.38 253.09 228.28 236.20 231.49 227.00C234.83 217.45 235.80 215.04 239.36 207.54C242.24 201.46 248.04 191.67 251.51 187.00C255.44 181.73 256.51 180.34 258.52 177.91C262.38 173.24 272.58 163.04 277.75 158.68C283.09 154.17 296.14 145.27 301.50 142.49C313.72 136.15 320.98 133.20 331.09 130.50C334.20 129.66 337.43 128.77 338.25 128.51C343.21 126.96 358.50 125.09 368.25 124.83C401.41 123.94 433.18 134.07 459.75 154.01C488.05 175.24 507.18 204.48 515.05 238.50C516.85 246.31 517.32 249.30 518.25 259.00C519.19 268.83 519.19 275.32 518.25 284.75C517.12 296.15 515.83 303.18 513.03 313.25C508.89 328.09 500.13 345.85 490.69 358.53C481.70 370.61 468.57 383.77 458.79 390.50C457.40 391.46 455.85 392.61 455.36 393.05C453.52 394.70 441.45 401.59 434.97 404.68C410.99 416.15 383.98 420.87 357.50 418.25ZM390.57 414.99C430.66 409.71 465.98 388.39 489.58 355.25C507.14 330.59 515.98 302.71 516.00 271.92C516.02 233.00 501.63 197.96 474.26 170.30C457.50 153.35 435.56 140.00 414.25 133.77C412.60 133.29 410.69 132.71 410.00 132.48C405.41 130.95 392.22 128.66 384.25 128.01C353.20 125.46 323.48 132.35 297.25 148.18C273.87 162.28 254.82 182.92 242.63 207.34C235.09 222.45 231.03 235.72 228.41 253.75C227.53 259.83 227.53 283.13 228.42 289.75C229.75 299.77 233.11 314.03 235.49 319.75C235.72 320.30 236.40 322.10 237.01 323.75C246.46 349.30 265.88 374.02 289.50 390.57C302.50 399.68 317.32 406.54 334.75 411.50C337.19 412.19 345.48 413.90 349.25 414.49C357.06 415.70 359.74 415.88 371.07 415.94C380.34 415.99 384.53 415.78 390.57 414.99ZM360.00 409.01C320.64 405.88 283.26 384.53 259.67 351.73C249.74 337.92 242.13 321.19 237.98 304.06C235.63 294.39 234.03 281.67 234.03 272.75C234.03 266.65 235.16 253.86 236.24 247.75C242.68 211.33 264.35 178.11 295.08 157.57C330.33 134.01 374.61 127.86 414.50 140.99C467.31 158.38 504.63 205.79 508.98 260.99C510.26 277.22 508.28 295.72 503.59 311.26C493.69 344.14 472.31 371.76 443.00 389.58C426.77 399.44 409.59 405.51 390.06 408.26C383.68 409.16 367.09 409.58 360.00 409.01ZM373.05 399.23C376.81 397.28 375.65 392.00 371.46 392.00C370.02 392.00 369.33 392.31 368.54 393.32C366.82 395.50 367.36 397.85 369.89 399.22C371.58 400.14 371.28 400.14 373.05 399.23ZM386.18 383.49C397.29 381.92 408.25 378.92 416.25 375.27C422.70 372.32 424.09 371.61 429.03 368.69C446.10 358.62 461.40 342.75 470.68 325.50C471.20 324.54 472.12 322.85 472.72 321.75C474.96 317.67 478.94 307.04 480.49 301.00C483.55 289.03 484.17 283.15 483.86 268.78C483.63 257.85 483.47 256.11 482.10 249.75C478.85 234.70 474.03 222.92 466.12 210.75C461.57 203.75 458.64 200.11 452.28 193.57C434.76 175.58 415.03 165.28 389.25 160.67C382.92 159.53 361.99 159.38 355.75 160.42C342.73 162.58 334.10 165.26 323.11 170.53C300.89 181.19 282.72 199.01 271.39 221.25C257.51 248.49 255.46 279.61 265.59 309.25C269.11 319.57 277.00 333.66 284.20 342.50C300.93 363.05 323.90 376.98 349.75 382.23C352.81 382.85 358.01 383.54 364.75 384.21C367.93 384.52 382.26 384.04 386.18 383.49ZM362.25 377.22C361.43 377.11 358.84 376.77 356.50 376.47C354.16 376.16 349.66 375.27 346.50 374.49C320.80 368.09 298.40 352.35 283.90 330.50C276.10 318.75 270.57 305.50 268.03 292.50C263.80 270.85 266.42 247.92 275.31 228.58C276.24 226.56 277.00 224.84 277.00 224.74C277.00 224.32 282.15 215.74 284.52 212.20C289.72 204.46 299.67 193.83 306.75 188.45C322.89 176.19 340.51 169.01 360.00 166.78C391.29 163.18 422.80 174.02 445.44 196.15C462.07 212.41 472.27 232.09 476.32 255.75C477.42 262.18 477.57 280.27 476.57 286.50C473.93 302.99 468.47 317.28 459.96 329.98C455.40 336.79 449.34 344.15 444.96 348.20C428.74 363.22 410.60 372.32 389.00 376.27C384.95 377.01 365.75 377.69 362.25 377.22ZM381.05 358.46C401.74 355.83 419.06 347.51 433.04 333.50C448.73 317.77 457.36 298.42 458.78 275.75C459.35 266.66 457.78 255.11 454.64 245.28C450.51 232.35 443.63 221.02 433.85 211.06C419.87 196.80 403.56 188.61 382.93 185.46C377.12 184.58 360.44 185.15 354.75 186.43C344.69 188.69 340.63 190.13 331.75 194.60C316.38 202.34 302.13 216.68 294.30 232.29C287.54 245.79 284.97 256.70 284.95 271.98C284.94 286.24 287.30 296.85 293.27 309.29C301.75 327.00 315.71 341.14 333.16 349.70C343.62 354.83 351.83 357.24 363.75 358.67C367.18 359.08 377.13 358.96 381.05 358.46ZM361.50 353.18C353.58 352.22 344.14 349.31 335.75 345.25C314.29 334.85 298.26 315.11 292.30 291.75C290.13 283.24 289.39 270.56 290.52 261.45C294.39 230.45 316.49 203.81 346.49 193.99C355.53 191.03 360.73 190.26 371.75 190.26C382.82 190.26 387.97 191.03 397.18 194.05C421.62 202.05 441.01 221.19 449.27 245.47C452.57 255.20 453.21 259.44 453.23 271.75C453.24 279.19 453.04 283.64 452.59 285.50C452.23 287.01 451.60 289.71 451.19 291.50C449.40 299.36 444.94 309.64 440.35 316.50C427.77 335.32 409.23 347.82 387.25 352.30C383.37 353.09 365.73 353.70 361.50 353.18ZM354.88 306.53C354.98 290.41 355.16 285.21 355.62 284.92C356.70 284.26 387.43 284.56 387.99 285.24C388.30 285.61 388.54 293.93 388.62 306.79L388.75 327.75L405.50 327.86C414.71 327.91 422.64 327.84 423.12 327.70C423.95 327.45 424.00 324.37 424.00 272.22L424.00 217.00L406.26 217.00L388.51 217.00L388.38 235.62L388.25 254.25L371.75 254.25L355.25 254.25L355.12 235.62L354.99 216.99L337.37 217.12L319.75 217.25L319.62 272.00C319.55 302.11 319.60 327.03 319.73 327.38C319.92 327.88 323.72 327.98 337.36 327.88L354.75 327.75L354.88 306.53ZM251.25 303.50C252.42 301.65 252.68 301.50 254.76 301.50C257.38 301.50 257.65 300.78 255.71 298.96C254.40 297.73 254.33 296.91 255.29 293.62C255.69 292.24 254.78 292.14 252.33 293.31C250.68 294.10 250.57 294.08 248.73 292.83C247.69 292.12 246.66 291.65 246.44 291.79C246.23 291.92 246.16 293.09 246.30 294.39C246.54 296.64 246.47 296.81 244.79 298.00C243.82 298.69 243.09 299.46 243.17 299.71C243.25 299.97 244.20 300.42 245.28 300.71C246.89 301.15 247.44 301.64 248.25 303.36C248.80 304.52 249.42 305.47 249.62 305.48C249.82 305.49 250.56 304.60 251.25 303.50ZM495.77 303.27C496.60 301.29 497.79 300.50 499.94 300.50C502.12 300.50 502.19 299.88 500.23 297.98C498.59 296.39 498.51 296.16 498.81 293.90C499.15 291.33 498.94 291.14 497.00 292.25C495.39 293.17 493.51 293.16 492.28 292.23C490.43 290.84 489.88 291.27 490.21 293.88C490.49 296.03 490.38 296.41 489.01 297.94C487.09 300.09 487.11 300.50 489.14 300.50C491.19 300.50 492.68 301.52 493.49 303.48C494.31 305.45 494.88 305.40 495.77 303.27ZM245.70 277.60C246.56 276.51 246.89 276.43 249.32 276.74C250.80 276.92 252.00 276.89 252.00 276.66C252.00 276.43 251.51 275.33 250.92 274.20L249.83 272.15L250.96 270.55C252.59 268.27 252.11 267.47 249.45 268.07C247.43 268.52 247.26 268.46 245.51 266.76C243.54 264.84 243.00 264.90 243.00 267.04C243.00 269.22 242.51 269.97 240.44 271.03C238.30 272.12 238.01 272.78 239.46 273.24C241.54 273.90 243.00 275.53 243.00 277.20C243.00 279.86 243.81 279.98 245.70 277.60ZM501.09 275.26C501.23 273.49 501.49 273.13 503.38 272.09C504.54 271.45 505.50 270.74 505.50 270.52C505.50 270.29 504.63 269.76 503.57 269.33C501.50 268.51 501.00 267.76 501.00 265.49C501.00 263.38 500.16 263.22 498.48 265.03C497.07 266.53 496.84 266.61 494.49 266.30C491.64 265.92 491.53 266.12 493.02 269.04L494.04 271.04L493.02 272.47C491.74 274.27 491.67 275.66 492.88 275.32C496.34 274.34 496.76 274.42 498.46 276.28C500.32 278.33 500.86 278.12 501.09 275.26ZM247.64 250.50L249.34 249.50L251.39 250.62C252.51 251.23 253.57 251.60 253.73 251.43C253.90 251.27 253.82 250.17 253.56 249.00C253.10 246.97 253.16 246.79 254.78 245.12C256.68 243.16 256.61 242.50 254.51 242.50C252.24 242.50 251.49 242.00 250.67 239.93C250.24 238.87 249.71 238.00 249.48 238.00C249.26 238.00 248.55 238.96 247.91 240.12C246.92 241.92 246.47 242.27 244.99 242.39C241.86 242.65 241.76 242.86 243.70 245.01C245.50 247.00 245.60 247.50 244.74 250.33C244.55 250.95 244.93 251.50 245.55 251.50C245.77 251.50 246.71 251.05 247.64 250.50ZM497.58 248.88C497.43 246.77 497.57 246.45 499.32 244.84L501.23 243.10L498.77 242.38C496.57 241.74 496.23 241.44 495.55 239.58C495.13 238.44 494.62 237.50 494.40 237.50C494.19 237.50 493.42 238.40 492.69 239.50C491.48 241.33 491.18 241.50 489.18 241.50C486.63 241.50 486.48 241.98 488.31 244.38C489.51 245.95 489.58 246.27 489.06 247.98C488.75 249.02 488.50 250.01 488.50 250.18C488.50 250.75 489.92 250.52 491.71 249.67C493.42 248.85 493.49 248.86 495.10 250.14C496.01 250.86 496.98 251.39 497.25 251.31C497.52 251.23 497.68 250.13 497.58 248.88ZM374.04 150.04C374.84 149.23 375.50 148.09 375.50 147.50C375.50 146.18 372.92 143.50 371.65 143.50C370.47 143.50 368.67 144.75 367.97 146.05C367.16 147.57 367.88 149.90 369.42 150.74C371.40 151.81 372.42 151.66 374.04 150.04Z\"/></svg>", "platoreel": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAD5CAYAAAD7uUu+AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA4RpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDkuMS1jMDAyIDc5LmRiYTNkYTNiNSwgMjAyMy8xMi8xNS0xMDo0MjozNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDoyMTM1NTk3ZC1jYjJkLTE4NGYtYWU2My02MWZmN2JhZjQwNTAiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NzVGQUI1NjI1N0JFMTFGMUFCM0VCNjk0MTFCQjA5ODkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NzVGQUI1NjE1N0JFMTFGMUFCM0VCNjk0MTFCQjA5ODkiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI1LjYgKFdpbmRvd3MpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MTAyZjhhOTktOThlZC03MzRmLTgwYjYtMDEzYjgxODBkYjdjIiBzdFJlZjpkb2N1bWVudElEPSJhZG9iZTpkb2NpZDpwaG90b3Nob3A6OTA5YzFjMGEtNzcwOS04NjQ0LTk4MzEtMzFmNGQzZWFiMjdkIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+2sBpsQAAI/RJREFUeNrs3QmcXFWVx/HTshsCJGDCqklHFh1WO+wggglBQR2XAOKOkCiufAQTR51RdLTjOs7ojAHEcUEkLaI4iJCwKbiRIBDZ6Y6YsCRgQghb2GrOyb0Flaa66r1br+rd9+r3/XzOJ5B0db2+r6rfv+69796eSqUiAAAAyM6LaAIAAAACFgAAAAELAACAgAUAAAACFgAAAAELAACAgAUAAAACFgAAAAELAACAgAUAAAACFgAAAAELAACAgAUAAEDAAgAAAAELAAAgVhvmfgSb9HAWOufFWjto7ai1na9xWttojfW1hdZorVFam/raSGsDrYrWM1prtZ7QekxrjdbDWg9prdT6h9YDWsu17te6T2uZ1gr/WHTC2gptAAA56qlUcv5FTMBqly19mKqWhamX+T+38GFrlP+zGqQ20do4ZfC2F9CTNaHL6nFfj/oQtkrrbq17fOC6x4euv/vHg4AFAAQsAlZ0RvvwtJOvnbUmaW3ty3qmxvgQlafVPmxVe7osaN2hNejDltW9nE4CFgAQsAhYebCepwm+Xq61r9b2vqo9VEXxrA9V1Z6tO7Wu92Gr2usFAhYAELAIWG2xrbheql18oNpNXC/VRDuPJftZH9RaojWkdZMPXEt96FrDS4GABQAELAJW8LkR1xtlE9L7tPbXeqXWP4mbN9VNLFzdqnWz1tVad4mbw7WalwkBCwAIWASsJF6iNV5rP62DtV6ltTfN8hy7W3GR1nVaV/qwZUOMT9A0BCwAIGARsGptLm65BOuhmiqut2p/mqUpG0q8VusKrd+J69WyyfPPErAIWABAwOpedmefDQO+XutwrYO0tuJlGeRmH7QuFdfDZT1d3durRcACAAJWl7E1pqzHypZSOFbrSK09eSlmxhY9vcTXr+X5tbgIWAAAAlZJg9Vm4uZWTdc6RtwCoGifBVoXa/1S3Kry1qPVHcmDgAUABKySs/0ebXV0m7D+dq03iJtvhc6xeVoXaf1M3FIPz5Q+aBGwAICAVXKHap2g9c/i7g5kVn/nVXz9SetCrZ9I2RcwJWABAAGrpPYRN8fKwpUtEroR4Sp31nP1lNYftH6qdZ6UdeFSAhYAELBKxraueZPWSVovle5bFLQInhY38f1yrf8Vd+fhWgIWAICAFR/b/8/mV71H3OKgW/Pyit6T4hYptflZ39e6gYAFACBgxeMwcRPY7c5AGw7cgJdWoTyitVjrx1rni1uslIAFACBg5cT2CXyb1slaE4ThwKKzpRxs+53vilsZvrgphYAFAASsgrIFQt+lNU3c/oEoB5sIf724Ow0HpKh3GxKwAICAVTA2BGgLhVqv1SvELSCK8rHeLNt659vi7jokYAEACFhtYquwv1fcsCC9Vt3h91pni9t2ZzkBCwCQBL0vydgWN3aH4AxxE9ppt+5hG3DblkZ7aH1P3KbSAAA0RA9Wc9tpvUNrprg1rtCdbJ0smwD/Ja0/S+zrZtGDBQAErEjZHoK7aH1A3Hwr7hCE+YvWt8QNGT5AwAIAELCS21TrQK1TtN7iwxZQtVTrLK1ztYYIWAAAAlZzo7Rer/VRrUN4iWAED4tbysHuMrxV61kCFgCAgFXf5uLmW52qtSsvDzRhb54Ltb4sbpudpwlYAAAC1vrsTsGPaH1CaxwvDaRgk98/I27yexwhi4AFAASsvNtAXM/VJ3242oyXBQJcpzVb6yqJYbiQgAUAuWLytsjWWp/VmkW4Qgsma31DaypNAQDo9gUzbdubfxG3xtVGvBzQAusJtcVIv6K1sdavaBIA6F7d3INVDVcn+QsikMX7aXetL2gdTXMAAAGr29g+gp/Wep8wLIjs31PWk/VFcct9AAAIWF1hK3GTkd8jbnI70I731V4+ZL2W5gAAAlbZVe8WfL/WaE4/2sjmZO2j1a91KM0BAASssrIV2m11dttbcEtOPTrE7i60hUj3pSkAgIBVNjbP6kStj2uN4bSjww7W+ry4uVkAAAJWKdgdgrZh88fETW4H8nCkuLl/L6cpAICAVXQ2D+YIcUODkzjdyNEGWm8Wtx3TDjQHABCwimxvrQ8L818QBxuqts3E3ynMAwQAAlZB2UKip4jbuqSHU41I2NZMdqOFrZG1Ac0BAASsIrHlGGz7m+OFVdoRnwlap4nrWWU/UAAgYBVCdVL7R4SFRBGvV2l9RmtXoYcVAAhYkbML1QFaHxQ3FAPEbJq47ZrG0xQAQMCKmc27ss2b9+bUogA2FDeMbUFrI5oDAAhYMbIJw+/SepPWppxaFMRO4uYL7ikMFQIAAStCrxN31+AWnFYUzIHC+lgAQMCKjH3qnyBuLst2nFIUlA0THiMMFQIAASsSFa0TxK13xZIMKCqb6G5D3HvSFABAwMqb9V7ZHm82h2U0pxMFfy3buli2COk4mgMACFh5srsGTxQ3URgoOhsenOYLAEDAykV189zXC3dfoTxsorsNFe5KUwAAASuPcLWPuDWvGBpE2d6Th4jbEHozmgMACFidZEMptkDjXpxClJAFK1vPbV+aAgAIWJ1iq18f6gMWG+WirGyI8P1aY2kKACBgdYLtMWhrXrEoI8rMlhyxye5H0BQAQMBqNxsaPExrCqcOXcB6r96h9RKaAgAIWO20o9a7ueCgS9gHisPFzccCABCw2naxsblXB3Pa0EVGaU3nQwUAELDaZaK4ie1bcdrQRTb0HyreSlMAAAGrHReZA7T255ShC9mEdxsm3IamAAACVpZepvU24ZZ1dCcbHn+1MBcLAAhYGbJtcHbXmszpQpeHrKO1NqEpAICAlYXtxE3y3Y7ThS4PWEeJ23tzA5oDAAhYrdpNq49TBaybi3gUzQAABKxW2S3qNiyyM6cKWNeL9QZxN3vQiwUABKxgu3AxAdYzXmsq7wkAIGC14kCtPThNwHPspo/XaY2jKQCAgBVie3Eb3W7BaQLWC1h7i1u2gTsKAYCAlZr1XO3JKQJewIKVDRNuTFMAAAEr7XHZJrcv5RQBdVnAerm4Hi0AAAErkQni5l8xBALUt4PWYVqb0RQAQMBKyta9msjpARqygDWKZgAAAlYSdvv5IcJdUkAzB/oPIgwTAgABqymbd3WAMDwINGNrYtndhAwTAgABqynb1HlbTg2QyH5aY2kGACBgJQlYW3NqgERsvuJ4mgEACFiNbOE/kTNxF0imV2svKcbG7QBAwMrJPsLaV0Ba1uu7Dc0AAASskdjK7aM5LUAqrxSG1QGAgNXA7sLeg0BarxAmugMAAWsE9gnc5l+xPAOQzkvETXZnHhYARGLDiI7FhjnGcEpQeP1fE9lyS5EddhSZdlT9r3n0UZHzz3P/fcUCkYHzW3lGW2h0N/8h5QFOAADkr6dSqeR7BJs8twj1TK0vSpLJukuXi4zLeKH32gve6tUis08L/15pj2/xTSKT9+p823/qsyKfOyP88b+/VuTwQ8Iee9gRIpddHte74aMfFpn7nfC2PHKayEEHhz//OWeL/FRfg1dfEfLoy7Q+rnXruv9bWxEAQH5i6sGyeST5rUg9apTIiSc9//+nfsIFnwXzWwtbMbNA0AoLE7vsInLHHd37DrJgdcqHswn89vqzuvQ3Il//atqgNUnST3QfFLfMQ5YWaQ34/17V09NzJr9ms6EfhtOerwXa/lNpObTxNUkjNBDTnI3dJbYtP/bY0wUt65GyC2mZWDDaa+8MQsGM7nznWA/cwhtdD2DWvak2rGi9ezbUmJwtb7JTBC1jc8H6fc2tOAu1ZvHrFgABq/N28J/A45ykaxdQu5D+5PzynPm3Hud67Vq1/wHd966xsG0ByAJ4O1m4txCXzEZau/o/Y7MudPmw1aWJHAABKx92Ydg8/lBybHlCVqvDg1XVYcJu8T9ntTZvLS0LcbcNJm3jCRL/jSLWqzVfixtaABCwOmBniWs+WOOQlW7oJj52sW5lMvYL2uS47glXtfP0OmVir8hFlyT5yu3FLdkQuyla8/n1C4CA1X42cXOjwrTajA8Uu9cm63lTWfWGxcyGBfMIV7Uh68prkgSsoqzo3lepVPr5FQyAgEXAep7NXTr19OKe9aznTdlk+TIPE9qE9tMjmKNtvY6Nb7awuYxFGnqbpSGrVwCAgNUWFqwmFSpgmcOPKOYZz3p4sBo4yzxMaHOusrghIAsW9EYOs1tpjS/Ye4lJ7wAIWG2ynf/k3dO2Z7D1rGxB09qyRSVtvaFQNmRTxF6bND1vF8xL/rVlHSac+aHsA2mrYbbxOdzJv6eKYgq/hgEQsNpjR8lj/0FbsfuNr3NBK9ThBVzDb9/9kn2drWy/+K/Jv2/aNbVsEc3hobdRffPr6X9We0ya56i3ivvJLXSwrFjhVmffY9f1n8f+zv4t1HFvbxTux/n3VDvYwpXr0b+brDWnhe/Zxx2FAAhY7bF9rsdhF1W74IWYOLFYZ9suyknXbrrxBrcVTlLWs1K2xVit9yp0rStru53Gi3zw5BeudG9/Z/8W2oPauBdrK/+e6gjNWIu0Zut/tvJpg4AFgIDVBttKO4cHk7DNdkPYhr5FkmZ48LZbXS+T9WQldeBB5Xp3HP/28HCVZI9G60FNE2JrjTwHcCv/nuooDVn2Jur4tjiVSmWKrRKvNa9S36D/91llPoay0jab7tuuv9LcLF8zWnzO6veZ3+C5FsZ2TvVY+vwxDY7QNtMD2r2efhYMTt6Q+dbGcobWo1qVxLV8eSWVm25s/j1DfO+szh1fFjU0mPyY3nGce8y11yR/zCOPtO/Yv/G19OfHHhP6fLvv4n6etOzc22Pb/Tym/vP8Yd17Ktn7bzDlM85P8Es5RG/gRXBlwHPNzerOxU4fQ9bnK+JrUp9vo1bMT/mcM3xoCn6+0NAR8Fyzhj2+t0kYHB4M+5q8h5O+zgb9hwuh6lcMPVjbSKxb5JSJLTUwMeHvdOu1Gjj/+Z6spGzoyobVyiB0K6Fzf5Ru82v72vPPCz/GFxrt31N5WNXux/kL4Upxex2GDC3aRXCwlZ6HGI6hpB/2LSjYnTULpUN3l1YDhf7nXHFbOoWymzXm+tAxvYNtZs81KMlvFrGf0ULWlDrfy9reKmn4t6+bL9yoMqIYgs3Y3I8j9G7A1auLc6bTDHfZ/KuqtMOnh726HO+MPXZP/xgLpucEjJKFDlHXP8bN/XsqDyEXKJvDlShg+QvAXMlmzlZ/yJY9MRxDScPVDB8UOhlO0gaKpKFjnv/e7T7+Wf74Q8yr7cmynq0W2n5+i+GUgFXqgBW6aOii64pzptOs21Xba2U9WWnmYR11dDneGa+anP4xFkzT9F7VtvGSoYAPBrvFFrBCeh2apksLIC1eABr1OiS6QMVwDCUOV3N9aO3U87XrXNaa7ofjxrTpZ7Bw1cpOCGOqbe7DYKsBiV0ZIg1YNik3v0nuNnR2XMBk5tphtNhNPy758GC9HpXaHq1myjJMOG58+sekGU4d7r770j9mfN257C/276k8LpIhPQFJuvyyuACMGHASbtkTwzGUMVz1S+cXm+1Uj0uftGfPzd6MAk2fD1dZBM0pwlBhlAFrdC7HYcHKNu+97PKwuTbX/K44Z/mIFK/7esExbXAo+jChDRmHvCZaGTIOCWfjxtX72039e6pTF8hZvjcg5CJ5Zk9Pz1CCT+rt/sU9q8nE39yPoaThyi7sszr8nP3S2eGsduy5mWUgnR7p9yJgZcSGNNrbg2VrGa2trF8WrFrZvPfi/yvOWU4zPFivtyrtHKFDX1Psd8V2get0LlkS/pyh4eyF8wd7/HuqHaYMv43If5IOuWBZsJrd5GKY9pP6Iq3JfgFUGyYdSPHY/liPoaTh6rkhqg4+55ROB7qa8NwNvTsErAgD1osL12q2dlG9Vb+jfMmnHB6s15OSdo6Q9axML/DehLu9ouhhMPb3lE1qPzbB5PZZKb/nVFv4dF3K1O+tdawkmONVEx57Iz2GMgq9A7OloJPjz9sNd4yOERYNji5gbVqoFrMhtM/9a3GO981vSff1I/VWXb+wvc+LbnlPVXt4FjXpbbBf1GmGQuaMENjSbOMzPbZjKKOAdh0eYmf711C9bZtmS52eUd+DFNKLNFD7XP45BgK+z5Q29GLNrjku20lhqIXvZT/TpJrvF7poMHcTRhawNi5Ui31qllvhvCjSDNc1mrifZl/CtM+LcPVfizG+p1b5C8LkZvOuvLQX4LoXBL/CfOKLYITHUEah4WpA23Ks1px6Ad1v2zTH19QM2tWe79ja5/LPcayE7b+Z5bm145oz7DU2M/RDj/85h2q+38zAkEUPVmQBa8PCtJZtDF2UoUFjd/PVnwhdX6O7BS9IecdkkYcJQ+8GbGVvymy3XYrpPWWfjGdWL4xt+iTcbC2tocDnjOEYyijkZxzwwSZUSLhpFFjmSPqFdbOanD6kbTEwQpBfFPD9RnpfhizQR8CKLGDFb8UKkXceX6xwZdLezXfZpSP/m63vlHatpiMK+mH8vmWdD0k77Bj2uozbIh88Qj4Jp3nxNLvQJX3hjhk2ByqGYyijrMNOQ35IMm2oG2gUmP2/pQ0gYzJaF2tBk/dcVt9vSFD4gPVM1C10ztkiO40vzppXtdIu+vm5M154t2VtTUz5ez/N3YsxsTCZZnHVqlYmx4fsJnDXnbG/p+yi1u/360uz0Wxvyk/CUxptmJbygt4byzGUUUC7Ng07bWrPRRl9Tb33RKuyDD6rGrTtKkHhA9aT0bWK9QxYsNqkR+SDJxfzzNrwYMhaTlmyQFbUYcKhwfSP2WvvsKCUZp/IWvfdU5T3lF1Q56XYey+GgNEtd/MVoV0X5fCcqzL6mthfV4SokgesJ3I/gsU3uUBltceurseqqMGq6uhj4jiOog4T3nFb+sdYoD0xYJrF8W8PfN3+Nd73VH39bHDc9UKGyFbl8JxAKQLW4x0JUNYbNVJN3ssFKquQveRidMihcRxHUYcJr/5t2OPe8a50vVitbNX05S90+j21oOZW9cAdqteFrGbDJPRgEbAAAlYGHtGqcCoy9KnP5j88WGVDX4cVMGTZDQ0h87Ds7smvfSvF85yV9VZNFf+eaht/q7rdBh+6Vk6zFctjGLZg6KQ8oWyoTc85pkPHAgJWsDVaz3IqMnTgQXEdT+gQWN5+c3HY46YdJXLRJY2/xnq5Ft4YNvfKjLxV01r/nmo7v1ZOyPyYZosuErDKKyRg9OVwLtsVsHhdEbA6arXQg5Udu3DHMjxYVdRhwrktbJVmIWvpcreh+PDzY3/3x+vdHpkhbMh75CVDHvfvqU4JvX1+VuSf8ulpiKddp7S4vEHQc2b0NcM/lCziJUDA6qSV0u09WPU2o05adrdgrbceF8/wYJX10oTcXZc3WyX90t+EP96GC21D8drztfh293etnKOzGo7MPeLfUx3hLxihW4f0jvA9h1J+0l/Uk50FsRxDjCzo2I0KWoPDVqJY6f++t8nrJW27mjHSwl5+fhmCtMGmr9HP4v8tbc8a4YqARcAqtCOnxXlcp55ezPY87WNhc7HapflG4x0NWN5A4OMarY2VJmT0pVlnK4UYjqEVDdfmamJKnVAx3b+2bA5db50QZH8/mOBO0ZAAaeGtv0PnsqpRF3Z/B98nIGAFe5CAlRHrJbK1mNKw8NDoDst6FbLZ9b77FbNN7a7SM78bx7Ek22h8jX9PdYzftiNkbsmMDD/tz0sbcOxuRq25DeaDxXAMUfA/17yEX95sOY7QoFHtOZtVb8jQt+W6IKY1P4OAZQF1fu258c8xX8I25SZgEbA6zvb7YA5WFmwNprRDT432HxzJBQGr2tswaBGHCc3s01zPUd6+OifJRuMP+/dUp4VcPHobBIuQOxQt4CxsNFTl/83KemIWNgl5MRxDLNL22PSPNG/KB/LQOW69/lhW1lktf6H/t1l1njN0nz57fc4f9hwhYXhBwk3OQcDK1P1CD1Y29j8g/WNCNjYO2ZfQFHWY0Bx+iJtcnpdvfr3Rule1HvLvqU4LnTc0Y4SL8KrAgNMnzw9V1duypt9X00nTMRxDDPy6Zb1ZnVtvTg4/yuw8P6ZxgSJg5eFeAlYGrHfooIPTP+6KwOvi9QvTP6aVvfpicML0fEKWhSvrRUvmIf+e6qgWhgmnN7hDbLbkf1t7DMeQt742vF4suA50+DW6QPIZppvD3YMErLwslRj3IyyakC1abE5P6CbWI2/TMjILgEUdJjTWc2er/ndquLA65yp5uDIP+PdUHkIvXo16sWbmecpjOIYItCtgWrt2etis089pd5fSe0XAys19vpiH1YopU9M/JmT+VVVoyDhxRvHb2oYLLfi08+5C6yl78xuTDgsO/8ByX8EC1vQGAWcggpCV+zHkbKgdj/PhdWonA0+Hn3ORfy4QsHJjK08Paj3N6QhkvUIhi1aGzL+qssnWIQEjZJ5YjCz4jN1c5IJ52X7fFStceLOesuYT2oezCe73+/dUHkHEhmBCejv6Gu1P6IeTjs05ZOV+DDn+7BYU0s4lWJXkMX7i91Tp4BpR/jlb2U8z0YcNfZ7JPtCBgJX7J6SnOB2BQiePX9Hi75eQHrCiDxMOd8JxbumKc8524SiU9QhasNppfEivVdU90vk1sIYL3Z9wRpOLovUiTWrzRVFiP4YcpZ2LNidpuLDAY2FEOjgR3I7N76eZ9XOuG1LW792VYRzDXmfuppYc2cVJ5BStL2ltySlBoVl4rAbeY97oVnOvx1aIv2eZyOrVaedYNXK51se1/rpu1fjmrOc4zd1hC/xFaUR+2YX5gRemSUkuyv45LJC1urDnAv8zpb6jLY9jsDWgJOxuvhBTh68o73sZ5yU4htkhbeqfY4xv1/4Wjz/VMfh1u6xC7+y0ToIzA19Llax+NltTTdIt+2HhdtII36vX/45IY2YLH7IIWG0KWEdqnau1DacECPYjrU+KDRMmC1j2Sb7QP3DNgpZTpPH6REM1v/iHfG9UaY4hhza3YNk3LCDbRX8gq/WefIitLhExoxPt6kNFNTQ3Cly1W0Sd2a1DgbnnBwJWooD1Mq3far2UUwIE+3etM8Tuyl3LLz4AyFMsc7D+rvU34U5CINQzWrcLS54AAAGrhgWrxVqPc0qAILY8w900AwAQsIa7nYAFBLN5KCtpBgAgYA13i9ZjnBIgOGD9g2YAAALWcDeLWygRQHp3iNsmBwBAwFqPrdJot76y4CiQjt0ifp2wGwIAELDqeFbrJqEXC0jrNq0HaQYAIGCN5EatNZwWIJWbCVgAQMBq5HqtZZwWIJVFBCwAIGA1YreZLxSWawCSsg8kfxHmXwEAAauJPwu3mwNJ2QeSe2kGACBgJblgLOfUAIn8SdxdhAAAAlZDS3zIYrkGoDEbUr9G61GaAgAIWM3YXJKrhUUTgWb+IG6BUTZJBwACViJ2N+ESTg/Q0G+F7aUAgICVwl3iVqZmmBCoz3Y+sJ5ehgcBgICV2DNal2st5RQBdS3QulUYHgQAAlZKi8WtUA1gfU/5DyBP0hQAQMBK626tK4UhEKBWxX/wuErrCZoDAAhYIewuqVs4TcB6AetSYXFRACBgtcDmmCziNAHPeUjc/Cu2xgEAAlaw1VoXC0s2AMbmXl0ibnFRAhYAELBaYpPdb+RUAdIjbniQ5UsAgIDVsmVa84QNoNHdrMfqCq1filvGBABAwGqJXUxsZfe/cLrQxex98Cuth2kKACBgZcXmYA1wcUGXst6rP2r9nKYAAAJWlmxBRZvYyx2F6EY25+oXwtIMAEDAaoNBrZ9qPcJpQxexoUHbl/NnNAUAELDaYa24Sb5/4rShizwmbnh8GU0BAASsdvm71o/ELbYIlJ3Nvfq91oU0BQAQsNrJ5mJdJq4nCyi7Vf4DxT00BQAQsNrtQa0f+j+BsrLeq6u05tMUAEDA6gS7o8p6sWzx0Wc5hSipu7TO1lpBUwAAAatTbKjwPK3bOYUoIXt9/1rrDzQFABCwOsluXbe7Cb+v9QSnESVivbJ/Fjf3ag3NAQAErE6zOSo2TDhfGCpEeSzX+rHWDTQFABCw8lARtzbQD4SNoFEO9kHht1qX0BQAQMDKkw0V2v5s5whDhSi+xVr/LW69NwAAASt3Nl/F9ip8mlOKgrLFc3+itZCmAAACVgxsqPBWcb1YKzmlKChbPNdWbH+MpgAAAlYsbO7KL7S+JwwVonhsaPA/tYZoCgAgYMXmca0zxa0f9BSnFgVhC4nO1fqjuDmFAAACVnT+pnWW1i2cWhSADW/bTRoXaa2lOQCAgBWzq8T1ZD3M6UUBXqvWe7WMpgAAAlbsbA6WbaNztjAfC/G6TetLWjeJ68kCABCwordK61vi7spi6QbE5l6tr4u7c5BdCACAgFUotljjf4lbGRuIxWpxS4r8nHAFAASsorINob8jbhgGyJtNZB8Qt5wIa7YBAAGrsKyHwPZ1s+1HlnK6kSNbguE34ta7+hvNAQAErKKz9bHO1fquuO1IgDxcq/VlcYuKAgAIWKXwiLheLLslfg2nHR12g9bnxA1ZAwAIWKVivVdfEbcxNPu9oROq+2R+WutKmgMACFhlZROLvyBunSzWyEK7w9WdPlz9muYAAAJW2d3vQ5bdzcWehWhXuBoUNyx4Ic0BAASsbnG31ue1fiqsRYTsw9USH67OozkAgIDVbYa0ztD6CS8DZBzeCVcAQMDqWhUfsj4rbuFHIIvQ/imhZxQACFhd/vPbRdB6HD4jbsV3Nt1FKNu8+XRxc66Y2wcAXa6nUsk5U2zSE0tbbK11mtYpWlvw0kAK12n9m7jNm9dGcURr+awAAASseFjIOsmHrJfy8kACC7S+pHWNxNRzRcACAAJWZLbSeqvWh7T24SWCEdgWTDYc+C2thRLbnCsCFgAQsCL0Yq3X+pA1jZcJhlmh9UOt72vdEuURErAAIFcb0gR12VY6F2vdq3Wf1glaG9MsULeLuyHiAv/6AADgBejBam6C1sla79bakZdM17L5VTaZ/ctal4sbIowXPVgAQMAqgFHierHerzVZawNeOl3FejFtP8Eztf5ciCMmYAEAAasobaX1GnF3Gb5e3GR4lN9N4uZa2ZDg0sIcNQELAHLFHKzk7Ip1pbjVum0eznvFLeVAb1Y5rdT6o9Z/iBsSZGV2AEBi9GCFe5u4eVmv1tqSl1JpPKN1h9b5Wj/WGizkT0EPFgAQsApsZ613ar1Pa5z9NLykCu0hcb1W39a6TIq85Q0BCwAIWCVwjNa7tKaK22aHYcOCxRGtu7TO0/qB1rLi/0QELAAgYJXDeHHDhu/ReqW4xUp7eIlFzYYDrdfqEnF3CP6uPJGRgAUABKxy2ccHrff50PUiXmbRsRe9TVq/Vut7Wr/SWlWqn5CABQAErLK1qTy/pMPxWtOFJR1ic4O4Sew/ErfGVfnuECRgAQABq6RsHpZNerd5WbZI6dHiFixFfm7VukjcPoJ2d+CT4nqzyoeABQAErJLbSNwyDoeL69GaRtDquMXi5llZr5VNZl9T2mBFwAIAAlaXBKwq2yx6a61DxM3ROlIYOmw329bmUq0Ltf4mbkJ7dyQPAhYAELC6jPVo2ZpZe/ig9RqtSbwUM2PDfldoLdD6pdaDPlh1FwIWABCwutj2WhPFraN1sFafuOUdkN4ScXcFztf6vda9Wo91bWsQsACAgIV1Q4W2r6Et8TBFa2+t3WmWph7WWqR1jdZV4ra4uUe6ZRiQgAUABCwCVmI7iuvVsh6t/cUtWroLzfKcR7VuFjdx/Ur/56D/exCwAICARcBqfG580Hq51gFak8XN1bLqtj0Pl4sbArxT62ofsOy//8HLhIAFAAQsAlYrJojrydrTh61erR3EzeMqm9Xi5lDZcN8tWtf5QGVDgKt4KRCwAICARcBqB1tXa1cfuGwI0SbHbyNuGQj7s0jrbNkq6nan3z/8n0t8oLrLh6pBTjcBCwAIWASsPIzV2lnc8KH1bO0mrsdrC63RvjaX/IcWbZ7Umpp6QOt2X3f5GuJ0ErAAgIBFwIrVS3zIepm4OxR3Ejena1txS0FY2NpU3AKoVhv52tBXUtYD9bTWUzW1Vtx6VPbnE+Lu9vu7r6Vad4tb+HPIfx0IWABAwCJgFZYFK5u3ZXcqbufLFj21YcWxvqq9XqN8ANvUBy/bW9FeLM/UBCdbZ2qND1C2mOdKcUN91jNlE9PvF7eZ8jKtFf6xIGABAAELAAAA6byIJgAAACBgAQAAELAAAAAIWAAAACBgAQAAELAAAAAIWAAAACBgAQAAELAAAAAIWAAAACBgAQAAELAAAAAIWAAAAAQsAAAAELAAAAAIWAAAAAQsAAAAELAAAAAi8P8CDACmmqgJb5FvGAAAAABJRU5ErkJggg=="};
+const rnd = (a, b) => a + Math.random() * (b - a);
+const V2 = (x, y) => new THREE.Vector2(x, y);
+// ---------- utilidades ----------
+const cv = (w, h, fn) => { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h); return c; };
+const ctex = (c, wrap) => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; if (wrap) t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+const RIM = { value: new THREE.Color('#bfe6ff') }, RIMK = { value: 0.6 };
+const MATS = new Map();
+function rimify(m, k = 1) { m.onBeforeCompile = s => { s.uniforms.uRim = RIM; s.uniforms.uRimK = RIMK; s.uniforms.uRimL = { value: k };
+    s.fragmentShader = 'uniform vec3 uRim; uniform float uRimK; uniform float uRimL;\n' + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n{ float rf = 1.0 - abs(dot(normalize(vViewPosition), normal)); totalEmissiveRadiance += uRim * (uRimK * uRimL * pow(rf, 2.4)); }'); };
+  m.customProgramCacheKey = () => 'astralrim'; return m; }
+function M(key, o) { if (MATS.has(key)) return MATS.get(key); const p = Object.assign({ roughness: 0.5, metalness: 0 }, o); const rk = p.rim == null ? 1 : p.rim; delete p.rim; const m = rimify(new THREE.MeshStandardMaterial(p), rk); MATS.set(key, m); return m; }
+function mesh(geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = sx, sz = sx) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.scale.set(sx, sy, sz); return m; }
+function roundRect(w, h, r) { const s = new THREE.Shape(), x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; }
+// UV planas (0..1 sobre la caja XY) para tapas de extrusiones; la cara trasera (z<mitad) se espeja para que el texto se lea
+function planarUV(g, flipBack = true) { g.computeBoundingBox(); const b = g.boundingBox, p = g.attributes.position, uv = new Float32Array(p.count * 2), zm = (b.min.z + b.max.z) / 2;
+  for (let i = 0; i < p.count; i++) { let u = (p.getX(i) - b.min.x) / (b.max.x - b.min.x); const v = (p.getY(i) - b.min.y) / (b.max.y - b.min.y); if (flipBack && p.getZ(i) < zm) u = 1 - u; uv[i * 2] = u; uv[i * 2 + 1] = v; }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); return g; }
+function svgShapes(txt, cx, cy, k, flipY, div = 6) { const d = new SVGLoader().parse(txt), out = [];
+  const tr = pts => pts.map(p => V2((p.x - cx) * k, (flipY ? -1 : 1) * (p.y - cy) * k));
+  for (const p of d.paths) for (const s of SVGLoader.createShapes(p)) { const ns = new THREE.Shape(tr(s.getPoints(div))); ns.holes = s.holes.map(h => new THREE.Path(tr(h.getPoints(div)))); out.push(ns); } return out; }
+// ---------- fusión por material ----------
+function bake(group, maxDim = 1) { group.updateMatrixWorld(true); const box = new THREE.Box3().setFromObject(group), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3()), k = maxDim / Math.max(sz.x, sz.y, sz.z);
+  const T = new THREE.Matrix4().makeScale(k, k, k).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z)); const B = new Map();
+  group.traverse(o => { if (!o.isMesh) return; let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(T, o.matrixWorld));
+    const mats = Array.isArray(o.material) ? o.material : [o.material]; const grs = Array.isArray(o.material) && g.groups.length ? g.groups : [{ start: 0, count: g.attributes.position.count, materialIndex: 0 }];
+    for (const gr of grs) { const m = mats[gr.materialIndex]; if (!m) continue; if (!B.has(m)) B.set(m, []); B.get(m).push({ g, s: gr.start, c: Math.min(gr.count, g.attributes.position.count - gr.start) }); } });
+  const parts = []; for (const [m, L] of B) { let n = 0; L.forEach(e => n += e.c); const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2), C = m.vertexColors ? new Float32Array(n * 3).fill(1) : null; let o = 0;
+    for (const e of L) { const a = e.g.attributes; P.set(a.position.array.subarray(e.s * 3, (e.s + e.c) * 3), o * 3); N.set(a.normal.array.subarray(e.s * 3, (e.s + e.c) * 3), o * 3); if (a.uv) U.set(a.uv.array.subarray(e.s * 2, (e.s + e.c) * 2), o * 2); if (C && a.color) C.set(a.color.array.subarray(e.s * 3, (e.s + e.c) * 3), o * 3); o += e.c; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); if (C) g.setAttribute('color', new THREE.BufferAttribute(C, 3)); g.computeBoundingSphere(); parts.push({ geo: g, mat: m }); }
+  return parts; }
+// ---------- texturas ----------
+let IMG_PR = null; function prImg() { if (!IMG_PR && ASSETS.platoreel) { IMG_PR = new Image(); IMG_PR.src = ASSETS.platoreel; } return IMG_PR; } prImg();
+function noiseDots(x, w, h, n, cols, r0, r1, a0, a1) { for (let i = 0; i < n; i++) { x.globalAlpha = rnd(a0, a1); x.fillStyle = cols[(Math.random() * cols.length) | 0]; x.beginPath(); x.ellipse(Math.random() * w, Math.random() * h, rnd(r0, r1), rnd(r0, r1) * 0.6, rnd(0, 3), 0, 7); x.fill(); } x.globalAlpha = 1; }
+// ---------- 1. BITCOIN ----------
+function mkBitcoin() { const G = new THREE.Group(), R = 0.5;
+  const gold = M('btcGold', { color: '#f7931a', metalness: 0.45, roughness: 0.32, emissive: '#7a3400', emissiveIntensity: 0.55 }), white = M('btcWhite', { color: '#fff6e0', metalness: 0.2, roughness: 0.35, emissive: '#ffcf80', emissiveIntensity: 0.35 }), rim = M('btcRim', { color: '#ffb547', metalness: 0.6, roughness: 0.25, emissive: '#6a3000', emissiveIntensity: 0.5 });
+  G.add(mesh(new THREE.CylinderGeometry(R, R, 0.1, 36), gold, 0, 0, 0, Math.PI / 2)); G.add(mesh(new THREE.TorusGeometry(R, 0.035, 6, 36), rim));
+  // el ₿: huecos del círculo de simple-icons -> formas propias (con sus contraformas)
+  const sh = svgShapes(ASSETS.bitcoin, 12, 12, 0.88 / 24, true, 8); let sym = [];
+  for (const s of sh) { const big = s.getPoints().reduce((m, p) => Math.max(m, Math.hypot(p.x, p.y)), 0) > 0.4; if (big) { for (const h of s.holes) sym.push(new THREE.Shape(h.getPoints())); } else sym.push(s); }
+  // las contraformas de la B son formas independientes dentro de un hueco: conviértelas en agujeros del ₿
+  const area = s => Math.abs(THREE.ShapeUtils.area(s.getPoints())); sym.sort((a, b) => area(b) - area(a)); const outer = [], inner = [];
+  for (const s of sym) { const p0 = s.getPoints()[0]; const host = outer.find(o => pointIn(p0, o.getPoints())); if (host) host.holes.push(new THREE.Path(s.getPoints())); else outer.push(s); }
+  const sg = new THREE.ExtrudeGeometry(outer, { depth: 0.035, bevelEnabled: false, curveSegments: 6 });
+  G.add(mesh(sg, white, 0, 0, 0.05)); G.add(mesh(sg, white, 0, 0, -0.05, 0, Math.PI)); return { g: G, glow: '#ffb02e', coin: true }; }
+function pointIn(p, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a.y > p.y) !== (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) c = !c; } return c; }
+// ---------- 2. CÁMARA DE FOTOS ----------
+function mkCamera() { const G = new THREE.Group();
+  const leather = M('camBody', { color: '#1d1d22', roughness: 0.65, emissive: '#0a0a12', emissiveIntensity: 1 }), silver = M('camSilver', { color: '#d6d9df', metalness: 0.9, roughness: 0.25, emissive: '#30333a', emissiveIntensity: 0.6 }), glass = M('camGlass', { color: '#0c1d4a', metalness: 0.9, roughness: 0.05, emissive: '#1b3f9a', emissiveIntensity: 0.45 }), red = M('camRed', { color: '#e8262f', roughness: 0.35, emissive: '#5a0006', emissiveIntensity: 0.6 }), flash = M('camFlash', { color: '#ffffff', emissive: '#fffbe0', emissiveIntensity: 1.6, roughness: 0.2 }), black = M('camBlack', { color: '#0b0b0d', roughness: 0.4 });
+  const body = new THREE.ExtrudeGeometry(roundRect(1.0, 0.56, 0.08), { depth: 0.3, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2, curveSegments: 4 }); G.add(mesh(body, leather, 0, 0, -0.15));
+  const top = new THREE.ExtrudeGeometry(roundRect(1.02, 0.16, 0.05), { depth: 0.33, bevelEnabled: false, curveSegments: 3 }); G.add(mesh(top, silver, 0, 0.24, -0.165));
+  G.add(mesh(new THREE.BoxGeometry(0.34, 0.14, 0.26), black, 0, 0.38, 0)); // visor / joroba
+  G.add(mesh(new THREE.BoxGeometry(0.24, 0.1, 0.06), flash, -0.32, 0.38, 0.12)); G.add(mesh(new THREE.BoxGeometry(0.28, 0.13, 0.2), silver, -0.32, 0.36, 0.03)); // flash
+  G.add(mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 20), red, 0.34, 0.345, 0.03)); // disparador
+  G.add(mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.04, 20), silver, 0.15, 0.34, 0.0));
+  G.add(mesh(new THREE.CylinderGeometry(0.25, 0.27, 0.2, 24), black, 0, -0.04, 0.27, Math.PI / 2)); // objetivo
+  G.add(mesh(new THREE.CylinderGeometry(0.23, 0.25, 0.14, 24), silver, 0, -0.04, 0.42, Math.PI / 2));
+  G.add(mesh(new THREE.TorusGeometry(0.205, 0.025, 6, 24), black, 0, -0.04, 0.49));
+  G.add(mesh(new THREE.SphereGeometry(0.19, 20, 6, 0, Math.PI * 2, 0, Math.PI / 2), glass, 0, -0.04, 0.45, Math.PI / 2, 0, 0, 1, 1, 0.45));
+  G.add(mesh(new THREE.CircleGeometry(0.04, 12), flash, -0.06, 0.01, 0.537));
+  G.add(mesh(new THREE.BoxGeometry(0.1, 0.07, 0.02), glass, 0.36, 0.2, 0.17)); // ventanita visor
+  return { g: G, glow: '#7fc8ff' }; }
+// ---------- 3. CHULETÓN ----------
+function mkSteak() { const G = new THREE.Group();
+  const pts = [[-0.46, 0.0], [-0.4, -0.24], [-0.15, -0.34], [0.18, -0.33], [0.42, -0.2], [0.48, 0.04], [0.38, 0.27], [0.1, 0.36], [-0.2, 0.32], [-0.4, 0.2]];
+  const shape = new THREE.Shape(new THREE.SplineCurve([...pts, pts[0]].map(p => V2(...p))).getPoints(48));
+  const W = 512, H = 400, bx = [-0.52, 0.54], by = [-0.4, 0.42], X = x => (x - bx[0]) / (bx[1] - bx[0]) * W, Y = y => (1 - (y - by[0]) / (by[1] - by[0])) * H;
+  const c = cv(W, H, (x) => { const pp = shape.getPoints(48); const path = (sc, ox, oy) => { x.beginPath(); pp.forEach((p, i) => { const px = X(p.x * sc + ox), py = Y(p.y * sc + oy); i ? x.lineTo(px, py) : x.moveTo(px, py); }); x.closePath(); };
+    x.fillStyle = '#efc584'; x.fillRect(0, 0, W, H); path(1, 0, 0); x.fillStyle = '#f4d095'; x.fill(); // borde de grasa
+    x.save(); path(0.86, -0.02, -0.06); x.clip(); const gr = x.createRadialGradient(W * 0.45, H * 0.55, 10, W * 0.45, H * 0.55, 240); gr.addColorStop(0, '#f0444a'); gr.addColorStop(0.65, '#d42a32'); gr.addColorStop(1, '#b01c26'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+    x.filter = 'blur(1.5px)'; x.strokeStyle = 'rgba(255,226,215,0.6)'; for (let i = 0; i < 55; i++) { x.lineWidth = rnd(1.5, 4); x.beginPath(); let px = rnd(0, W), py = rnd(0, H); x.moveTo(px, py); for (let k = 0; k < 5; k++) { px += rnd(-20, 20); py += rnd(-20, 20); x.lineTo(px, py); } x.stroke(); } // vetas de grasa
+    x.filter = 'none'; x.fillStyle = 'rgba(255,236,224,0.55)'; x.beginPath(); x.moveTo(W * 0.62, H * 0.12); x.bezierCurveTo(W * 0.5, H * 0.4, W * 0.72, H * 0.6, W * 0.58, H * 0.95); x.lineTo(W * 0.62, H * 0.95); x.bezierCurveTo(W * 0.76, H * 0.6, W * 0.55, H * 0.4, W * 0.66, H * 0.12); x.fill(); // vena de grasa del lomo alto
+    const sg = x.createRadialGradient(W * 0.45, H * 0.5, 40, W * 0.45, H * 0.5, 260); sg.addColorStop(0, 'rgba(120,30,10,0)'); sg.addColorStop(1, 'rgba(110,40,10,0.45)'); x.fillStyle = sg; x.fillRect(0, 0, W, H); // dorado de la plancha en el borde
+    noiseDots(x, W, H, 140, ['#ffd9d2', '#8a1020', '#f06070'], 1, 4, 0.2, 0.5); x.restore();
+    path(0.86, -0.02, -0.06); x.lineWidth = 5; x.strokeStyle = 'rgba(200,120,90,0.55)'; x.stroke(); path(1, 0, 0); x.lineWidth = 6; x.strokeStyle = 'rgba(190,140,80,0.7)'; x.stroke(); });
+  const t = ctex(c); const meat = M('steakTop', { map: t, roughness: 0.38, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 0.32, rim: 0.4 }), side = M('steakSide', { color: '#e2b070', roughness: 0.5, emissive: '#4a2a10', emissiveIntensity: 0.5, rim: 0.5 }), bone = M('steakBone', { color: '#f4ecd8', roughness: 0.45, emissive: '#4a4236', emissiveIntensity: 0.6 });
+  const g = new THREE.ExtrudeGeometry(shape, { depth: 0.13, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.03, bevelSegments: 2, curveSegments: 32 });
+  const p = g.attributes.position, uv = new Float32Array(p.count * 2); for (let i = 0; i < p.count; i++) { uv[i * 2] = (p.getX(i) - bx[0]) / (bx[1] - bx[0]); uv[i * 2 + 1] = (p.getY(i) - by[0]) / (by[1] - by[0]); } g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  G.add(mesh(g, [meat, side], 0, 0, -0.065));
+  // hueso de costilla que sale por un lado (chuletón)
+  G.add(mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.5, 14), bone, -0.56, 0.06, 0, 0, 0, Math.PI / 2 - 0.12)); G.add(mesh(new THREE.SphereGeometry(0.075, 14, 10), bone, -0.8, 0.09, 0.02, 0, 0, 0, 1, 1.15, 0.9)); G.add(mesh(new THREE.SphereGeometry(0.065, 14, 10), bone, -0.79, 0.0, -0.02));
+  return { g: G, glow: '#ff6a4a' }; }
+// ---------- 4. NIGIRIS ----------
+function mkNigiri(tuna) { const G = new THREE.Group();
+  const rc = cv(256, 256, (x, w, h) => { x.fillStyle = '#f4f1e8'; x.fillRect(0, 0, w, h); noiseDots(x, w, h, 520, ['#ffffff', '#ddd8ca', '#fffdf6', '#cfc8b6'], 3, 7, 0.5, 0.95); });
+  const rt = ctex(rc, true); rt.repeat.set(2.5, 2.5); const rice = M('rice', { map: rt, roughness: 0.8, emissive: '#3a3a36', emissiveIntensity: 0.5 });
+  const rg = new THREE.ExtrudeGeometry(roundRect(0.64, 0.28, 0.12), { depth: 0.12, bevelEnabled: true, bevelThickness: 0.07, bevelSize: 0.05, bevelSegments: 3, curveSegments: 6 });
+  G.add(mesh(rg, rice, 0, -0.06, 0.06, -Math.PI / 2)); // tapas en el plano XZ, altura en Y (de -0.18 a 0.18)
+  const fc = cv(512, 256, (x, w, h) => { if (tuna) { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#c0142e'); g.addColorStop(1, '#8a0a20'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(255,120,140,0.25)'; x.lineWidth = 6; for (let i = -4; i < 14; i++) { x.beginPath(); x.moveTo(i * 44, 0); x.bezierCurveTo(i * 44 + 40, h * 0.4, i * 44 + 10, h * 0.6, i * 44 + 60, h); x.stroke(); } }
+    else { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#ff8a4c'); g.addColorStop(1, '#ff6a2a'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.strokeStyle = '#fff3e6'; for (let i = -4; i < 14; i++) { x.lineWidth = rnd(7, 12); x.beginPath(); x.moveTo(i * 46, 0); x.bezierCurveTo(i * 46 + 50, h * 0.35, i * 46 + 5, h * 0.65, i * 46 + 70, h); x.stroke(); } } });
+  const fish = M(tuna ? 'tuna' : 'salmon', { map: ctex(fc), roughness: 0.25, emissive: tuna ? '#3a0010' : '#5a1a00', emissiveIntensity: 0.5 });
+  const fg = new THREE.BoxGeometry(0.92, 0.12, 0.42, 20, 2, 6); const p = fg.attributes.position; for (let i = 0; i < p.count; i++) { const X = p.getX(i), Z = p.getZ(i), Y = p.getY(i); p.setY(i, Y * (1 - 0.35 * Math.abs(X) / 0.46) - 0.55 * X * X - 0.35 * Z * Z); } fg.computeVertexNormals();
+  G.add(mesh(fg, fish, 0, 0.16, 0)); return { g: G, glow: tuna ? '#ff3a5a' : '#ff9a4a' }; }
+// ---------- 5. HANGAR (insignia y logo completo) ----------
+function mkHangar(full) { const G = new THREE.Group();
+  const black = M('hgBlack', { color: '#0a0a0c', roughness: 0.35, metalness: 0.3, emissive: '#000000' }), white = M('hgWhite', { color: '#ffffff', roughness: 0.3, emissive: '#d8d8d8', emissiveIntensity: 0.55 }), edge = M('hgEdge', { color: '#c8ccd4', metalness: 0.95, roughness: 0.2, emissive: '#303038', emissiveIntensity: 0.5 });
+  let sh; if (full) { sh = svgShapes(ASSETS.hangar_logo, 367.5, 357.5, 1 / 533 * 0.9, true, 2); const pl = new THREE.ExtrudeGeometry(roundRect(1.0, 0.92, 0.12), { depth: 0.06, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 1, curveSegments: 4 }); G.add(mesh(pl, [black, edge], 0, 0, -0.03)); }
+  else { sh = svgShapes(ASSETS.hangar_badge, 371.5, 271.5, 1 / 301 * 0.94, true, 2); G.add(mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 40), [edge, black, black], 0, 0, 0, Math.PI / 2)); }
+  if (full) { const lg = new THREE.ExtrudeGeometry(sh, { depth: 0.018, bevelEnabled: false, curveSegments: 1 }); G.add(mesh(lg, white, 0, 0, 0.045)); G.add(mesh(lg, white, 0, 0, -0.045, 0, Math.PI)); }
+  else G.add(mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.1, bevelEnabled: false, curveSegments: 2 }), white, 0, 0, -0.05)); /* atraviesa el disco: sobresale por las dos caras */ return { g: G, glow: '#ffffff', coin: true }; }
+// ---------- 6. CARACOL ----------
+function mkSnail() { const G = new THREE.Group();
+  class Spiral extends THREE.Curve { getPoint(t, o = new THREE.Vector3()) { const a = t * Math.PI * 2 * 2.6, r = 0.03 + 0.3 * Math.pow(t, 1.25); return o.set(Math.cos(a) * r, Math.sin(a) * r, 0.16 * (1 - t)); } }
+  const cu = new Spiral(), TS = 64, RS = 9, tg = new THREE.TubeGeometry(cu, TS, 1, RS, false), p = tg.attributes.position, rad = t => 0.012 + 0.16 * Math.pow(t, 1.35);
+  for (let i = 0; i <= TS; i++) { const c = cu.getPointAt(i / TS), s = rad(i / TS); for (let j = 0; j <= RS; j++) { const k = i * (RS + 1) + j; p.setXYZ(k, c.x + (p.getX(k) - c.x) * s, c.y + (p.getY(k) - c.y) * s, c.z + (p.getZ(k) - c.z) * s); } } tg.computeVertexNormals();
+  const sc = cv(512, 64, (x, w, h) => { const g = x.createLinearGradient(0, 0, w, 0); g.addColorStop(0, '#5a2e12'); g.addColorStop(1, '#c98a45'); x.fillStyle = g; x.fillRect(0, 0, w, h); for (let i = 0; i < 46; i++) { x.fillStyle = i % 2 ? 'rgba(60,25,8,0.55)' : 'rgba(255,215,150,0.35)'; x.fillRect(i * 11.1, 0, rnd(3, 6), h); } x.fillStyle = 'rgba(255,230,180,0.5)'; x.fillRect(0, h * 0.42, w, 6); });
+  const shell = M('shell', { map: ctex(sc), roughness: 0.35, emissive: '#2a1204', emissiveIntensity: 0.6 }); G.add(mesh(tg, shell, 0, 0.3, 0, 0, Math.PI / 2));
+  const skin = M('snailSkin', { color: '#cdb38a', roughness: 0.3, emissive: '#3a2a14', emissiveIntensity: 0.6 }), eye = M('snailEye', { color: '#1a1410', roughness: 0.2 });
+  const foot = new THREE.CapsuleGeometry(0.12, 0.75, 4, 10); G.add(mesh(foot, skin, 0.08, -0.06, 0, 0, 0, Math.PI / 2, 1, 1, 0.8));
+  G.add(mesh(new THREE.SphereGeometry(0.13, 16, 12), skin, 0.5, 0.04, 0)); // cabeza
+  for (const s of [-1, 1]) { G.add(mesh(new THREE.CylinderGeometry(0.018, 0.026, 0.3, 8), skin, 0.58, 0.24, s * 0.06, s * 0.25, 0, -0.35)); G.add(mesh(new THREE.SphereGeometry(0.038, 12, 8), eye, 0.635, 0.385, s * 0.095)); }
+  return { g: G, glow: '#ffcf7a' }; }
+// ---------- 7. PALA DE PÁDEL ----------
+function mkPadel() { const G = new THREE.Group(); const s = new THREE.Shape();
+  s.moveTo(-0.07, -0.02); s.bezierCurveTo(-0.16, 0.06, -0.27, 0.16, -0.27, 0.32); s.bezierCurveTo(-0.27, 0.5, -0.16, 0.6, 0, 0.6); s.bezierCurveTo(0.16, 0.6, 0.27, 0.5, 0.27, 0.32); s.bezierCurveTo(0.27, 0.16, 0.16, 0.06, 0.07, -0.02); s.lineTo(-0.07, -0.02);
+  for (let r = 0; r < 7; r++) for (let c = -3; c <= 3; c++) { const x = c * 0.058 + (r % 2 ? 0.029 : 0), y = 0.17 + r * 0.055; if (((x / 0.21) ** 2 + ((y - 0.34) / 0.22) ** 2) > 1) continue; const h = new THREE.Path(); h.absarc(x, y, 0.015, 0, Math.PI * 2, true); s.holes.push(h); }
+  const th = new THREE.Path(); th.moveTo(0, 0.1); th.lineTo(-0.045, 0.03); th.lineTo(0.045, 0.03); th.lineTo(0, 0.1); s.holes.push(th);
+  const fc = cv(256, 320, (x, w, h) => { const g = x.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#0f2a6b'); g.addColorStop(1, '#0a1230'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.fillStyle = '#c6ff1a'; x.beginPath(); x.moveTo(0, h * 0.62); x.quadraticCurveTo(w * 0.5, h * 0.36, w, h * 0.5); x.lineTo(w, h * 0.6); x.quadraticCurveTo(w * 0.5, h * 0.48, 0, h * 0.74); x.fill(); x.fillStyle = '#ffffff'; x.beginPath(); x.moveTo(0, h * 0.78); x.quadraticCurveTo(w * 0.5, h * 0.52, w, h * 0.64); x.lineTo(w, h * 0.67); x.quadraticCurveTo(w * 0.5, h * 0.57, 0, h * 0.82); x.fill(); x.fillStyle = '#c6ff1a'; x.font = '900 34px Arial Black, Arial'; x.textAlign = 'center'; x.fillText('PÁDEL', w / 2, h * 0.3); });
+  const face = M('padelFace', { map: ctex(fc), roughness: 0.4, emissive: '#0a1a40', emissiveIntensity: 0.6 }), frame = M('padelFrame', { color: '#16161a', roughness: 0.35, metalness: 0.4, emissive: '#101018', emissiveIntensity: 0.6 }), grip = M('padelGrip', { color: '#f5f5f5', roughness: 0.6, emissive: '#3a3a3a', emissiveIntensity: 0.5 });
+  const g = planarUV(new THREE.ExtrudeGeometry(s, { depth: 0.05, bevelEnabled: false, curveSegments: 4 })); G.add(mesh(g, [face, frame], 0, 0, -0.025));
+  G.add(mesh(new THREE.CylinderGeometry(0.034, 0.03, 0.26, 12), grip, 0, -0.15, 0)); G.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 12), frame, 0, -0.29, 0));
+  for (let i = 0; i < 5; i++) G.add(mesh(new THREE.TorusGeometry(0.034, 0.006, 4, 12), frame, 0, -0.06 - i * 0.05, 0, Math.PI / 2 + 0.25)); // cinta
+  return { g: G, glow: '#c6ff1a' }; }
+// ---------- 8. BOTELLA DE CERVEZA ----------
+function mkBeer(green) { const G = new THREE.Group();
+  const prof = [[0, 0], [0.165, 0], [0.18, 0.02], [0.18, 0.5], [0.17, 0.57], [0.12, 0.66], [0.068, 0.75], [0.062, 0.93], [0.07, 0.945], [0.07, 0.975], [0.055, 0.985], [0, 0.985]].map(p => V2(...p));
+  const glass = M(green ? 'glassG' : 'glassB', { color: green ? '#1f6b2a' : '#6a3008', roughness: 0.08, metalness: 0.35, emissive: green ? '#0c3a12' : '#3a1600', emissiveIntensity: 0.9, rim: 1.4 });
+  G.add(mesh(new THREE.LatheGeometry(prof, 28), glass));
+  const lc = cv(512, 160, (x, w, h) => { x.fillStyle = green ? '#f2f2e6' : '#f6e7b8'; x.fillRect(0, 0, w, h); for (const ox of [0, w / 2]) { x.fillStyle = green ? '#127a2e' : '#c1121f'; x.beginPath(); x.ellipse(ox + w / 4, h / 2, 100, 58, 0, 0, 7); x.fill(); x.strokeStyle = '#d4a017'; x.lineWidth = 6; x.stroke(); x.fillStyle = '#fff'; x.font = '900 40px Arial Black, Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(green ? 'LAGER' : 'CERVEZA', ox + w / 4, h / 2 - 6); x.font = 'bold 20px Arial'; x.fillText('LA CURVA', ox + w / 4, h / 2 + 30); } x.fillStyle = '#d4a017'; x.fillRect(0, 0, w, 10); x.fillRect(0, h - 10, w, 10); });
+  const label = M(green ? 'lblG' : 'lblB', { map: ctex(lc), roughness: 0.5, emissive: '#303030', emissiveIntensity: 0.5 }), foil = M('foil', { color: '#e8c04a', metalness: 0.9, roughness: 0.25, emissive: '#3a2a00', emissiveIntensity: 0.6 });
+  G.add(mesh(new THREE.CylinderGeometry(0.184, 0.184, 0.32, 28, 1, true), label, 0, 0.29, 0)); G.add(mesh(new THREE.CylinderGeometry(0.066, 0.07, 0.08, 20, 1, true), foil, 0, 0.82, 0));
+  G.add(mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.035, 21), foil, 0, 0.99, 0)); return { g: G, glow: green ? '#5aff7a' : '#ffb347' }; }
+// ---------- 9. PALMERA ----------
+function mkPalm() { const G = new THREE.Group();
+  const cu = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.06, 0.35, 0), new THREE.Vector3(0.18, 0.7, 0), new THREE.Vector3(0.3, 0.95, 0)]), TS = 24, RS = 9, tg = new THREE.TubeGeometry(cu, TS, 1, RS, false), p = tg.attributes.position;
+  for (let i = 0; i <= TS; i++) { const c = cu.getPointAt(i / TS), s = 0.055 - 0.022 * i / TS; for (let j = 0; j <= RS; j++) { const k = i * (RS + 1) + j; p.setXYZ(k, c.x + (p.getX(k) - c.x) * s, c.y + (p.getY(k) - c.y) * s, c.z + (p.getZ(k) - c.z) * s); } } tg.computeVertexNormals();
+  const bc = cv(256, 32, (x, w, h) => { x.fillStyle = '#8a5a2b'; x.fillRect(0, 0, w, h); for (let i = 0; i < 16; i++) { x.fillStyle = '#5a3816'; x.fillRect(i * 16, 0, 5, h); x.fillStyle = '#b07a42'; x.fillRect(i * 16 + 6, 0, 3, h); } });
+  G.add(mesh(tg, M('trunk', { map: ctex(bc), roughness: 0.8, emissive: '#2a1606', emissiveIntensity: 0.6 })));
+  const leaf = M('leaf', { vertexColors: true, roughness: 0.55, side: THREE.DoubleSide, emissive: '#0a3a0a', emissiveIntensity: 0.6 });
+  const top = cu.getPoint(1); const NS = 14;
+  for (let f = 0; f < 8; f++) { const pos = [], col = [], ang = f / 8 * Math.PI * 2 + 0.2, L = rnd(0.48, 0.6), up = f % 2 ? 0.22 : 0.3;
+    const at = (t, side) => { const w = 0.11 * Math.sin(Math.PI * Math.pow(t, 0.75)) * (side ? ((Math.round(t * NS * 2) % 2) ? 1 : 0.6) : 0); const r = L * t, y = up * t - (up + 0.42) * t * t; return [Math.cos(ang) * r - Math.sin(ang) * w * side, y - 0.04 * Math.abs(side) * w / 0.11, Math.sin(ang) * r + Math.cos(ang) * w * side]; };
+    for (let i = 0; i < NS; i++) { const t0 = i / NS, t1 = (i + 1) / NS; for (const sd of [-1, 1]) { const a = at(t0, 0), b = at(t1, 0), c = at(t1, sd), d = at(t0, sd); pos.push(...a, ...b, ...c, ...a, ...c, ...d); col.push(0.1, 0.4, 0.08, 0.1, 0.4, 0.08, 0.25, 0.85, 0.2, 0.1, 0.4, 0.08, 0.25, 0.85, 0.2, 0.25, 0.85, 0.2); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); G.add(mesh(g, leaf, top.x, top.y, top.z)); }
+  const coco = M('coco', { color: '#5a3a1a', roughness: 0.6, emissive: '#1a0e04', emissiveIntensity: 0.5 }); for (let i = 0; i < 3; i++) G.add(mesh(new THREE.SphereGeometry(0.045, 12, 8), coco, top.x + Math.cos(i * 2.1) * 0.05, top.y - 0.05, top.z + Math.sin(i * 2.1) * 0.05));
+  G.add(mesh(new THREE.SphereGeometry(0.26, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), M('sand', { color: '#f2d28a', roughness: 0.9, emissive: '#4a3a10', emissiveIntensity: 0.5 }), 0, -0.02, 0, 0, 0, 0, 1, 0.35, 1));
+  return { g: G, glow: '#7aff9a' }; }
+// ---------- 10. PLATOREEL ----------
+function mkPlatoReel() { const G = new THREE.Group(); const W = 1024, H = 470;
+  const c = cv(W, H, () => {}); const t = ctex(c); const draw = () => { const x = c.getContext('2d'); const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1c1c26'); g.addColorStop(1, '#07070b'); x.fillStyle = g; x.fillRect(0, 0, W, H); x.strokeStyle = '#ff2a1a'; x.lineWidth = 14; x.strokeRect(14, 14, W - 28, H - 28); const im = prImg(); if (im && im.complete && im.naturalWidth) { const s = (W * 0.86) / im.naturalWidth; x.drawImage(im, (W - im.naturalWidth * s) / 2, (H - im.naturalHeight * s) / 2, im.naturalWidth * s, im.naturalHeight * s); } t.needsUpdate = true; };
+  draw(); const im = prImg(); if (im && !im.complete) im.addEventListener('load', draw);
+  const face = M('prFace', { map: t, roughness: 0.4, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 0.55 }), side = M('prSide', { color: '#ff2a1a', roughness: 0.4, emissive: '#5a0800', emissiveIntensity: 0.8 });
+  const g = planarUV(new THREE.ExtrudeGeometry(roundRect(1.6, 0.735, 0.08), { depth: 0.05, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 1, curveSegments: 4 }));
+  G.add(mesh(g, [face, side], 0, 0, -0.025)); return { g: G, glow: '#ff3a2a', coin: true }; }
+// ---------- 11. TINDER ----------
+function mkTinder() { const G = new THREE.Group(); const sh = svgShapes(ASSETS.tinder, 12, 12, 1 / 24, true, 6);
+  const g = new THREE.ExtrudeGeometry(sh, { depth: 0.14, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 2, curveSegments: 6 }); g.computeBoundingBox(); const b = g.boundingBox, p = g.attributes.position, col = new Float32Array(p.count * 3), c0 = new THREE.Color('#fd267a'), c1 = new THREE.Color('#ff7a36'), cc = new THREE.Color();
+  for (let i = 0; i < p.count; i++) { cc.copy(c0).lerp(c1, (p.getY(i) - b.min.y) / (b.max.y - b.min.y)); col.set([cc.r, cc.g, cc.b], i * 3); } g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  G.add(mesh(g, M('tinder', { vertexColors: true, roughness: 0.5, metalness: 0, emissive: '#8a0a34', emissiveIntensity: 0.55, rim: 0.5 }), 0, 0, -0.07)); return { g: G, glow: '#ff3a7a', coin: true }; }
+// ---------- 12. INSTAGRAM ----------
+function mkInstagram() { const G = new THREE.Group();
+  const c = cv(512, 512, (x, w, h) => { let g = x.createRadialGradient(w * 0.3, h * 1.07, 0, w * 0.3, h * 1.07, w * 1.3); g.addColorStop(0, '#FFDD55'); g.addColorStop(0.1, '#FFDD55'); g.addColorStop(0.5, '#FF543E'); g.addColorStop(1, '#C837AB'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+    g = x.createRadialGradient(-w * 0.17, h * 0.07, 0, -w * 0.17, h * 0.07, w * 0.6); g.addColorStop(0, '#3771C8'); g.addColorStop(0.13, '#3771C8'); g.addColorStop(1, 'rgba(102,0,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
+  const tile = M('igTile', { map: ctex(c), roughness: 0.3, emissive: '#ffffff', emissiveMap: null, emissiveIntensity: 0.0 }); tile.emissiveMap = tile.map; tile.emissiveIntensity = 0.45;
+  const g = planarUV(new THREE.ExtrudeGeometry(roundRect(1, 1, 0.24), { depth: 0.1, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 1, curveSegments: 5 }), false); G.add(mesh(g, tile, 0, 0, -0.05));
+  const sh = svgShapes(ASSETS.instagram, 12, 12, 0.72 / 24, true, 5); const gl = new THREE.ExtrudeGeometry(sh, { depth: 0.18, bevelEnabled: false, curveSegments: 5 }); const wh = M('igWhite', { color: '#ffffff', roughness: 0.3, emissive: '#e0e0e0', emissiveIntensity: 0.6 });
+  G.add(mesh(gl, wh, 0, 0, -0.09)); return { g: G, glow: '#ff4fa8', coin: true }; }
+// ---------- 13. PATINETE ELÉCTRICO ----------
+function mkScooter() { const G = new THREE.Group();
+  const blk = M('scBlack', { color: '#18181c', roughness: 0.5, emissive: '#0a0a10', emissiveIntensity: 0.8 }), gry = M('scGrey', { color: '#cfd3da', metalness: 0.7, roughness: 0.3, emissive: '#2a2c33', emissiveIntensity: 0.6 }), acc = M('scAcc', { color: '#18c06a', roughness: 0.35, emissive: '#04401c', emissiveIntensity: 0.8 }), tyre = M('scTyre', { color: '#0c0c0c', roughness: 0.8 }), lamp = M('camFlash', {});
+  G.add(mesh(new THREE.ExtrudeGeometry(roundRect(0.8, 0.2, 0.06), { depth: 0.08, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 1, curveSegments: 3 }), [blk, gry], 0, 0.14, 0, Math.PI / 2)); // plataforma
+  G.add(mesh(new THREE.BoxGeometry(0.7, 0.012, 0.15), acc, 0, 0.115, 0)); // franja
+  const R = 0.11; for (const x of [-0.42, 0.46]) { G.add(mesh(new THREE.TorusGeometry(R, 0.035, 8, 24), tyre, x, 0.11, 0)); G.add(mesh(new THREE.CylinderGeometry(R * 0.72, R * 0.72, 0.05, 18), x > 0 ? acc : gry, x, 0.11, 0, Math.PI / 2)); }
+  G.add(mesh(new THREE.TorusGeometry(0.14, 0.02, 4, 16, Math.PI * 0.6), blk, -0.42, 0.11, 0, 0, 0, Math.PI * 0.25)); // guardabarros
+  const a = new THREE.Vector3(0.46, 0.11, 0), b = new THREE.Vector3(0.36, 1.0, 0), d = b.clone().sub(a), L = d.length(); const st = mesh(new THREE.CylinderGeometry(0.04, 0.045, L, 12), gry, (a.x + b.x) / 2, (a.y + b.y) / 2, 0); st.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); G.add(st);
+  G.add(mesh(new THREE.BoxGeometry(0.09, 0.2, 0.08), blk, 0.43, 0.3, 0, 0, 0, 0.11)); // horquilla/cuello
+  G.add(mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.5, 10), gry, b.x, b.y, 0, Math.PI / 2)); for (const s of [-1, 1]) G.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.13, 10), blk, b.x, b.y, s * 0.22, Math.PI / 2));
+  G.add(mesh(new THREE.BoxGeometry(0.06, 0.03, 0.1), acc, b.x, b.y + 0.025, 0)); G.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 14), lamp, 0.45, 0.62, 0, 0, 0, Math.PI / 2 + 0.11));
+  return { g: G, glow: '#3affa0' }; }
+// ---------- catálogo ----------
+const TYPES = [
+  { k: 'bitcoin', name: 'Bitcoin', mk: mkBitcoin, n: 6, s: 0.9 },
+  { k: 'camara', name: 'Cámara de fotos', mk: mkCamera, n: 3, s: 1.0 },
+  { k: 'chuleton', name: 'Chuletón', mk: mkSteak, n: 3, s: 1.15 },
+  { k: 'nigiri_salmon', name: 'Nigiri de salmón', mk: () => mkNigiri(false), n: 3, s: 0.95 },
+  { k: 'nigiri_atun', name: 'Nigiri de atún', mk: () => mkNigiri(true), n: 2, s: 0.95 },
+  { k: 'hangar', name: 'Hangar (insignia)', mk: () => mkHangar(false), n: 6, s: 1.0 },
+  { k: 'hangar_logo', name: 'Hangar (logo)', mk: () => mkHangar(true), n: 2, s: 1.25 },
+  { k: 'caracol', name: 'Caracol', mk: mkSnail, n: 3, s: 0.95 },
+  { k: 'padel', name: 'Pala de pádel', mk: mkPadel, n: 3, s: 1.2 },
+  { k: 'cerveza', name: 'Cerveza', mk: () => mkBeer(false), n: 2, s: 1.05 },
+  { k: 'cerveza_verde', name: 'Cerveza (verde)', mk: () => mkBeer(true), n: 2, s: 1.05 },
+  { k: 'palmera', name: 'Palmera', mk: mkPalm, n: 3, s: 1.25 },
+  { k: 'platoreel', name: 'PlatoReel', mk: mkPlatoReel, n: 3, s: 1.9 },
+  { k: 'tinder', name: 'Tinder', mk: mkTinder, n: 4, s: 0.85 },
+  { k: 'instagram', name: 'Instagram', mk: mkInstagram, n: 4, s: 0.85 },
+  { k: 'patinete', name: 'Patinete eléctrico', mk: mkScooter, n: 3, s: 1.2 },
+];
+let PROTOS = null;
+function protos() { if (PROTOS) return PROTOS; PROTOS = {}; for (const T of TYPES) { const o = T.mk(); PROTOS[T.k] = { parts: bake(o.g), glow: new THREE.Color(o.glow), coin: !!o.coin }; } return PROTOS; }
+function protoGroup(k) { const g = new THREE.Group(); for (const p of protos()[k].parts) g.add(new THREE.Mesh(p.geo, p.mat)); return g; }
+let HALO = null; function haloTex() { if (HALO) return HALO; HALO = ctex(cv(128, 128, (x, w, h) => { const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.35, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); })); return HALO; }
+
+// ---------- sistema de vuelo ----------
+function create(scene, opt = {}) { const P = protos(); const objs = [], meshes = {}; const ORBIT = 3; // insignias de Hangar dando vueltas alrededor del Pop
+  // en móvil (LITE) ~40 objetos en vez de ~52
+  const TY = TYPES.map(T => Object.assign({}, T, { n: opt.lite ? Math.max(T.k === 'hangar' ? 5 : 1, Math.round(T.n * 0.75)) : T.n }));
+  let total = 0; for (const T of TY) total += T.n;
+  // orden intercalado para que en cada momento haya variedad
+  const order = []; const left = TY.map(T => T.n); for (let r = 0; order.length < total; r++) TY.forEach((T, i) => { if (left[i] > 0) { left[i]--; order.push(i); } });
+  for (const T of TY) { meshes[T.k] = P[T.k].parts.map(p => { const im = new THREE.InstancedMesh(p.geo, p.mat, T.n); im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(im); return im; }); }
+  const halo = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: haloTex(), transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }), total); halo.frustumCulled = false; scene.add(halo);
+  const cnt = {}; let orb = 0;
+  order.forEach((ti, idx) => { const T = TY[ti]; const o = { T, k: T.k, i: (cnt[T.k] = (cnt[T.k] || 0) + 1) - 1, coin: P[T.k].coin, s: T.s * rnd(1.05, 1.6), rot: new THREE.Euler(rnd(0, 6), rnd(0, 6), rnd(0, 6)), sp: new THREE.Vector3(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).multiplyScalar(rnd(0.7, 1.5)), vf: rnd(0.75, 1.25), sw: rnd(0.15, 0.45) * (Math.random() < 0.5 ? -1 : 1), orbit: -1 };
+    if (T.k === 'hangar' && orb < ORBIT) { o.orbit = orb++; o.s = 0.62; }
+    if (o.coin) o.sp.set(rnd(-0.25, 0.25), rnd(1.0, 1.9) * (Math.random() < 0.5 ? -1 : 1), rnd(-0.2, 0.2));
+    o.a = rnd(0, Math.PI * 2); o.r = rnd(1.8, 6.5); o.z = -2 - (idx / total) * 60 + rnd(-1, 1); objs.push(o); halo.setColorAt(idx, P[T.k].glow); });
+  halo.instanceColor.needsUpdate = true;
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), dir = new THREE.Vector3(), fr = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(), slot = {};
+  function respawn(o) { o.z = -rnd(52, 66); o.a = rnd(0, Math.PI * 2); o.r = rnd(1.9, 6.0); o.s = o.T.s * rnd(1.05, 1.6); }
+  function update(dt, g, speed, pop, cam) { const vz = 2.5 + speed * 0.055; const asp = cam.aspect, hh = Math.tan(cam.fov * Math.PI / 360);
+    RIM.value.setHSL((0.55 + g * 0.08) % 1, 0.35, 0.72); fr.setFromProjectionMatrix(pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    for (const T of TY) slot[T.k] = 0; let nh = 0;
+    objs.forEach((o, idx) => { let s;
+      if (o.orbit >= 0) { // órbita alrededor del Pop
+        const d = Math.abs(pop.z) + 0.3, hw = d * hh * asp, hy = d * hh, rx = Math.min(1.7, Math.max(0.75, hw * 0.72)), ry = Math.min(1.3, Math.max(0.8, hy * 0.5)); const th = g * 1.15 + o.orbit * Math.PI * 2 / ORBIT;
+        v.set(pop.x + Math.cos(th) * rx, pop.y + 0.35 + Math.sin(th) * ry, pop.z - 0.3 + Math.sin(th + 1.2) * 0.45); s = o.s * Math.min(1, g / 0.8 + 0.05); }
+      else { o.z += dt * vz * o.vf; o.a += dt * o.sw; if (o.z > 1.5) respawn(o); v.set(Math.cos(o.a) * o.r, Math.sin(o.a) * o.r, o.z); s = o.s * Math.min(1, (o.z + 68) / 12); }
+      o.rot.x += o.sp.x * dt; o.rot.y += o.sp.y * dt; o.rot.z += o.sp.z * dt; if (o.coin) { o.rot.x = 0.35 * Math.sin(g * 0.9 + idx); o.rot.z = 0.25 * Math.sin(g * 0.7 + idx * 2); }
+      sph.center.copy(v); sph.radius = s * 1.2; if (s < 0.01 || !fr.intersectsSphere(sph)) return; // fuera de cámara: no se dibuja
+      const k = slot[o.k]++; q.setFromEuler(o.rot); sc.setScalar(s); m4.compose(v, q, sc); for (const im of meshes[o.k]) im.setMatrixAt(k, m4);
+      dir.copy(v).sub(cam.position).normalize(); v.addScaledVector(dir, 0.55 * s); sc.setScalar(s * 2.3); m4.compose(v, cam.quaternion, sc); halo.setMatrixAt(nh, m4); halo.setColorAt(nh++, P[o.k].glow); });
+    for (const k in meshes) for (const im of meshes[k]) { im.count = slot[k]; im.instanceMatrix.needsUpdate = true; } halo.count = nh; halo.instanceMatrix.needsUpdate = true; halo.instanceColor.needsUpdate = true; }
+  return { update, objs, meshes, halo, count: total }; }
+
+// ---------- hoja de contacto (para revisar cada objeto) ----------
+function sheet(cell = 300, cols = 4) { const P = protos(); const LIST = [['bitcoin', '1. Bitcoin'], ['camara', '2. Cámara de fotos'], ['chuleton', '3. Chuletón'], [['nigiri_salmon', 'nigiri_atun'], '4. Nigiris (salmón / atún)'], [['hangar', 'hangar_logo'], '5. Hangar (insignia / logo)'], ['caracol', '6. Caracol'], ['padel', '7. Pala de pádel'], [['cerveza', 'cerveza_verde'], '8. Cervezas'], ['palmera', '9. Palmera'], ['platoreel', '10. PlatoReel'], ['tinder', '11. Tinder'], ['instagram', '12. Instagram'], ['patinete', '13. Patinete eléctrico']];
+  const rows = Math.ceil(LIST.length / cols), W = cell * cols, H = cell * rows; const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H); r.setScissorTest(true);
+  const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 50); cam.position.set(0, 0.15, 3.1); cam.lookAt(0, 0, 0);
+  LIST.forEach(([ks, label], i) => { const S = new THREE.Scene(); const c = i % cols, rw = Math.floor(i / cols); S.background = new THREE.Color().setHSL(0.72 + 0.04 * Math.sin(i), 0.8, 0.05);
+    S.add(new THREE.AmbientLight('#ffffff', 0.9)); const d = new THREE.DirectionalLight('#ffffff', 2.2); d.position.set(2, 3, 4); S.add(d); const p1 = new THREE.PointLight('#ff4fd8', 6, 10, 1.2); p1.position.set(2, 1, 1.5); S.add(p1); const p2 = new THREE.PointLight('#2fd8ff', 6, 10, 1.2); p2.position.set(-2, -1, 1.5); S.add(p2);
+    const arr = Array.isArray(ks) ? ks : [ks]; arr.forEach((k, j) => { const g = protoGroup(k); const sc = (arr.length > 1 ? 0.72 : 1.05) * Math.min(1.25, TYPES.find(T => T.k === k).s); g.scale.setScalar(sc * (k === 'platoreel' ? 0.85 : 1)); g.position.x = arr.length > 1 ? (j ? 0.42 : -0.42) : 0; if (arr.length > 1) g.position.y = j ? -0.15 : 0.15;
+      if (P[k].coin) g.rotation.set(0.12, -0.42, 0.04); else g.rotation.set(0.35, -0.6, 0.1); S.add(g); });
+    RIM.value.set('#bfe6ff'); r.setViewport(c * cell, (rows - 1 - rw) * cell, cell, cell); r.setScissor(c * cell, (rows - 1 - rw) * cell, cell, cell); r.render(S, cam); });
+  const out = cv(W, H, (x) => { x.fillStyle = '#05010f'; x.fillRect(0, 0, W, H); x.drawImage(r.domElement, 0, 0); x.font = 'bold 19px Arial'; x.textAlign = 'center';
+    LIST.forEach(([, label], i) => { const c = i % cols, rw = Math.floor(i / cols); x.fillStyle = 'rgba(0,0,0,0.6)'; x.fillRect(c * cell, rw * cell + cell - 32, cell, 32); x.fillStyle = '#fff'; x.fillText(label, c * cell + cell / 2, rw * cell + cell - 10); x.strokeStyle = 'rgba(255,255,255,0.15)'; x.strokeRect(c * cell + 0.5, rw * cell + 0.5, cell - 1, cell - 1); });
+    const c = LIST.length % cols, rw = Math.floor(LIST.length / cols); if (c) { x.fillStyle = '#ffd67a'; x.font = '900 30px Arial Black, Arial'; x.fillText('VIAJE ASTRAL', (c * cell + W) / 2, rw * cell + cell / 2 - 10); x.font = 'bold 18px Arial'; x.fillStyle = '#fff'; x.fillText('objetos flotantes · La Curva', (c * cell + W) / 2, rw * cell + cell / 2 + 22); } });
+  const url = out.toDataURL('image/png'); r.dispose(); r.forceContextLoss(); return url; }
+return { create, sheet, protos, TYPES, RIM, ready: () => { const im = prImg(); return !im || im.complete; } };
+})();
+window.ASTRAL = ASTRAL;
+</script>
 <script type="module">// ===== LA CURVA · el juego =====
 (async () => {
 const THREE = window.THREE, W = window.WORLD, scene = W.scene, WX = W.WX;
@@ -2055,7 +5472,7 @@ function stepSeated(dt) { const a = P.a; P.sitT += dt; if (P.lock > 0) P.lock -=
   P.vel.set(0, 0, 0); sun.position.copy(P.pos).add(SUN_OFF); sun.target.position.copy(P.pos); }
 // pregunta del viaje astral (solo DOM)
 const tripQEl = $('tripQ'); const tripQOpen = () => tripQEl.classList.contains('on');
-function showTripQ() { if (P.tripDone || !P.sit || STATE !== 'play') return; tripQEl.classList.add('on'); }
+function showTripQ() { if (P.tripDone || !P.sit || STATE !== 'play') return; tripQEl.classList.add('on'); setTimeout(() => { try { buildTrip(); if (!TRIP.compiled) { TRIP.compiled = true; renderer.compile(TRIP.scene, TRIP.cam); } } catch (e) { console.warn(e); } }, 60); } // prepara el viaje mientras se pregunta
 function hideTripQ() { tripQEl.classList.remove('on'); }
 function tripNo() { hideTripQ(); P.askT = -1; if (P.sit) say(P.a, pick(['Mejor me quedo aquí sentadito', 'Hoy no, que estoy a gusto', 'Otro día, galaxia']), 2.2); }
 function tripYes() { if (!tripQOpen() || !P.sit || STATE !== 'play') return; hideTripQ(); startTrip(); }
@@ -2079,12 +5496,9 @@ function buildTrip() { if (TRIP.built) return; TRIP.built = true;
   TRIP.rings = []; for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.TorusGeometry(7, 0.07, 6, 48), new THREE.MeshBasicMaterial({ color: '#fff', transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })); m.position.z = -i * 22; S.add(m); TRIP.rings.push(m); }
   // nebulosas
   const neb = dotTex(true); TRIP.nebs = []; for (let i = 0; i < 9; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: neb, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false })); sp.scale.setScalar(rnd(22, 42)); sp.position.set(rnd(-40, 40), rnd(-30, 30), -rnd(60, 220)); sp.userData.h = Math.random(); S.add(sp); TRIP.nebs.push(sp); }
-  // planetas que giran
-  const planetTex = (c1, c2, c3) => TX.text(256, 128, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, c1); g.addColorStop(0.5, c2); g.addColorStop(1, c3); x.fillStyle = g; x.fillRect(0, 0, w, h); for (let i = 0; i < 14; i++) { x.globalAlpha = 0.25; x.fillStyle = i % 2 ? c1 : c3; x.fillRect(0, Math.random() * h, w, rnd(3, 12)); } x.globalAlpha = 0.3; for (let i = 0; i < 20; i++) { x.fillStyle = '#fff'; x.beginPath(); x.ellipse(Math.random() * w, Math.random() * h, rnd(4, 18), rnd(2, 6), 0, 0, 7); x.fill(); } });
-  TRIP.planets = []; const PL = [[3.2, planetTex('#ff4fd8', '#7b2ff7', '#2fd8ff'), true, [-9, 4, -30]], [2.2, planetTex('#ffe14f', '#ff7b2f', '#c4262f'), false, [10, -5, -42]], [5, planetTex('#4fffb0', '#2f7bff', '#1a1060'), true, [6, 9, -80]], [1.4, planetTex('#ffffff', '#9fd8ff', '#3a60ff'), false, [-7, -7, -18]]];
-  for (const [r, t, ring, p] of PL) { const g = new THREE.Group(); g.position.set(...p); const sm = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 20), new THREE.MeshStandardMaterial({ map: t, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 0.55, roughness: 0.6 })); g.add(sm);
-    if (ring) { const rm = new THREE.Mesh(new THREE.RingGeometry(r * 1.35, r * 2.0, 48), new THREE.MeshBasicMaterial({ color: '#ffd6f5', transparent: true, opacity: 0.55, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })); rm.rotation.x = 1.2; g.add(rm); g.userData.ring = rm; }
-    g.userData.home = V3(...p); g.userData.sp = rnd(0.3, 0.8); S.add(g); TRIP.planets.push(g); }
+  // objetos flotantes (bitcoins, logos, comida, cervezas, palmeras…): se construyen una vez y vuelan con InstancedMesh
+  TRIP.ast = window.ASTRAL ? window.ASTRAL.create(S, { lite: LITE }) : null;
+  TRIP.key = new THREE.DirectionalLight('#ffffff', 1.6); TRIP.key.position.set(2, 4, 5); S.add(TRIP.key);
   TRIP.amb = new THREE.AmbientLight('#ffffff', 0.9); S.add(TRIP.amb); TRIP.l1 = new THREE.PointLight('#ff4fd8', 30, 30, 1.2); TRIP.l1.position.set(3, 2, 2); S.add(TRIP.l1); TRIP.l2 = new THREE.PointLight('#2fd8ff', 30, 30, 1.2); TRIP.l2.position.set(-3, -1, 1); S.add(TRIP.l2); }
 function tripMusic(on) { if (!AC) return; try {
   if (on) { const g = AC.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(0.22, AC.currentTime + 1); g.connect(master); const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.Q.value = 6; lp.connect(g);
@@ -2121,11 +5535,11 @@ function updTrip(dt) { TRIP.t += dt; const t = TRIP.t, n = P.a.n;
   TRIP.lines.geometry.attributes.position.needsUpdate = TRIP.lines.geometry.attributes.color.needsUpdate = TRIP.pts.geometry.attributes.position.needsUpdate = TRIP.pts.geometry.attributes.color.needsUpdate = true;
   TRIP.rings.forEach((r, i) => { r.position.z += speed * 0.5 * dt; if (r.position.z > 3) r.position.z -= 14 * 22; r.material.color.setHSL((i * 0.07 + g * 0.4) % 1, 1, 0.6); r.rotation.z = g * (i % 2 ? 1 : -1) * 0.6; const w = 1 + 0.25 * Math.sin(g * 3 + i); r.scale.set(w, 1 / w, 1); });
   TRIP.nebs.forEach((s, i) => { s.material.color.setHSL((s.userData.h + g * 0.15) % 1, 1, 0.5); s.position.z += speed * 0.15 * dt; if (s.position.z > -20) s.position.z -= 200; s.material.rotation = g * 0.2 * (i % 2 ? 1 : -1); });
-  TRIP.planets.forEach((p, i) => { p.rotation.y += dt * p.userData.sp * 2; p.rotation.z = 0.3 * Math.sin(g + i); const h = p.userData.home; p.position.set(h.x * Math.cos(g * 0.25 + i) - h.y * Math.sin(g * 0.25 + i), h.x * Math.sin(g * 0.25 + i) + h.y * Math.cos(g * 0.25 + i), h.z + g * 2.2); if (p.userData.ring) p.userData.ring.rotation.z += dt; });
   TRIP.l1.color.setHSL((g * 0.3) % 1, 1, 0.6); TRIP.l2.color.setHSL((g * 0.3 + 0.5) % 1, 1, 0.6); TRIP.scene.background.setHSL(0.68 + 0.18 * Math.sin(g * 0.6), 0.9, 0.012 + 0.006 * Math.sin(g * 2));
   // el personaje flota y da volteretas
   const appear = smooth(clamp(g / 0.8, 0, 1)); n.scale.setScalar(TRIP.sc0 * appear); n.position.set(Math.sin(g * 1.3) * 0.4, -0.6 + Math.sin(g * 1.9) * 0.3, -3.1 + Math.sin(g * 0.8) * 0.3); n.rotation.set(g * 1.7, g * 2.3, Math.sin(g * 1.1) * 0.8);
   P.a.wave = 1; n.userData.update(dt, { speed: 0.6, grounded: false, vy: 3, wave: true, dance: true }); applyPose(P.a, dt);
+  if (TRIP.ast) { C.updateMatrixWorld(); TRIP.ast.update(dt, g, speed, n.position, C); }
   tripEl.style.setProperty('--h', ((g * 90) % 360).toFixed(0)); tripArp(dt);
   renderer.render(TRIP.scene, C); if (g >= end) endTrip(); }
 const skipTrip = () => { if (STATE === 'trip') TRIP.skip = true; };
