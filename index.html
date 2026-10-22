@@ -241,6 +241,27 @@ body.rk #layer,body.rkp #netPill,body.rkp #feed,body.rk #big{display:none!import
 @media (max-width:430px){#pToast{width:calc(100vw - 24px);max-width:none;top:calc(env(safe-area-inset-top) + 104px);padding:10px 10px 10px 12px;gap:12px;font-size:14px;line-height:1.3}#pToast span b{font-size:15px}#pToast .btn{padding:11px 14px;font-size:14px;flex:none}}
 @media (max-width:340px){#pToast{font-size:12.5px;gap:8px}#pToast .ic{width:32px;height:32px;font-size:18px}#pToast .btn{padding:9px 10px;font-size:13px}}
 @media (min-aspect-ratio:1/1){#phone{top:auto;bottom:calc(env(safe-area-inset-bottom) + 18px);left:auto;right:calc(env(safe-area-inset-right) + 24px);transform:translate(0,40px) scale(.9) rotate(2deg)}#phone.on{transform:translate(0,0) scale(1)}}
+
+/* bloque 3: momento DJ (src/dj.js) */
+#dj{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);width:min(360px,calc(100vw - 20px));z-index:16;transform:translate(-50%,30px) scale(.94);opacity:0;pointer-events:none;transition:opacity .25s,transform .35s cubic-bezier(.2,1.5,.35,1);background:linear-gradient(180deg,rgba(40,10,70,.55),rgba(12,4,26,.88));border:2px solid rgba(255,63,164,.65);border-radius:22px;padding:8px 8px 10px;box-shadow:0 0 26px rgba(255,63,164,.35),0 14px 40px rgba(0,0,0,.55);backdrop-filter:blur(3px)}
+#dj.on{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
+#dj .djTop{display:flex;justify-content:space-between;align-items:center;padding:0 6px 6px;color:#fff;font-weight:900;font-size:17px;letter-spacing:.5px}
+#dj .djTop b{color:#ffd23a;text-shadow:0 0 10px #ff3fa4}#dj #djSc{font-variant-numeric:tabular-nums;color:#7ff0ff}
+#dj .djSong{margin:-4px 6px 6px;color:#ffb8e0;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#djCv{position:static!important;display:block;width:100%;height:min(34vh,300px);border-radius:14px}
+#dj .djPads{display:flex;gap:8px;margin-top:8px}
+#dj .djPad{flex:1;height:74px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#1a0b2e;background:var(--c);box-shadow:0 5px 0 rgba(0,0,0,.35),0 0 16px var(--c);user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;transition:transform .08s}
+#dj .djPad kbd{font-size:11px;margin-top:2px;background:rgba(0,0,0,.25);color:#fff;border-radius:5px;padding:0 5px}
+#dj .djPad.hit{transform:translateY(3px) scale(.96);filter:brightness(1.35)}
+#dj .djRes{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-radius:20px;background:rgba(12,4,26,.82);color:#fff;opacity:0;pointer-events:none;transition:opacity .25s}
+#dj .djRes.on{opacity:1}#dj .djRes b{font-size:26px;color:#ffd23a;text-shadow:0 0 14px #ff3fa4;animation:bigPop .5s cubic-bezier(.2,1.5,.35,1)}#dj .djRes i{font-style:normal;font-size:34px;font-weight:900;color:#7dff5a}
+body.djOn #btns,body.djOn #joy,body.djOn #prompt{display:none!important}
+@media (min-aspect-ratio:1/1){#dj{left:auto;right:max(18px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 20px);width:min(340px,calc(50vw - 40px));transform:translate(30px,0) scale(.94)}#dj.on{transform:translate(0,0) scale(1)}#djCv{height:min(38vh,300px)}#dj .djPad{height:62px}}
+/* bloque 3: fundido de entrada a la partida y tarjeta final con pop */
+#fadeIn{position:fixed;inset:0;background:#05060c;z-index:30;pointer-events:none;opacity:0}
+#fadeIn.go{animation:fadeIn .9s ease-out forwards}@keyframes fadeIn{0%{opacity:1}100%{opacity:0}}
+#end.on>*{animation:endPop .55s cubic-bezier(.2,1.4,.35,1) both}#end.on>*:nth-child(2){animation-delay:.08s}#end.on>*:nth-child(3){animation-delay:.16s}#end.on>*:nth-child(4){animation-delay:.22s}#end.on>*:nth-child(5){animation-delay:.28s}#end.on>*:nth-child(n+6){animation-delay:.34s}
+@keyframes endPop{0%{opacity:0;transform:translateY(18px) scale(.9)}100%{opacity:1;transform:none}}
 </style></head><body>
 <div id="load" class="scr on"><div class="logo">LA CURVA</div><div class="sub">El Último Tango · C. Diario de Córdoba</div><div id="bar"><i></i></div><div id="loadtxt">Cargando el barrio…</div></div>
 <div id="menu" class="scr"><div class="logo" style="font-size:clamp(34px,10vw,60px)">LA CURVA</div><div class="sub">Elige quién de la pandilla va a liarla esta noche</div><div id="best"></div>
@@ -273,7 +294,7 @@ body.rk #layer,body.rkp #netPill,body.rkp #feed,body.rk #big{display:none!import
  <div id="rankBar"><div id="rankWait"></div><button class="btn" id="rankAgain">Otra ronda</button><button class="btn alt sm" id="rankLobby">Cambiar personaje</button><button class="btn alt sm" id="rankLeave">Salir</button></div></div>
 <div id="mpPause"><h2 style="color:#ffd67a;font-size:34px;margin:0">Partida online</h2><p>La noche sigue para los demás: no se puede pausar.</p><button class="btn" id="mpResume">Seguir liándola</button><button class="btn alt sm" id="mpQuit">Salir de la sala</button></div>
 <div id="emoMenu"></div><button id="chatBtn" type="button">💬 Chatear<kbd>C</kbd></button><div id="chatLog" aria-live="polite"></div><div id="chatBox"><div id="chatRow"><input id="chatIn" type="text" maxlength="80" autocomplete="off" autocapitalize="sentences" enterkeyhint="send" placeholder="Escribe algo… (máx. 80)"><button id="chatSend" type="button">Enviar</button><button id="chatX" type="button" aria-label="Cerrar">✕</button></div><div id="chatQuick"></div></div><div id="feed"></div><div id="netPill"><i></i><span>Conectado</span></div><div id="toast"></div>
-<div id="vig"></div><div id="pToast"></div><div id="phone"><div id="phScr"></div></div><div id="flash"></div><div id="big"></div><div id="cap"><h1></h1><p></p></div><div id="layer"></div>
+<div id="vig"></div><div id="fadeIn"></div><div id="pToast"></div><div id="phone"><div id="phScr"></div></div><div id="flash"></div><div id="big"></div><div id="cap"><h1></h1><p></p></div><div id="layer"></div>
 <script>/* semilla determinista para tráiler/pruebas */(function(){var q=location.search;if(/[?&](trailer|seed)=/.test(q)){var m=q.match(/seed=(\d+)/),s=m?+m[1]:12345;Math.random=function(){s=(s*16807)%2147483647;return(s-1)/2147483646;};}window.__GAME=1;})();</script>
 <script type="module">/**
  * @license
@@ -5120,7 +5141,7 @@ function setPose(a, k, v, dur) { a.pose[k] = v; if (dur) a.poseT[k] = dur; }
 function applyPose(a, dt) {
   const U = a.n.userData, w = a.pw, R = U.arms[0], L = U.arms[1], t = a.t;
   for (const k in a.poseT) { a.poseT[k] -= dt; if (a.poseT[k] <= 0) { delete a.poseT[k]; a.pose[k] = 0; } }
-  for (const k of ['sit', 'scratch', 'armUp', 'selfie', 'complain', 'startle', 'crouch', 'pour', 'push', 'drink', 'tray', 'look', 'pose', 'mob']) { w[k] = (w[k] || 0) + ((a.pose[k] || 0) - (w[k] || 0)) * Math.min(1, dt * 9); }
+  for (const k of ['sit', 'scratch', 'armUp', 'selfie', 'complain', 'startle', 'crouch', 'pour', 'push', 'drink', 'tray', 'look', 'pose', 'mob', 'dance']) { w[k] = (w[k] || 0) + ((a.pose[k] || 0) - (w[k] || 0)) * Math.min(1, dt * 9); }
   // caña en la mano (y sorbo de vez en cuando)
   if (a.beer && a.beerHand != null && !w.complain) { const arm = U.arms[a.beerHand]; const sip = Math.max(0, Math.sin(a.t * 0.7 + a.id)) ** 10; arm.rotation.x = -0.75 - 0.9 * sip - 1.3 * w.drink; arm.rotation.z = (a.beerHand ? 0.12 : -0.12) + (a.beerHand ? -0.45 : 0.45) * (sip + w.drink); }
   if (w.sit > 0.01) { for (const lg of U.legs) lg.rotation.x = lg.rotation.x * (1 - w.sit) - 1.45 * w.sit; }
@@ -5135,6 +5156,15 @@ function applyPose(a, dt) {
   if (w.tray > 0.01) { const s = w.tray; L.rotation.x = L.rotation.x * (1 - s) - 1.35 * s; L.rotation.z = L.rotation.z * (1 - s) + 0.35 * s; }
   if (w.mob > 0.01) { const s = w.mob; R.rotation.x = R.rotation.x * (1 - s) - 1.25 * s; R.rotation.z = R.rotation.z * (1 - s) - 0.42 * s; R.rotation.y = -0.5 * s; U.headPivot.rotation.x += 0.22 * s; }
   if (a.mobPh) a.mobPh.visible = w.mob > 0.3;
+  if (w.dance > 0.01) { const s = w.dance, me = a === P.a, bt = (DJ ? DJ.t : t) / (DJ ? DJ.BEAT : 0.52) * Math.PI + (me ? 0 : (a.dPh || 0)), b2 = Math.sin(bt), sitK = 1 - (w.sit || 0) * 0.7; // baile al ritmo: 4 estilos (manos arriba, dedo disco, pádel, brindis)
+    const sty = me ? (DJ && DJ.mv || 0) : (a.dSt || 0), pump = Math.abs(Math.sin(bt)); let rz, lz, rx, lx;
+    if (sty === 1) { const u = 0.5 + 0.5 * Math.sin(bt * 0.5); rz = -(0.5 + 2.3 * u); rx = -0.15 - 0.6 * (1 - u); lz = 0.55; lx = -0.85; U.torso.rotation.z += -0.12 * (u - 0.5) * s; } // dedo al cielo / al suelo
+    else if (sty === 2) { rz = -0.55 - 0.45 * b2; rx = -1.25 + 0.35 * b2; lz = 0.45 + 0.3 * b2; lx = -0.55; U.torso.rotation.y += 0.55 * b2 * s; } // drive y revés de pádel
+    else if (sty === 3) { rz = -(2.25 + 0.45 * pump); rx = -0.25 - 0.35 * pump; lz = 0.4 + 0.2 * pump; lx = -0.8; } // brindis: caña / puño arriba al ritmo
+    else { rz = -(1.6 + 1.0 * Math.max(0, b2)); lz = 1.6 + 1.0 * Math.max(0, -b2); rx = lx = -0.3; } // manos arriba alternas
+    R.rotation.z = R.rotation.z * (1 - s) + rz * s; L.rotation.z = L.rotation.z * (1 - s) + lz * s; R.rotation.x = R.rotation.x * (1 - s) + rx * s; L.rotation.x = L.rotation.x * (1 - s) + lx * s;
+    const kick = me && DJ ? Math.max(0, DJ.kick || 0) / 0.22 : 0, kl = me && DJ ? (DJ.flL || 1) - 1 : 0; // golpe de pad: salto corto e inclinación hacia el carril
+    U.body.position.y += (0.035 * pump + 0.05 * kick) * s * sitK; U.body.rotation.z = (0.12 * b2 - 0.22 * kl * kick) * s * sitK; U.headPivot.rotation.x += 0.1 * Math.abs(Math.cos(bt)) * s; U.headPivot.rotation.z += 0.08 * b2 * s; }
   if (w.pose > 0.01) { const s = w.pose; L.rotation.z = L.rotation.z * (1 - s) + 2.4 * s; R.rotation.z = R.rotation.z * (1 - s) - 2.4 * s; U.body.rotation.z = 0.15 * Math.sin(t * 8) * s; }
 }
 function walkTo(a, pts, onArrive, speed) { a.path = pts.map(p => p.clone ? p.clone() : V3(p[0], 0, p[1])); a.pi = 0; a.onArrive = onArrive || null; if (speed) a.speed = speed; standUp(a); }
@@ -5490,7 +5520,7 @@ let STATE = 'load', score = 0, timeLeft = 240, combo = 1, comboT = 0, lastPrank 
 let input = { x: 0, z: 0, run: false }, jumpQ = 0, prankQ = false;
 // ----- teclado
 const keys = {};
-addEventListener('keydown', e => { if (e.target && e.target.tagName === 'INPUT') return; if (PH && STATE === 'play' && PH.key(e)) return; if (STATE === 'trip') { e.preventDefault(); if (!e.repeat) skipTrip(); return; }
+addEventListener('keydown', e => { if (e.target && e.target.tagName === 'INPUT') return; if (PH && STATE === 'play' && PH.key(e)) return; if (DJ && STATE === 'play' && DJ.key(e)) return; if (STATE === 'trip') { e.preventDefault(); if (!e.repeat) skipTrip(); return; }
   if (tripQOpen() && !e.repeat && ['KeyS', 'KeyY', 'KeyN'].includes(e.code)) { e.preventDefault(); audioOn(); if (e.code === 'KeyN') tripNo(); else tripYes(); return; }
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault(); keys[e.code] = true; audioOn(); if (e.repeat) return; if (MP.on && mpKey(e)) return;
   if (e.code === 'Space') jumpQ = 0.15; if (e.code === 'KeyE' || e.code === 'KeyX' || e.code === 'Enter') prankQ = true; if (e.code === 'KeyP' || e.code === 'Escape') togglePause(); });
@@ -5511,7 +5541,7 @@ cvs.addEventListener('wheel', e => { e.preventDefault(); cam.distK = clamp(cam.d
 const btn = (id, down, up) => { const el = $(id); el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioOn(); down(el); }); if (up) { el.addEventListener('pointerup', e => up(el)); el.addEventListener('pointercancel', e => up(el)); } };
 btn('bPrank', () => prankQ = true); btn('bJump', () => jumpQ = 0.2); btn('bRun', el => { P.run = !P.run; el.classList.toggle('on', P.run); });
 $('pause').addEventListener('click', () => togglePause());
-function readInput() { if (CHAT.open || (PH && PH.open)) return { x: 0, z: 0, run: false }; if (MANUAL && window.__input) return window.__input; let x = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0), z = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+function readInput() { if (CHAT.open || (PH && PH.open) || (DJ && DJ.open)) return { x: 0, z: 0, run: false }; if (MANUAL && window.__input) return window.__input; let x = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0), z = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
   if (joy.id != null) { const dx = joy.x - joy.x0, dy = joy.y - joy.y0, l = Math.hypot(dx, dy); if (l > 8) { const m = Math.min(1, l / 52); x = dx / l * m; z = dy / l * m; } }
   return { x, z, run: keys.ShiftLeft || keys.ShiftRight || P.run }; }
 // ----- cámara
@@ -5557,14 +5587,15 @@ let baseFov = 50; function fitView() { camera.aspect = innerWidth / innerHeight;
 addEventListener('resize', fitView); fitView();
 
 // ---------- bromas ----------
-const PR = { steal: ['🍺', 'Robar caña', 100], pour: ['💦', 'Echarle la caña', 170], untie: ['👟', 'Desatar cordones', 140], scare: ['😱', '¡BUH!', 90], photo: ['📸', 'Photobomb', 150], phone: ['📱', 'Esconder móvil', 130], queue: ['🚽', 'Colarse', 160], drink: ['🍺', 'Bebérsela', 40], sit: ['🚽', 'Sentarse', 0], stand: ['🧻', 'Levantarse', 0], cocktail: ['🍹', 'Pedir cóctel', 0, 'Cóctel'], grab: ['🍹', 'Coger cóctel', 0, 'Coger'], sip: ['🍹', 'Beber cóctel', 0, 'Beber'], ride: ['🛵', 'Montarse en la moto', 0, 'Montarse'], unride: ['🛵', 'Bajarse', 0, 'Bajarse'], flute: ['🎵', 'Robar flauta', 150, 'Robar<br>flauta'], nigiri: ['🍣', 'Robar nigiri', 180, 'Robar<br>nigiri'], fPlay: ['🎶', 'Tocar flauta', 0, 'Tocar'], fBack: ['☮', 'Devolver flauta', 0, 'Devolver'] };
+const PR = { steal: ['🍺', 'Robar caña', 100], pour: ['💦', 'Echarle la caña', 170], untie: ['👟', 'Desatar cordones', 140], scare: ['😱', '¡BUH!', 90], photo: ['📸', 'Photobomb', 150], phone: ['📱', 'Esconder móvil', 130], queue: ['🚽', 'Colarse', 160], drink: ['🍺', 'Bebérsela', 40], sit: ['🚽', 'Sentarse', 0], stand: ['🧻', 'Levantarse', 0], cocktail: ['🍹', 'Pedir cóctel', 0, 'Cóctel'], grab: ['🍹', 'Coger cóctel', 0, 'Coger'], sip: ['🍹', 'Beber cóctel', 0, 'Beber'], ride: ['🛵', 'Montarse en la moto', 0, 'Montarse'], unride: ['🛵', 'Bajarse', 0, 'Bajarse'], flute: ['🎵', 'Robar flauta', 150, 'Robar<br>flauta'], nigiri: ['🍣', 'Robar nigiri', 180, 'Robar<br>nigiri'], dj: ['🕺', '¡A bailar!', 0, 'BAILAR'], fPlay: ['🎶', 'Tocar flauta', 0, 'Tocar'], fBack: ['☮', 'Devolver flauta', 0, 'Devolver'] };
 let curPrank = null, prankScan = 0;
 const fwd = (yaw) => V3(Math.sin(yaw), 0, Math.cos(yaw));
 function findPrank() {
-  const me = P.pos; let best = null, bd = 9; if (P.dead || (PH && PH.open)) return null;
+  const me = P.pos; let best = null, bd = 9; if (P.dead || (PH && PH.open) || (DJ && DJ.open)) return null;
   if (P.sit) return { k: 'stand', p: P.pos };
   if (P.ride) return { k: 'unride', p: P.pos };
   if (EVN) { const q = EVN.find(me); if (q) return q; }
+  if (DJ) { const q = DJ.find(me); if (q) return q; }
   const inBar = me.z < -0.3 && Math.abs(me.x) < W.BW / 2;
   if (inBar && CKS.st === 'wait' && CKS.glass && !P.cocktail && Math.hypot(CKS.glass.g.position.x - me.x, CKS.glass.g.position.z - me.z) < 1.4) return { k: 'grab', p: P.pos };
   if (inBar && CKS.st === 'idle' && !P.cocktail && !inBath(me)) { const cn = counterNear(me); if (cn.side < 0 && cn.d < 0.9 && cn.t > 0.02 && cn.t < 0.97) return { k: 'cocktail', cn, p: P.pos }; }
@@ -5591,7 +5622,7 @@ function findPrank() {
 function award(pts, p, label) { const now = gameT; if (now - lastPrank < 6.5) { combo = Math.min(5, combo + 1); if (combo > stats.maxCombo) stats.maxCombo = combo; if (combo >= 2) { bigText('¡COMBO x' + combo + '!'); sfx('combo'); } } else combo = 1; lastPrank = now; comboT = 6.5;
   const v = Math.round(pts * combo); score += v; popText(p, '+' + v + (label ? ' ' + label : '')); stats.pranks++; }
 function doPrank(pr) { if (!pr || P.lock > 0) return; if (pr.k === 'sit') { sitWC(); return; } if (pr.k === 'stand') { standWC(true); return; }
-  if (pr.k === 'cocktail') { orderCocktail(pr.cn); return; } if (pr.k === 'grab') { grabCocktail(); return; } if (pr.k === 'sip') { sipCocktail(); return; } if (pr.k === 'ride') { mountScooter(pr.S); return; } if (pr.k === 'unride') { dismount(false); return; } if (pr.k === 'fPlay') { playFlute(); return; } if (pr.k === 'fBack') { returnFlute('give'); return; } if (pr.k === 'nigiri') { EVN.steal(pr); return; } if (pr.pl) { mpDoPlayerPrank(pr); return; } const a = pr.a, [ic, lab, pts] = PR[pr.k]; sfx('prank');
+  if (pr.k === 'dj') { DJ.play(); return; } if (pr.k === 'cocktail') { orderCocktail(pr.cn); return; } if (pr.k === 'grab') { grabCocktail(); return; } if (pr.k === 'sip') { sipCocktail(); return; } if (pr.k === 'ride') { mountScooter(pr.S); return; } if (pr.k === 'unride') { dismount(false); return; } if (pr.k === 'fPlay') { playFlute(); return; } if (pr.k === 'fBack') { returnFlute('give'); return; } if (pr.k === 'nigiri') { EVN.steal(pr); return; } if (pr.pl) { mpDoPlayerPrank(pr); return; } const a = pr.a, [ic, lab, pts] = PR[pr.k]; sfx('prank');
   const face = (q) => { P.yaw = Math.atan2(q.x - P.pos.x, q.z - P.pos.z); };
   if (a) { a.cd = 7; face(a.pos); }
   switch (pr.k) {
@@ -5656,7 +5687,7 @@ function stepPlayer(dt) {
   else if (P.pos.y <= gy) { if (P.grounded && gy - P.pos.y < 0.3) P.pos.y += (gy - P.pos.y) * Math.min(1, dt * 18); else P.pos.y = gy; P.vy = 0; P.grounded = true; } else if (P.pos.y > gy + 0.02 && P.vy !== 0) P.grounded = false; else if (P.pos.y > gy) P.pos.y = Math.max(gy, P.pos.y - dt * 1.5);
   const a = P.a; a.pos.copy(P.pos); a.n.position.copy(P.pos); a.n.rotation.set(0, P.yaw, 0); a.yaw = P.yaw; a.t += dt; if (a.wave > 0) a.wave -= dt;
   const speed = Math.hypot(P.vel.x, P.vel.z) / 2.6; let turn = angDiff(P.lastYaw, P.yaw) / Math.max(dt, 1e-3); P.lastYaw = P.yaw; const accel = (speed - P.lastSpeed) / Math.max(dt, 1e-3); P.lastSpeed = speed;
-  a.n.userData.update(dt, { speed: Math.min(1.4, speed), grounded: P.grounded, vy: P.vy, dance: false, wave: a.wave > 0, turn: -turn * 0.15, accel: accel * 0.6 });
+  a.n.userData.update(dt, { speed: Math.min(1.4, speed), grounded: P.grounded, vy: P.vy, dance: !!(DJ && DJ.open), wave: a.wave > 0, turn: -turn * 0.15, accel: accel * 0.6 });
   if (P.beer && !a.pw.pour && !a.pw.drink) { const arm = a.n.userData.arms[1]; arm.rotation.x = Math.min(arm.rotation.x, -0.7); }
   applyPose(a, dt);
   // cóctel en la otra mano (y sorbo)
@@ -6061,14 +6092,14 @@ window.PORTRAITS = PORTRAITS;
 let selIdx = store.get('lacurva_pj', 0); if (!(selIdx >= 0 && selIdx < NG)) selIdx = 0;
 const grid = $('grid');
 GANG.forEach((g, i) => { const c = document.createElement('div'); c.className = 'card' + (i === selIdx ? ' sel' : ''); c.innerHTML = `<img alt="" src="${PORTRAITS[i]}"><b>${g.name}</b>`; c.onclick = () => { selIdx = i; [...grid.children].forEach((e, k) => e.classList.toggle('sel', k === i)); audioOn(); }; c.ondblclick = () => startGame(i); grid.appendChild(c); });
-const HOWTO = 'Elige a alguien de la pandilla y tienes <b>4 minutos</b> para liarla en El Último Tango sin que te echen. Muévete con el <b>joystick</b> (en el móvil) o con <b>WASD/flechas</b>; acércate a la gente y pulsa <b>BROMA</b> (o <b>E</b>) cuando aparezca la acción: robar cañas, echárselas por encima, desatar cordones por la espalda, dar sustos, hacer photobombs, esconder móviles o colarte en la cola del baño. Si vas lanzado contra una <b>mesa de la terraza</b>, ¡la tiras con todas las cañas! Encadena bromas seguidas para hacer <b>combos</b> (hasta x5). Ojo con los <b>camareros hippies</b>: si te ven dentro de su cono de visión sube el medidor de <b>PILLADO</b>, y si se llena… ¡a la calle! Escóndete detrás de la gente o de las paredes y deja que se te olvide. Y para relajarte: en la <b>barra</b> el camarero te prepara un <b>cóctel</b> 🍹, y en la calle puedes <b>montarte en una moto</b> 🛵 (con <b>Espacio</b> o SALTAR pitas). Junto a cada perro hay un <b>perroflauta</b>: ¡<b>róbale la flauta</b> 🎵, <b>tócala</b> 🎶 delante de la gente y devuélvesela con buen rollo ☮! Y cuidado: cada minuto baja el <b>autobús 3 de AUCORSA</b> 🚌 por el carril de enfrente: si estás en la mitad de la calzada lejos del bar o en la otra acera… ¡te arrolla! Y atento al <b>móvil</b> 📱: cuando vibre, ábrelo (<b>T</b> o ABRIR) para un <b>Tinder</b> 🔥 con la gente del bar (desliza o ←/→) o para <b>comprar Bitcoin en el dip</b> ₿ (toca o Espacio cuando se desplome), o para aceptar un <b>reto de pádel</b> 🎾 de la pandilla (mueve la pala arrastrando o con ←/→). Y cuando llegue la <b>ronda de nigiris</b> 🍣 a la mesa de la pandilla, ¡roba uno (BROMA/E) mientras están distraídos 💬! Si te miran 👀… te pillan.';
+const HOWTO = 'Elige a alguien de la pandilla y tienes <b>4 minutos</b> para liarla en El Último Tango sin que te echen. Muévete con el <b>joystick</b> (en el móvil) o con <b>WASD/flechas</b>; acércate a la gente y pulsa <b>BROMA</b> (o <b>E</b>) cuando aparezca la acción: robar cañas, echárselas por encima, desatar cordones por la espalda, dar sustos, hacer photobombs, esconder móviles o colarte en la cola del baño. Si vas lanzado contra una <b>mesa de la terraza</b>, ¡la tiras con todas las cañas! Encadena bromas seguidas para hacer <b>combos</b> (hasta x5). Ojo con los <b>camareros hippies</b>: si te ven dentro de su cono de visión sube el medidor de <b>PILLADO</b>, y si se llena… ¡a la calle! Escóndete detrás de la gente o de las paredes y deja que se te olvide. Y para relajarte: en la <b>barra</b> el camarero te prepara un <b>cóctel</b> 🍹, y en la calle puedes <b>montarte en una moto</b> 🛵 (con <b>Espacio</b> o SALTAR pitas). Junto a cada perro hay un <b>perroflauta</b>: ¡<b>róbale la flauta</b> 🎵, <b>tócala</b> 🎶 delante de la gente y devuélvesela con buen rollo ☮! Y cuidado: cada minuto baja el <b>autobús 3 de AUCORSA</b> 🚌 por el carril de enfrente: si estás en la mitad de la calzada lejos del bar o en la otra acera… ¡te arrolla! Y atento al <b>móvil</b> 📱: cuando vibre, ábrelo (<b>T</b> o ABRIR) para un <b>Tinder</b> 🔥 con la gente del bar (desliza o ←/→) o para <b>comprar Bitcoin en el dip</b> ₿ (toca o Espacio cuando se desplome), o para aceptar un <b>reto de pádel</b> 🎾 de la pandilla (mueve la pala arrastrando o con ←/→). Y cuando llegue la <b>ronda de nigiris</b> 🍣 a la mesa de la pandilla, ¡roba uno (BROMA/E) mientras están distraídos 💬! Si te miran 👀… te pillan. Y si el DJ pincha un <b>temazo</b> 🪩, pulsa <b>BAILAR</b> (E) y sigue el ritmo con los pads (o <b>← ↓ →</b>).';
 $('howto').innerHTML = HOWTO; $('howBtn').onclick = () => $('howto').classList.toggle('on');
 $('play').onclick = () => { audioOn(); startGame(selIdx); };
 $('again').onclick = () => { audioOn(); startGame(selIdx); }; $('change').onclick = () => showMenu();
 const showBest = () => { $('best').textContent = best > 0 ? 'Récord: ' + best + ' puntos' : ''; };
 function showMenu() { if (STATE === 'trip') endTrip(); resetScooters(); resetCocktail(); resetFlutes(); resetBus(); STATE = 'menu'; P.sit = false; hideTripQ(); $('menu').classList.add('on'); $('end').classList.remove('on'); $('hud').classList.remove('on'); showBest(); if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); P.a = null; } }
 function resetFlutes() { returnFlute('silent'); P.flute = null; P.flPlay = 0; P.tune = null; for (const o of OWNERS) { setOwnerFlute(o, true); o.flPlay = 0; o.flLock = 0; o.spareT = 0; } for (const q of AG) { q.dance = false; q.danceT = 0; } }
-function resetRound() { if (EVN) EVN.reset(); resetScooters(); resetCocktail(); resetFlutes(); resetBus(); for (const T of TABLES) if (T.state !== 'up') { T.state = 'up'; T.thudd = 0; T.root.quaternion.identity(); T.root.position.set(T.x, T.y, T.z); T.inner.position.set(0, 0, 0); if (!W.COLL.includes(T.coll)) W.COLL.push(T.coll); fillTable(T); }
+function resetRound() { if (EVN) EVN.reset(); if (DJ) DJ.reset(); resetScooters(); resetCocktail(); resetFlutes(); resetBus(); for (const T of TABLES) if (T.state !== 'up') { T.state = 'up'; T.thudd = 0; T.root.quaternion.identity(); T.root.position.set(T.x, T.y, T.z); T.inner.position.set(0, 0, 0); if (!W.COLL.includes(T.coll)) W.COLL.push(T.coll); fillTable(T); }
   for (const p of PARTS) if (p.m.parent) p.m.parent.remove(p.m); PARTS.length = 0; TIMERS.length = 0; for (const b of BUBS) b.el.remove(); BUBS.length = 0;
   for (const a of AG) { a.trip = 0; a.untied = 0; a.wet = 0; a.cd = 0; a.n.rotation.set(0, a.yaw, 0); for (const k of ['complain', 'startle', 'push', 'crouch', 'pour', 'drink', 'pose', 'scratch']) { a.pose[k] = 0; } if (a.beerHand != null && a.kind !== 'waiter' && !a.selfie) giveBeer(a); }
   for (const w of WAITER_A) { w.alert = 0; w.freeze = false; }
@@ -6078,7 +6109,7 @@ function startGame(i) { resetScooters(); resetCocktail(); if (P.a) { P.a.visible
   resetRound(); const a = GANG_A[i]; P.a = a; for (const T of TABLES) T.seated = T.seated.filter(x => x !== a); a.seat = null; a.pose.sit = 0; a.pw.sit = 0; takeBeer(a); P.beer = null; a.tagT.el.classList.add('me');
   P.pos.copy(SPAWN); P.pos.y = groundAt(SPAWN.x, SPAWN.z); P.vel.set(0, 0, 0); P.vy = 0; P.yaw = Math.PI + 0.45; P.flung = 0; P.lock = 0; P.inQueue = 0; P.sit = false; P.tripDone = false; P.askT = -1; P.bounce = 0; hideTripQ(); a.radius = a.radius || RAD; cam.yaw = 0.45; cam.pitch = portrait() ? 0.48 : 0.42; cam.target.copy(P.pos).add(V3(0, 1.2, 0)); camDist = 6; lastManual = -99;
   for (const T of TABLES) T.seated = T.seated.filter(x => x.seat);
-  $('menu').classList.remove('on'); $('end').classList.remove('on'); $('hud').classList.add('on'); STATE = 'play'; gameT = 0; bigText('¡A liarla, ' + a.name + '!', 1.6); }
+  $('menu').classList.remove('on'); $('end').classList.remove('on'); $('hud').classList.add('on'); STATE = 'play'; gameT = 0; bigText('¡A liarla, ' + a.name + '!', 1.6); if (!MANUAL) { const f = $('fadeIn'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); } }
 const TITLES = [[0, 'Pringao de La Curva'], [700, 'Aprendiz de gamberro'], [1600, 'Liante de barrio'], [2800, 'Terror de las terrazas'], [4200, 'Leyenda del Último Tango'], [6000, 'Rey de La Curva']];
 const titleFor = s => TITLES.filter(t => s >= t[0]).pop()[1];
 function endGame(expelled) { if (STATE === 'end') return; STATE = 'end'; engineOn(false); returnFlute('silent'); const nb = score > best; if (nb) { best = score; store.set('lacurva_best', best); }
@@ -6097,7 +6128,7 @@ let domAcc = 0;
 function frame(dt, noRender) {
   if (STATE === 'pause') { updDOM(0); renderer.render(scene, camera); return; }
   if (STATE === 'trip') { updTrip(dt); if (MP.on) mpFrame(dt); return; }
-  gameT += dt; if (PH) PH.tick(dt); if (EVN) EVN.tick(dt); if (FX) FX.tick(dt);
+  gameT += dt; if (PH) PH.tick(dt); if (EVN) EVN.tick(dt); if (DJ) DJ.tick(dt); if (FX) FX.tick(dt);
   if (STATE === 'play' || STATE === 'caught') {
     if (STATE === 'play') { timeLeft -= dt; if (timeLeft <= 0) { timeLeft = 0; if (MP.on) mpTimeUp(); else endGame(false); } }
     stepPlayer(dt);
@@ -6716,7 +6747,7 @@ function mobPhone() { const a = P.a; if (!a || a.mobPh) return; const g = new TH
   const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.072, 0.142), new THREE.MeshBasicMaterial({ color: '#ff6b8a', toneMapped: false })); sc.position.z = 0.0075; g.add(sc); g.userData.sc = sc;
   g.position.set(0, -0.37, 0.05); g.rotation.set(-1.25, 0, 0); g.visible = false; a.n.userData.arms[0].add(g); a.mobPh = g; }
 // ---------- aviso ----------
-function canPhone() { return STATE === 'play' && P.a && !P.sit && !P.ride && !P.dead && !tripQOpen() && !CHAT.open && !TRAILER && (cam.bath || 0) < 0.3; }
+function canPhone() { return STATE === 'play' && P.a && !P.sit && !P.ride && !P.dead && !tripQOpen() && !CHAT.open && !TRAILER && (cam.bath || 0) < 0.3 && !(DJ && DJ.open); }
 function notify(kind) { if (PH.open) return; PH.toast = 8; PH.toastKind = kind; buzz(); if (navigator.vibrate && TOUCH) try { navigator.vibrate([90, 60, 90]); } catch (_) {}
   if (kind === 'pad') PH.padRival = padRival();
   toastEl.innerHTML = kind === 'tin' ? '<b class="ic tin">🔥</b><span><b>Tinder</b><br>Hay gente cerca de ti… 👀</span>' : kind === 'pad' ? `<b class="ic pad">🎾</b><span><b>${PH.padRival.name}</b><br>¿Pádel? Te reto 🎾</span>` : '<b class="ic btc">₿</b><span><b>Bitcoin</b><br>¡Se está moviendo! 📉📈</span>';
@@ -6932,6 +6963,136 @@ function reset() { finish(); EVN.done = 0; EVN.next = rnd(70, 100); }
 Object.assign(EVN, { tick, find, steal, start, finish, reset, setWatch, watchers });
 }
 
+// ======================= EVENTO: ¡TEMAZO! MOMENTO DJ (src/dj.js, inyectado en /*__DJ__*/) =======================
+// 1–2 veces por partida el DJ del Último Tango pincha un temazo: baja la bola de discoteca, focos de colores en el suelo y el bar entero baila.
+// Mientras suena, BROMA/E = "🕺 ¡A bailar!": minijuego de ritmo de 3 carriles (toque en los pads / ← ↓ → · A S D · J K L / clic).
+// Todo local: no se envía nada nuevo por la red. Apagado en ?test=1 salvo ?dj=1; los tests lo lanzan con GAME.dj.start(true).
+var DJ = null;
+{
+const DJ_ON = !MANUAL || Q.has('dj');
+const BPM = 116, BEAT = 60 / BPM, SONG_BEATS = 30, FALL = 1.5, WIN_OK = 0.17, WIN_PERF = 0.075;
+const DJ_SAY = ['¡Esta va por la pandilla del Último Tango! 🎧', '¡Subidón! ¡Que suene!', '¡Temazo del verano en Málaga!', '¡Manos arriba, Diario de Córdoba!', '¡Pa la pandilla del pádel!', '¡Esta la pinchaba yo en el Hangar!'];
+const DJ_GANG = ['¡TEMAZOOO! 🙌', '¡Esta es la nuestra!', '¡Como en el Hangar!', '¡A la pista, {P}!', '¡Que la pongan otra vez!', '¡Suelta la caña y a bailar!', '¡Esta sonaba en Málaga!', '¡Más arriba que el Bitcoin! 🚀'];
+const DJ_GOOD = ['¡Qué arte, {P}! 💃', '¡Eso es bailar y lo demás tonterías!', '¡{P}, rey de la pista!', '¡Fichadlo para el Hangar!', '¡Con esos pasos, match seguro en Tinder! 🔥', '¡Ni en el Planeta 80 se baila así!', '¡Bailas mejor que juegas al pádel!', '¡Esto se merece un chuletón!'];
+const DJ_BAD = ['{P}, eso no es bailar… 😂', '¡Parece que te pica algo!', '¡Menos mal que no hay fotos!', '¡Tú a la barra, mejor!', '¡Bailas como el Bitcoin: todo caídas! 📉', '¡Eso en Tinder es un NOPE!', '¡Ni con el patinete vas tan descontrolado!', '¡Vuelve a la mesa de los nigiris!'];
+const DJ_ME = ['¡Mirad cómo me muevo! 🕺', '¡Sujetadme la caña!', '¡Esto lo bailaba yo en el cole!', '¡Paso del pádel, mirad!', '¡A la luna como el Bitcoin! 🚀'];
+// temazos "de la casa" (títulos inventados con las cosas de la pandilla)
+const SONGS = ['«Compra en el dip» (Hangar Remix)', '«Punto de oro» feat. Tagua', '«Match a las tres» (Tinder Edit)', '«Vuelve a Málaga»', '«Chuletón y caña»', '«Patinete eléctrico»', '«Nigiri de atún» (Club Mix)', '«Fuera del Tango»'];
+// pasos que salen con la racha (y cambian el baile de tu Pop)
+const MOVES = [[4, '¡LA CAÑA EN ALTO! 🍺', 3], [8, '¡EL DEDO DISCO! ☝️', 1], [12, '¡EL PASO DEL PÁDEL! 🎾', 2], [16, '¡BITCOIN A LA LUNA! 🚀', 0], [20, '¡EL SWIPE DE TINDER! 🔥', 1], [24, '¡EL PATINETE! 🛴', 2]];
+DJ = { mv: 0, kick: 0, song: SONGS[0], on: false, open: false, t: 0, st: 0, next: rnd(55, 85), done: 0, notes: [], hits: 0, perf: 0, miss: 0, streak: 0, best: 0, pts: 0, danced: 0, phase: 0, res: 0 };
+// ---------- bola de discoteca + focos en el suelo (sin luces nuevas: nada recompila shaders) ----------
+const ballG = new THREE.Group(); ballG.visible = false; scene.add(ballG);
+const mirTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++) { const v = 120 + Math.random() * 135 | 0; x.fillStyle = `rgb(${v},${v},${Math.min(255, v + 20)})`; x.fillRect(i * 8, j * 8, 7, 7); } x.fillStyle = '#fff'; for (let k = 0; k < 14; k++) x.fillRect((Math.random() * 16 | 0) * 8, (Math.random() * 16 | 0) * 8, 7, 7); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const ballM = new THREE.MeshStandardMaterial({ map: mirTex, emissiveMap: mirTex, emissive: '#ffffff', emissiveIntensity: 0.55, metalness: 0.7, roughness: 0.2, flatShading: true });
+const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 2), ballM); ballG.add(ball);
+const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 4), new THREE.MeshBasicMaterial({ color: '#222' })); ballG.add(cord);
+const BALL = { x: 1.2, z: -1.9, y0: W.FLOOR_IN + 3.6, y1: W.FLOOR_IN + 2.62 };
+const softTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.5, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const sparkle = new THREE.Sprite(new THREE.SpriteMaterial({ map: softTex, color: '#bfe8ff', transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending })); sparkle.scale.setScalar(0.9); ballG.add(sparkle);
+const SPOT_COL = ['#ff3fa4', '#3fe0ff', '#ffd23a', '#7dff5a', '#b06bff'], SPOTS = [];
+for (let i = 0; i < (LITE ? 3 : 5); i++) { const m = new THREE.MeshBasicMaterial({ map: softTex, color: SPOT_COL[i], transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+  const s = new THREE.Mesh(new THREE.CircleGeometry(0.75, 24), m); s.rotation.x = -Math.PI / 2; s.position.set(0, W.FLOOR_IN + 0.013 + i * 0.001, -3); s.renderOrder = 2; s.visible = false; scene.add(s);
+  // haz de luz falso desde la bola hasta el foco (cono aditivo muy tenue)
+  const bm = new THREE.MeshBasicMaterial({ color: SPOT_COL[i], transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false });
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1, 16, 1, true), bm); beam.geometry.translate(0, -0.5, 0); beam.visible = false; scene.add(beam);
+  SPOTS.push({ s, m, beam, bm, ph: i * 1.7, f: 0.31 + i * 0.07 }); }
+// reflejos de la bola: puntitos de luz que barren paredes, techo y suelo del bar (un solo Points aditivo; LITE: menos)
+const NR = LITE ? 40 : 90, RDIR = [], rG = new THREE.BufferGeometry(), rP = new Float32Array(NR * 3), rC = new Float32Array(NR * 3);
+for (let i = 0; i < NR; i++) { const y = 1 - (i + 0.5) / NR * 2, r = Math.sqrt(1 - y * y), th = i * 2.399963; RDIR.push(Math.cos(th) * r, y * 0.85 - 0.1, Math.sin(th) * r); const c = new THREE.Color(i % 5 ? '#fff6e8' : SPOT_COL[i % SPOT_COL.length]); rC.set([c.r, c.g, c.b], i * 3); }
+rG.setAttribute('position', new THREE.BufferAttribute(rP, 3)); rG.setAttribute('color', new THREE.BufferAttribute(rC, 3));
+const rM = new THREE.PointsMaterial({ map: softTex, size: LITE ? 0.16 : 0.13, sizeAttenuation: true, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+const refl = new THREE.Points(rG, rM); refl.frustumCulled = false; refl.visible = false; refl.renderOrder = 3; scene.add(refl);
+const RB = { x0: W.BX0 + 0.02, x1: W.BX1 - 0.02, y0: W.FLOOR_IN + 0.02, y1: (W.BH || 3.3) - 0.03, z0: -(W.BD || 8) + 0.03 };
+function updRefl(by, ang, k, beatK) { const ca = Math.cos(ang), sa = Math.sin(ang);
+  for (let i = 0; i < NR; i++) { const dx0 = RDIR[i * 3], dy = RDIR[i * 3 + 1], dz0 = RDIR[i * 3 + 2], dx = dx0 * ca - dz0 * sa, dz = dx0 * sa + dz0 * ca; let tm = 1e9;
+    if (dx > 1e-4) tm = Math.min(tm, (RB.x1 - BALL.x) / dx); else if (dx < -1e-4) tm = Math.min(tm, (RB.x0 - BALL.x) / dx);
+    if (dy > 1e-4) tm = Math.min(tm, (RB.y1 - by) / dy); else if (dy < -1e-4) tm = Math.min(tm, (RB.y0 - by) / dy);
+    if (dz < -1e-4) tm = Math.min(tm, (RB.z0 - BALL.z) / dz); else if (dz > 1e-4 && (-0.05 - BALL.z) / dz < tm) { rP[i * 3 + 1] = -50; continue; } // hacia la puerta: fuera
+    rP[i * 3] = BALL.x + dx * tm; rP[i * 3 + 1] = by + dy * tm; rP[i * 3 + 2] = BALL.z + dz * tm; }
+  rG.attributes.position.needsUpdate = true; rM.opacity = 0.9 * k * (0.7 + 0.3 * beatK); }
+// ---------- música (WebAudio, sintetizada) ----------
+let nextBeat = 0, beatN = 0;
+function noise(d, v, at, hp) { if (!AC) return; const t = AC.currentTime + at, n = AC.sampleRate * d | 0, buf = AC.createBuffer(1, n, AC.sampleRate), ch = buf.getChannelData(0); for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const s = AC.createBufferSource(); s.buffer = buf; const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp || 6000; const g = AC.createGain(); g.gain.value = v; s.connect(f); f.connect(g); g.connect(master); s.start(t); }
+const BASS = [55, 55, 65.4, 73.4, 55, 55, 82.4, 73.4];
+function beatSound(b, at) { if (!AC) return; try { tone(120, 0.16, 'sine', 0.5, 0.35, at); noise(0.05, 0.12, at + BEAT / 2); if (b % 2) noise(0.12, 0.08, at, 1800);
+  tone(BASS[b % 8], BEAT * 0.45, 'sawtooth', 0.09, 0, at + BEAT / 2); if (b % 4 === 0) for (const f of [261.6, 329.6, 392]) tone(f * (b % 16 < 8 ? 1 : 1.122), 0.18, 'square', 0.035, 0, at); } catch (_) {} }
+// ---------- minijuego ----------
+const L_COL = ['#ff3fa4', '#ffd23a', '#3fe0ff'], L_IC = ['◀', '▼', '▶'];
+const root = document.createElement('div'); root.id = 'dj'; root.innerHTML = '<div class="djTop"><b>🪩 ¡TEMAZO!</b><span id="djSc">0</span></div><div class="djSong"></div><canvas id="djCv" width="300" height="300"></canvas><div class="djPads"></div><div class="djRes"></div>'; document.body.appendChild(root);
+const cv = root.querySelector('#djCv'), padsEl = root.querySelector('.djPads'), resEl = root.querySelector('.djRes'), scEl = root.querySelector('#djSc'), songEl = root.querySelector('.djSong'); const PADS = [];
+for (let l = 0; l < 3; l++) { const b = document.createElement('div'); b.className = 'djPad'; b.style.setProperty('--c', L_COL[l]); b.innerHTML = L_IC[l] + (TOUCH ? '' : `<kbd>${['←', '↓', '→'][l]}</kbd>`); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioOn(); hit(l); }); padsEl.appendChild(b); PADS.push(b); }
+cv.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const r = cv.getBoundingClientRect(); hit(clamp(Math.floor((e.clientX - r.left) / r.width * 3), 0, 2)); });
+root.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+function chart() { const N = []; let s = 7; const rr = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; const seed = (Math.random() * 1000) | 0; for (let i = 0; i < seed % 17; i++) rr();
+  let last = 1; for (let b = 4; b < SONG_BEATS - 2; b++) { let l = (last + 1 + ((rr() * 2) | 0)) % 3; N.push({ t: b * BEAT, l, st: 0 }); last = l; if (b > 14 && b % 4 === 3) N.push({ t: (b + 0.5) * BEAT, l: (l + 1) % 3, st: 0 }); } return N; }
+function canDance() { return STATE === 'play' && P.a && !P.sit && !P.ride && !P.dead && !(PH && PH.open) && !tripQOpen() && !CHAT.open && (cam.bath || 0) < 0.3; }
+function dancers() { return AG.filter(a => a.visible && !a.ko && !a.remote && a !== P.a && a.kind !== 'waiter' && a.pos.distanceTo(V3(BALL.x, 0, BALL.z)) < 9 && !a.cyc); }
+function start(force) { if (DJ.on || (!force && (STATE !== 'play' || timeLeft < 25 || (EVN && EVN.on)))) return false;
+  Object.assign(DJ, { on: true, t: 0, open: false, danced: 0, songT: SONG_BEATS * BEAT + 1.2, song: pick(SONGS) }); songEl.textContent = '🎵 ' + DJ.song; DJ.done++; beatN = 0; nextBeat = 0.6; ballG.visible = true; for (const S of SPOTS) { S.s.visible = true; S.beam.visible = !LITE; }
+  bigText('🪩 ¡TEMAZO!', 1.6); feed('🎧 El DJ pincha ' + DJ.song + ': pulsa ' + (TOUCH ? 'BAILAR' : 'E') + ' y lúcete en la pista', '#ff3fa4'); sfx('ding');
+  const w = WAITER_A.filter(w => !w.ko)[0]; if (w) say(w, pick(DJ_SAY), 2.4, 0.2, 'w');
+  GANG_A.filter(g => g !== P.a && g.visible && !g.remote).sort(() => Math.random() - 0.5).slice(0, 2).forEach((g, k) => say(g, fmt(pick(DJ_GANG)), 2.2, 0.9 + k * 1.1));
+  return true; }
+function stop() { if (!DJ.on) return; if (DJ.open) closeDance(true); DJ.on = false; DJ.t = 0; DJ.leave = 1.2; for (const a of AG) if (a.pose) a.pose.dance = 0; DJ.next = rnd(80, 120); }
+function find(me) { if (!DJ.on || DJ.open || DJ.danced || DJ.t > DJ.songT - SONG_BEATS * BEAT * 0.45 || P.lock > 0 || !canDance()) return null; return { k: 'dj', p: V3(me.x, me.y + 0.2, me.z) }; }
+function play() { if (!DJ.on || DJ.open || !canDance()) return false; DJ.open = true; DJ.danced = 1; DJ.st = -FALL - 0.3; DJ.notes = chart(); Object.assign(DJ, { hits: 0, perf: 0, miss: 0, streak: 0, best: 0, pts: 0, res: 0, fl: null, flT: 0, mv: 0, kick: 0, mvT: 0, mvN: null });
+  P.vel.set(0, 0, 0); setPose(P.a, 'dance', 1); root.classList.add('on'); document.body.classList.add('djOn'); resEl.classList.remove('on'); scEl.textContent = '0'; say(P.a, pick(DJ_ME), 1.6); sfx('ding'); return true; }
+function judge(n, dtt) { const perf = Math.abs(dtt) < WIN_PERF; n.st = 1; DJ.hits++; if (perf) DJ.perf++; DJ.streak++; DJ.best = Math.max(DJ.best, DJ.streak);
+  const p = (perf ? 10 : 5) + Math.min(8, DJ.streak); DJ.pts += p; scEl.textContent = DJ.pts; DJ.fl = perf ? '¡PERFECTO!' : '¡BIEN!'; DJ.flT = 0.5; DJ.flL = n.l; DJ.kick = 0.22; const M = MOVES.find(m => m[0] === DJ.streak); if (M) { DJ.mv = M[2]; DJ.mvN = M[1]; DJ.mvT = 1.3; DJ.pts += 20; scEl.textContent = DJ.pts; } PADS[n.l].classList.add('hit'); setTimeout(() => PADS[n.l].classList.remove('hit'), 120);
+  if (DJ.streak === 8 || DJ.streak === 16) { const g = dancers().filter(a => a.kind === 'gang')[0]; if (g) say(g, fmt(pick(DJ_GOOD)), 2); }
+  if (AC) try { tone([523, 659, 784][n.l] * (perf ? 2 : 1), 0.08, 'triangle', 0.12); } catch (_) {} }
+function hit(l) { if (!DJ.open || DJ.res) return; let best = null, bd = 9; for (const n of DJ.notes) { if (n.st || n.l !== l) continue; const d = Math.abs(DJ.st - n.t); if (d < bd) { bd = d; best = n; } }
+  if (best && bd < WIN_OK) judge(best, DJ.st - best.t); else { DJ.streak = 0; DJ.mv = 0; DJ.fl = '¡FUERA!'; DJ.flT = 0.4; DJ.flL = l; } }
+function closeDance(silent) { if (!DJ.open) return; DJ.open = false; root.classList.remove('on'); document.body.classList.remove('djOn'); if (P.a) setPose(P.a, 'dance', 0);
+  if (!silent && STATE === 'play') feed(`🕺 Baile: ${DJ.hits}/${DJ.notes.length} pasos (${DJ.perf} perfectos) · +${DJ.paid || 0}`, '#ff3fa4'); }
+function finishDance() { if (DJ.res) return; DJ.res = 1; const tot = DJ.notes.length, r = DJ.hits / Math.max(1, tot); let bonus = r >= 0.9 ? 100 : r >= 0.7 ? 40 : 0; const s0 = score;
+  if (DJ.pts + bonus > 0) award(DJ.pts + bonus, headPos(P.a, 0.3), '🕺'); DJ.paid = score - s0; const good = r >= 0.6;
+  resEl.innerHTML = `<b>${r >= 0.9 ? '¡REY DE LA PISTA! 👑' : good ? '¡TEMAZO! 🔥' : '¡A LA BARRA! 😅'}</b><span>${DJ.hits}/${tot} pasos · racha ${DJ.best}</span><i>+${DJ.paid}</i>`; resEl.classList.add('on');
+  if (r >= 0.9) bigText('👑 ¡REY DE LA PISTA!', 1.4);
+  const gs = dancers().filter(a => a.kind === 'gang').slice(0, 2); gs.forEach((g, k) => { g.look = 2; g.lookAt = P.pos; if (!good) setPose(g, 'complain', 1, 1.2); say(g, fmt(pick(good ? DJ_GOOD : DJ_BAD)), 2.2, 0.3 + k * 0.9); });
+  setTimeoutG(() => closeDance(), 1.4); }
+function draw() { const x = cv.getContext('2d'), w = cv.width, h = cv.height, lw = w / 3, hy = h - 34;
+  x.clearRect(0, 0, w, h); const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(20,8,40,.15)'); g.addColorStop(1, 'rgba(20,8,40,.75)'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  const pulse = 1 - ((DJ.st % BEAT) + BEAT) % BEAT / BEAT;
+  for (let l = 0; l < 3; l++) { x.fillStyle = l % 2 ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.02)'; x.fillRect(l * lw, 0, lw, h); x.strokeStyle = L_COL[l]; x.globalAlpha = 0.35 + 0.4 * pulse; x.lineWidth = 3; x.beginPath(); x.arc(l * lw + lw / 2, hy, 24, 0, 7); x.stroke(); x.globalAlpha = 1; }
+  x.fillStyle = 'rgba(255,255,255,' + (0.25 + 0.35 * pulse) + ')'; x.fillRect(0, hy - 1, w, 2);
+  for (const n of DJ.notes) { if (n.st === 1) continue; const y = hy - (n.t - DJ.st) / FALL * hy; if (y < -30 || y > h + 30) continue; const cx = n.l * lw + lw / 2;
+    x.globalAlpha = n.st === 2 ? 0.25 : 1; x.shadowColor = L_COL[n.l]; x.shadowBlur = 14; x.fillStyle = L_COL[n.l]; x.beginPath(); x.arc(cx, y, 20, 0, 7); x.fill(); x.shadowBlur = 0; x.fillStyle = 'rgba(255,255,255,.85)'; x.beginPath(); x.arc(cx - 6, y - 6, 6, 0, 7); x.fill();
+    x.fillStyle = '#1a0b2e'; x.font = '900 16px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(L_IC[n.l], cx, y + 1); x.globalAlpha = 1; }
+  if (DJ.flT > 0 && DJ.fl) { x.globalAlpha = Math.min(1, DJ.flT * 3); x.font = '900 26px sans-serif'; x.textAlign = 'center'; x.fillStyle = DJ.fl === '¡FUERA!' ? '#ff4d6d' : '#ffd23a'; x.strokeStyle = '#000'; x.lineWidth = 5; x.strokeText(DJ.fl, w / 2, hy - 58); x.fillText(DJ.fl, w / 2, hy - 58); x.globalAlpha = 1; }
+  if (DJ.mvT > 0 && DJ.mvN) { const a = Math.min(1, DJ.mvT * 3), sc = 1 + 0.25 * Math.max(0, DJ.mvT - 1); x.save(); x.globalAlpha = a; x.translate(w / 2, 46); x.scale(sc, sc); x.font = '900 19px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.strokeStyle = '#2a0a3a'; x.lineWidth = 5; x.strokeText(DJ.mvN, 0, 0); x.fillStyle = '#7ff0ff'; x.fillText(DJ.mvN, 0, 0); x.restore(); }
+  if (DJ.streak >= 3) { x.font = '900 18px sans-serif'; x.textAlign = 'right'; x.fillStyle = '#fff'; x.fillText('x' + DJ.streak, w - 10, 18); } }
+function stepDance(dt) { if (!canDance()) { closeDance(true); return; } prankQ = false; jumpQ = 0; P.vel.set(0, 0, 0); DJ.st += dt; DJ.flT -= dt;
+  for (const n of DJ.notes) if (!n.st && DJ.st - n.t > WIN_OK) { n.st = 2; DJ.miss++; DJ.streak = 0; DJ.mv = 0; } DJ.kick -= dt; DJ.mvT -= dt;
+  if (!DJ.res && DJ.notes.length && DJ.st > DJ.notes[DJ.notes.length - 1].t + 0.4) finishDance(); draw(); }
+// en vertical el panel tapa la mitad de abajo: desplazamos la imagen hacia arriba (setViewOffset) para que se vea al jugador bailando
+let vOff = 0; function viewShift(dt) { const vw = innerWidth, vh = innerHeight, want = DJ.open && vh > vw ? vh * 0.2 : 0; vOff += (want - vOff) * Math.min(1, dt * 6); if (Math.abs(want - vOff) < 0.5) vOff = want;
+  if (vOff > 0.5) camera.setViewOffset(vw, vh, 0, vOff, vw, vh); else if (camera.view && camera.view.enabled) camera.clearViewOffset(); }
+// ---------- bucle ----------
+function tick(dt) { viewShift(dt); // bola y focos (también al irse)
+  const k = DJ.on ? Math.min(1, DJ.t / 1.2) : Math.max(0, (DJ.leave || 0) / 1.2); if (!DJ.on && DJ.leave > 0) { DJ.leave -= dt; if (DJ.leave <= 0) { ballG.visible = false; refl.visible = false; renderer.toneMappingExposure = 1; for (const S of SPOTS) { S.s.visible = false; S.beam.visible = false; } } }
+  if (ballG.visible) { const e = 1 - (1 - k) * (1 - k); const by = BALL.y0 + (BALL.y1 - BALL.y0) * e; ballG.position.set(BALL.x, by, BALL.z); ball.rotation.y += dt * 1.3; cord.scale.y = Math.max(0.01, W.FLOOR_IN + 3.35 - by); cord.position.y = cord.scale.y / 2;
+    sparkle.material.opacity = (0.35 + 0.3 * Math.abs(Math.sin(DJ.t * 9))) * k; DJ.phase += dt;
+    for (const S of SPOTS) { const tt = DJ.phase * S.f * 2.2 + S.ph, sx = clamp(BALL.x + Math.sin(tt) * 1.9, W.BX0 + 0.7, W.BX1 - 0.6), sz = clamp(BALL.z + Math.sin(tt * 1.37 + 1) * 1.2, -3.6, -0.5);
+      S.s.position.x = sx; S.s.position.z = sz; const beatK = DJ.on ? 0.75 + 0.25 * Math.cos(DJ.t / BEAT * Math.PI * 2) : 1; S.m.opacity = 0.8 * k * beatK;
+      if (S.beam.visible) { const top = V3(BALL.x, by, BALL.z), bot = V3(sx, W.FLOOR_IN, sz), d = top.distanceTo(bot); S.beam.position.copy(top); S.beam.scale.set(1, d, 1); S.beam.quaternion.setFromUnitVectors(V3(0, -1, 0), bot.sub(top).normalize()); S.bm.opacity = 0.075 * k * beatK; } }
+    const bk = DJ.on ? 0.5 + 0.5 * Math.cos(DJ.t / BEAT * Math.PI * 2) : 0; refl.visible = camera.position.z < 1.5; if (refl.visible) updRefl(by, ball.rotation.y, k, bk);
+    renderer.toneMappingExposure = camera.position.z < 1.5 && STATE === 'play' ? 1 + 0.05 * bk * k : 1; }
+  if (!DJ.on) { if (!DJ_ON || STATE !== 'play' || DJ.done >= 2 || MP.passive) return; DJ.next -= dt; if (DJ.next <= 0) { if (!(PH && PH.open) && !start()) DJ.next = 7; } return; }
+  if (STATE !== 'play' && STATE !== 'caught' && STATE !== 'pause') { stop(); return; } if (STATE === 'pause') return;
+  DJ.t += dt; nextBeat -= dt; if (nextBeat <= 0) { beatSound(beatN, 0); beatN++; nextBeat += BEAT; // en cada tiempo: el bar baila
+    for (const a of dancers()) { if (!a.pose.dance) { a.pose.dance = 1; a.dPh = Math.random() * 6; a.dSt = Math.random() * 4 | 0; } if (!a.seat && !a.path) { a.dance = true; a.danceT = BEAT * 2 + 0.1; } if (beatN % 16 === 0 && Math.random() < 0.3) a.dSt = Math.random() * 4 | 0; } }
+  if (DJ.open) stepDance(dt);
+  if (DJ.t > DJ.songT && !DJ.open) { stop(); feed('🎧 Se acabó el temazo… ¡otra, otra!', '#ff3fa4'); } }
+function key(e) { if (!DJ.open) return false; if (e.code === 'Escape') { closeDance(true); return true; }
+  const m = { ArrowLeft: 0, KeyA: 0, KeyJ: 0, ArrowDown: 1, KeyS: 1, KeyK: 1, ArrowUp: 1, KeyW: 1, Space: 1, ArrowRight: 2, KeyD: 2, KeyL: 2 }; if (e.code in m) { e.preventDefault(); if (!e.repeat) hit(m[e.code]); return true; }
+  if (['KeyE', 'KeyX', 'Enter'].includes(e.code)) { e.preventDefault(); return true; } return false; }
+function reset() { stop(); DJ.leave = 0; ballG.visible = false; refl.visible = false; renderer.toneMappingExposure = 1; for (const S of SPOTS) { S.s.visible = false; S.beam.visible = false; } DJ.done = 0; DJ.next = rnd(55, 85); }
+Object.assign(DJ, { refl, MOVES, SONGS, tick, key, find, play, start, stop, hit, reset, closeDance, dancers, ball: ballG, BEAT, FALL, WIN_OK });
+}
+
 // ======================= CALIDAD (bloque 2): halos de luz falsos, neón del bar, parpadeos =======================
 // Sprites aditivos (sin postproceso) sobre globos, guirnalda, farolas y un neón "Último Tango" en la contrabarra. LITE: menos sprites y sin luz extra.
 var FX = null;
@@ -6963,13 +7124,32 @@ function tick(dt) { T0 += dt; fT -= dt; if (fT <= 0) { flick = 0.35; fT = 6 + Ma
   for (const h of HALOS) { if (h.kind === 'fest') h.m.opacity = h.op * (0.75 + 0.25 * Math.sin(T0 * 2.3 + h.ph)); else if (h.kind === 'lamp') { const e = h.L.glow.emissiveIntensity; h.m.opacity = h.op * Math.min(1, e / 2.4) * (0.94 + 0.06 * Math.sin(T0 * 7 + h.ph)); h.s.visible = e > 0.05; } else if (h.kind === 'globe') { h.s.visible = h.g.visible; h.m.opacity = h.op * (0.95 + 0.05 * Math.sin(T0 * 1.3 + h.ph)); } } }
 FX = { tick, HALOS, neon: np };
 }
+// ======================= CALIDAD (bloque 3): motas de polvo en la luz del bar + salpicaduras en los charcos =======================
+{
+const NM = LITE ? 70 : 160, mg = new THREE.BufferGeometry(), mp = new Float32Array(NM * 3), MV = [];
+for (let i = 0; i < NM; i++) { mp[i * 3] = rnd(W.BX0 + 0.3, W.BX1 - 0.3); mp[i * 3 + 1] = W.FLOOR_IN + rnd(0.6, 3.0); mp[i * 3 + 2] = rnd(-7.6, -0.4); MV.push(rnd(0, 6.28), rnd(0.02, 0.06)); }
+mg.setAttribute('position', new THREE.BufferAttribute(mp, 3));
+const motTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'); const g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, 'rgba(255,240,215,1)'); g.addColorStop(1, 'rgba(255,240,215,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const mm = new THREE.PointsMaterial({ map: motTex, size: 0.035, sizeAttenuation: true, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, color: '#ffe2b8' });
+const motes = new THREE.Points(mg, mm); motes.frustumCulled = false; motes.renderOrder = 2; scene.add(motes);
+const wetM = new THREE.MeshBasicMaterial({ color: '#b9d2e6', transparent: true, opacity: 0.75 }), wetG = new THREE.SphereGeometry(0.018, 5, 3);
+let mt = 0, spT = 0; const tick0 = FX.tick;
+FX.tick = function (dt) { tick0(dt); mt += dt;
+  // motas: flotan despacio y titilan (sólo se actualizan si la cámara está cerca del bar)
+  if (camera.position.z < 4) { for (let i = 0; i < NM; i++) { const ph = MV[i * 2], sp = MV[i * 2 + 1]; mp[i * 3] += Math.sin(mt * 0.3 + ph) * sp * dt; mp[i * 3 + 1] += (Math.cos(mt * 0.23 + ph * 1.3) * 0.5 + 0.12) * sp * dt; mp[i * 3 + 2] += Math.cos(mt * 0.27 + ph) * sp * dt;
+      if (mp[i * 3 + 1] > W.FLOOR_IN + 3.05) mp[i * 3 + 1] = W.FLOOR_IN + 0.6; } mg.attributes.position.needsUpdate = true; mm.opacity = 0.42 + 0.13 * Math.sin(mt * 1.7); }
+  // salpicaduras al correr por la calle mojada (fuera del bar, en el suelo)
+  spT -= dt; if (spT <= 0 && P.a && STATE === 'play' && !P.ride && P.grounded !== false && P.pos.z > 0.2) { const v = Math.hypot(P.vel.x, P.vel.z); if (v > 2.6) { spT = 0.16;
+      for (let i = 0; i < (LITE ? 2 : 4); i++) { const m = new THREE.Mesh(wetG, wetM); m.position.set(P.pos.x + rnd(-0.12, 0.12), P.pos.y + 0.03, P.pos.z + rnd(-0.12, 0.12)); particle(m, V3(-P.vel.x * 0.12 + rnd(-0.6, 0.6), rnd(0.9, 1.7), -P.vel.z * 0.12 + rnd(-0.6, 0.6)), { life: 0.5 }); } } else spT = 0.1; } };
+FX.motes = motes;
+}
 
 // ---------- arranque ----------
 // precompila los shaders del bus y de un espíritu para que el primer paso no dé tirón
 try { if (!BUS) BUS = makeBus(); BS.th = THa; placeBus(0); BUS.g.visible = true; const a0 = AG.find(a => a.kind === 'crowd'); const sp = a0 ? makeSpirit(a0) : null; const sm = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: SPLAT_T, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 })); BUS.g.add(sm); const st0 = makeStars(); renderer.compile(scene, camera); BUS.g.remove(sm); scene.remove(st0);
   BUS.g.visible = false; if (sp) { scene.remove(sp.c); SPIRITS.length = 0; } } catch (e) { console.warn('precompile', e); }
 prog(1, '¡Listo!'); $('load').classList.remove('on'); showMenu();
-window.GAME = { phone: PH, ev: { get N() { return EVN; }, nigiri: (f = true) => EVN.start(f), finish: () => EVN.finish() }, busPlan, get busSched() { return BS.sched.slice(); }, __cb: (x, z, r) => { const v = V3(x, 0, z); collideBoxes(v, r); return [v.x, v.z]; }, __ov: (a) => overlapAny(a, AG.filter(q => q.visible && q.trip <= 0)), chat: { send: t => chatSend(t), open: () => chatOpen(), close: () => chatClose(), near: () => !!chatNear(), log: () => CHAT.log.map(l => l.name + ': ' + l.text), clear: () => { CHAT.log.length = 0; $('chatLog').replaceChildren(); }, clean: chatClean, get isOpen() { return CHAT.open; } }, busKOSide, makeSpirit, BUBS, W, busClear, mp: MP, mpApi: { url: () => mpUrl(), create: mpCreate, join: mpJoin, pick: mpPick, start: mpHostStart, leave: mpLeave, emote: mpEmote, roster, colorOf, NPCL, beer() { if (!P.beer) P.beer = beerOn(P.a.n.userData.arms[1]); }, rank: mpRankData }, start: startGame, showMenu, endGame, step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) frame(dt, i < n - 1); }, tick(dt = 1 / 30, dom = false) { frame(dt, true); if (dom) { updDOM(dt); updHUD(); } }, setInput(o) { window.__input = o; }, prank() { prankQ = true; }, sitWC, standWC, tripYes, tripNo, showTripQ, skipTrip, inBath, bathDoor, BTH, TRIP, sepAgents, get tripQ() { return tripQOpen(); }, jump() { jumpQ = 0.2; }, findPrank, doPrank, knock, spawnBus, BS, get BUS() { return BUS; }, SPIRITS, koPlayer, OWNERS, DOGS, NOTES, stealFlute, returnFlute, playFlute, TUNES, fluteFor, W, SCOOT, CKS, counterNear, orderCocktail, grabCocktail, sipCocktail, mountScooter, dismount, barman, witness, P, AG, TABLES, QUEUE, WAITER_A, GANG_A, CROWD_A, BATH, cam, camera, renderer, scene, groundAt, bigText, say, setPose, popText,
+window.GAME = { get dj() { return DJ; }, phone: PH, ev: { get N() { return EVN; }, nigiri: (f = true) => EVN.start(f), finish: () => EVN.finish() }, busPlan, get busSched() { return BS.sched.slice(); }, __cb: (x, z, r) => { const v = V3(x, 0, z); collideBoxes(v, r); return [v.x, v.z]; }, __ov: (a) => overlapAny(a, AG.filter(q => q.visible && q.trip <= 0)), chat: { send: t => chatSend(t), open: () => chatOpen(), close: () => chatClose(), near: () => !!chatNear(), log: () => CHAT.log.map(l => l.name + ': ' + l.text), clear: () => { CHAT.log.length = 0; $('chatLog').replaceChildren(); }, clean: chatClean, get isOpen() { return CHAT.open; } }, busKOSide, makeSpirit, BUBS, W, busClear, mp: MP, mpApi: { url: () => mpUrl(), create: mpCreate, join: mpJoin, pick: mpPick, start: mpHostStart, leave: mpLeave, emote: mpEmote, roster, colorOf, NPCL, beer() { if (!P.beer) P.beer = beerOn(P.a.n.userData.arms[1]); }, rank: mpRankData }, start: startGame, showMenu, endGame, step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) frame(dt, i < n - 1); }, tick(dt = 1 / 30, dom = false) { frame(dt, true); if (dom) { updDOM(dt); updHUD(); } }, setInput(o) { window.__input = o; }, prank() { prankQ = true; }, sitWC, standWC, tripYes, tripNo, showTripQ, skipTrip, inBath, bathDoor, BTH, TRIP, sepAgents, get tripQ() { return tripQOpen(); }, jump() { jumpQ = 0.2; }, findPrank, doPrank, knock, spawnBus, BS, get BUS() { return BUS; }, SPIRITS, koPlayer, OWNERS, DOGS, NOTES, stealFlute, returnFlute, playFlute, TUNES, fluteFor, W, SCOOT, CKS, counterNear, orderCocktail, grabCocktail, sipCocktail, mountScooter, dismount, barman, witness, P, AG, TABLES, QUEUE, WAITER_A, GANG_A, CROWD_A, BATH, cam, camera, renderer, scene, groundAt, bigText, say, setPose, popText,
   get state() { return STATE; }, set state(v) { STATE = v; }, get score() { return score; }, set score(v) { score = v; }, get pillado() { return pillado; }, set pillado(v) { pillado = v; }, get timeLeft() { return timeLeft; }, set timeLeft(v) { timeLeft = v; }, get combo() { return combo; }, get curPrank() { return curPrank; }, stats: () => stats, BAKE, LITE, updCamera };
 window.GAME_READY = 1;
 })().catch(e => { console.error(e); const t = document.getElementById('loadtxt'); if (t) t.textContent = 'Error: ' + e.message; });
