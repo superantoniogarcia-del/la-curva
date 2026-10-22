@@ -5302,7 +5302,21 @@ function say(a, text, dur = 2.4, delay = 0, cls = '') { if (!text) return; if (d
   if (MP.on && a === P.a && cls !== 'chat') mpSay(text); // el chat va por su propio tema
   const old = BUBS.find(b => b.a === a); if (old) { old.el.remove(); BUBS.splice(BUBS.indexOf(old), 1); }
   if (BUBS.length > 5) { const k = BUBS.findIndex(b => !b.el.classList.contains('chat')); const o = BUBS.splice(k < 0 ? 0 : k, 1)[0]; o.el.remove(); } // los del chat aguantan
-  const el = document.createElement('div'); el.className = 'bub ' + cls; el.textContent = text; layer.appendChild(el); BUBS.push({ a, el, t: dur }); }
+  const el = document.createElement('div'); el.className = 'bub ' + cls; el.textContent = text; layer.appendChild(el); const nb = { a, el, t: dur }; BUBS.push(nb);
+  if (!AMB_SAY) { let over = bubCount() - AMB_CAP(); for (const b of BUBS) { if (over <= 0) break; if (b.amb && !b.gone) { b.gone = 1; b.t = Math.min(b.t, 0.3 + domAcc); over--; } } } // los de evento/jugador cuentan para el tope: los de ambiente les ceden el sitio
+  return nb; }
+// ---------- tope de bocadillos de AMBIENTE (charla, frases sueltas, diálogos de fichero, camareros) ----------
+// máx. 2 a la vez en móvil y 3 en escritorio (contando los de evento), hueco global entre bocadillos de ambiente nuevos y sin solaparse en pantalla
+const AMB_CAP = () => innerWidth < 760 || (TOUCH && Math.min(innerWidth, innerHeight) < 600) ? 2 : 3;
+let AMB_SAY = 0, ambGap = 2, ambRes = 0; // ambRes: hueco reservado para la respuesta de una charla de ida y vuelta
+const bubLive = b => !b.gone && b.t > domAcc && b.a.visible;
+function bubCount() { let n = 0; for (const b of BUBS) if (bubLive(b) && (b.amb || b.el.style.display !== 'none')) n++; return n; }
+function ambRect(a, text) { const s = screenOf(headPos(a, a.kind === 'gang' ? 0.42 : 0.22)); if (!s.ok) return null; const tw = text ? text.length * 7.6 : 420, w = Math.min(232, tw + 24), h = Math.ceil(tw / 210) * 17 + 24;
+  return { x: clamp(s.x, 110, innerWidth - 110), y: clamp(s.y, 70, innerHeight * (portrait() ? 0.7 : 0.86)), w, h }; }
+function ambFree(a, text, need = 1, reply = false) { if (bubCount() + need + (reply ? 0 : ambRes) > AMB_CAP()) return false; const r = ambRect(a, text); if (!r) return false;
+  return !BUBS.some(b => bubLive(b) && b.a !== a && b.r && Math.abs(b.r.x - r.x) < (b.r.w + r.w) / 2 + 6 && Math.abs((b.r.y - b.r.h / 2) - (r.y - r.h / 2)) < (b.r.h + r.h) / 2 + 6); }
+function sayAmb(a, text, dur, cls = '', reply = false) { if (!text || (!reply && ambGap > 0) || !ambFree(a, text, 1, reply)) return false;
+  AMB_SAY = 1; const b = say(a, text, dur, 0, cls); AMB_SAY = 0; if (b) { b.amb = 1; b.r = ambRect(a, text); } ambGap = rnd(2.5, 3.5); return true; }
 function popText(p, text, color) { const el = document.createElement('div'); el.className = 'pop'; el.textContent = text; if (color) el.style.color = color; layer.appendChild(el); POPS.push({ p: p.clone(), el, t: 0 }); }
 let bigT = 0; function bigText(t, dur = 1.1) { const b = $('big'); b.textContent = t; b.classList.add('on'); bigT = dur; }
 function makeTag(a, me) { const el = document.createElement('div'); el.className = 'tag' + (me ? ' me' : ''); el.textContent = a.name; layer.appendChild(el); const T = { a, el, vis: true, chk: Math.random() }; TAGS.push(T); return T; }
@@ -5325,14 +5339,18 @@ function updDOM(dt) {
   // el jugador es un obstáculo para los bocadillos: nunca se le tapa
   if (P.a && (STATE === 'play' || STATE === 'caught') && !P.dead) { const t0 = screenOf(headPos(P.a, 0.05)), b0 = screenOf(P.a.n.position); if (t0.ok && b0.ok) placed.push({ x: t0.x, y: b0.y, w: Math.max(70, (b0.y - t0.y) * 0.8), h: b0.y - t0.y + 26 }); }
   const cbx = $('chatBox'), chatB = cbx && cbx.classList.contains('on') ? cbx.getBoundingClientRect().bottom + 6 : 0;
-  for (let i = BUBS.length - 1; i >= 0; i--) { const b = BUBS[i]; b.t -= dt; if (b.t <= 0 || !b.a.visible) { b.el.remove(); BUBS.splice(i, 1); continue; }
-    const hp = headPos(b.a, b.a.kind === 'gang' || b.a === P.a ? 0.42 : 0.22); const s = screenOf(hp); b.el.style.display = s.ok ? 'block' : 'none';
+  for (let i = BUBS.length - 1; i >= 0; i--) { const b = BUBS[i]; b.t -= dt; if (b.t <= 0 || !b.a.visible) { b.el.remove(); BUBS.splice(i, 1); } }
+  // orden de colocación: primero los de evento/jugador (el más nuevo delante), luego los de ambiente del más antiguo al más nuevo; un bocadillo de ambiente que pisaría a otro espera oculto
+  const ORD = BUBS.filter(b => !b.amb).reverse().concat(BUBS.filter(b => b.amb)), bubR = [];
+  for (const b of ORD) {
+    const hp = headPos(b.a, b.a.kind === 'gang' || b.a === P.a ? 0.42 : 0.22); const s = screenOf(hp); b.el.style.display = s.ok ? 'block' : 'none'; if (!s.ok) b.r = null;
     if (s.ok) { if (!b.w) { b.w = b.el.offsetWidth || 120; b.h = b.el.offsetHeight || 34; } let bx = clamp(s.x, 110, innerWidth - 110), by = clamp(s.y, 70, innerHeight * (portrait() ? 0.7 : 0.86)); // ni bajo el HUD ni encima del botón/indicación de acción
       for (let k = 0; k < 4; k++) { const r = placed.find(r => Math.abs(r.x - bx) < (r.w + b.w) / 2 && by > r.y - r.h - 2 && by - b.h - 8 < r.y); if (!r) break; by = r.y - r.h - 3; } // no tapar etiquetas ni otros bocadillos
       if (!HUD_B) { const hr = $('pilladoW').getBoundingClientRect(); HUD_B = hr.bottom > 0 ? hr.bottom + 6 : 0; } let minB = HUD_B + b.h; // no subir por encima del HUD (PILLADO)
       if (chatB) minB = Math.max(minB, chatB + b.h); // ni detrás de la caja del chat abierta
       if ((HUD_B || chatB) && by < minB) { by = minB; const r = placed.find(r => Math.abs(r.x - bx) < (r.w + b.w) / 2 && by > r.y - r.h - 2 && by - b.h - 8 < r.y); if (r) { const R = r.x + (r.w + b.w) / 2 + 4, Lx = r.x - (r.w + b.w) / 2 - 4; bx = clamp(R + b.w / 2 < innerWidth - 4 ? R : Lx, b.w / 2 + 4, innerWidth - b.w / 2 - 4); } }
-      placed.push({ x: bx, y: by, w: b.w, h: b.h + 8 }); b.el.style.transform = `translate(${bx}px,${by}px) translate(-50%,-100%)`; } b.el.style.opacity = Math.min(1, b.t * 4); }
+      if (b.amb && bubR.some(r => Math.abs(r.x - bx) < (r.w + b.w) / 2 + 2 && by > r.y - r.h - 2 && by - b.h - 8 < r.y + 2)) { b.el.style.display = 'none'; b.r = null; continue; }
+      placed.push({ x: bx, y: by, w: b.w, h: b.h + 8 }); bubR.push(b.r = { x: bx, y: by, w: b.w, h: b.h + 8 }); b.el.style.transform = `translate(${bx}px,${by}px) translate(-50%,-100%)`; } b.el.style.opacity = Math.min(1, b.t * 4); }
   for (let i = POPS.length - 1; i >= 0; i--) { const o = POPS[i]; o.t += dt; if (o.t > 1.3) { o.el.remove(); POPS.splice(i, 1); continue; } const s = screenOf(o.p.clone().add(V3(0, 1.6 + o.t * 0.9, 0))); o.el.style.display = s.ok ? 'block' : 'none'; o.el.style.transform = `translate(${s.x}px,${s.y}px) translate(-50%,-50%) scale(${(1 + 0.4 * Math.max(0, 0.25 - o.t) * 4).toFixed(2)})`; o.el.style.opacity = Math.min(1, (1.3 - o.t) * 3); }
   if (bigT > 0) { bigT -= dt; if (bigT <= 0) $('big').classList.remove('on'); }
 }
@@ -5411,7 +5429,7 @@ prog(0.85, 'Los camareros se ponen el delantal…'); await tick();
 // camareros hippies
 const WAITER_A = [];
 const CONE_TEX = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const g = x.createRadialGradient(64, 64, 4, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.75, 'rgba(255,255,255,0.75)'); g.addColorStop(0.93, 'rgba(255,255,255,0.35)'); g.addColorStop(0.97, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
-function makeWaiter(cfg, x, z, patrol, o) { const a = agent(Object.assign({}, cfg), { x, z, yaw: o.yaw || 0, kind: 'waiter', beer: false, res: RES_GANG, speed: o.speed || 1.0 }); a.n.scale.setScalar(SC * (o.sc || 1)); a.patrol = patrol; a.pi2 = 0; a.wait = rnd(1, 3); a.range = o.range; a.half = o.half; a.alert = 0; a.seen = 0; a.ambT = rnd(6, 12);
+function makeWaiter(cfg, x, z, patrol, o) { const a = agent(Object.assign({}, cfg), { x, z, yaw: o.yaw || 0, kind: 'waiter', beer: false, res: RES_GANG, speed: o.speed || 1.0 }); a.n.scale.setScalar(SC * (o.sc || 1)); a.patrol = patrol; a.pi2 = 0; a.wait = rnd(1, 3); a.range = o.range; a.half = o.half; a.alert = 0; a.seen = 0; a.ambT = rnd(10, 20);
   const cg = new THREE.CircleGeometry(o.range, 24, -o.half, o.half * 2); cg.rotateX(-Math.PI / 2); a.cone = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ color: '#ffd23a', map: CONE_TEX, transparent: true, opacity: 0.16, depthWrite: false, fog: false })); a.cone.renderOrder = 2; scene.add(a.cone);
   a.tag = makeTag(a, false); a.tag.el.style.background = '#c9f2c7'; WAITER_A.push(a); return a; }
 const BY = W.FLOOR_IN + WX.PLAT;
@@ -5678,7 +5696,7 @@ function updWaiters(dt) { for (const w of WAITER_A) {
     if (w.alert > 0) { w.alert -= dt; w.freeze = true; } else w.freeze = false;
     if (!w.path && w.alert <= 0 && !w.busy && !MP.passive) { w.wait -= dt; if (w.wait <= 0) { w.pi2 = (w.pi2 + 1) % w.patrol.length; const q = w.patrol[w.pi2]; walkTo(w, [V3(q[0], 0, q[1])], (a) => { a.faceYaw = q[2]; a.wait = q[3]; }); } }
     // vigila de forma pasiva: si te ve muy cerca con una caña robada, sospecha
-    w.ambT -= dt; if (w.ambT <= 0 && STATE === 'play') { w.ambT = rnd(5, 9); if (w.pos.distanceTo(P.pos) < 9 && !w.alert) say(w, pick(L.waiterAmb), 2.2); }
+    w.ambT -= dt; if (w.ambT <= 0 && STATE === 'play') { w.ambT = rnd(10, 18); if (w.pos.distanceTo(P.pos) < 9 && !w.alert) sayAmb(w, pick(L.waiterAmb), 2.2); } // la mitad de a menudo y con el tope de ambiente
     const c = w.cone; c.position.set(w.pos.x, (w === barman ? W.FLOOR_IN : groundAt(w.pos.x, w.pos.z)) + 0.03, w.pos.z); c.rotation.y = w.yaw - Math.PI / 2; c.material.color.set(w.alert > 0 ? '#ff3a3a' : '#ffd23a'); c.material.opacity = w.alert > 0 ? 0.42 : 0.24; c.visible = (STATE === 'play' || TRAILER) && !w.ko; } }
 function caught(w) { if (STATE !== 'play') return; STATE = 'caught'; caughtT = 0; caughtBy = w; sfx('out'); bigText('¡PILLADO!', 2.2); w.freeze = true; }
 let caughtT = 0, caughtBy = null;
@@ -6064,23 +6082,29 @@ const kindG = a => a.kind === 'waiter' ? 'waiter' : a.kind === 'gang' ? 'gang' :
 let ambT = 2; const DLG_N = { g: 0, c: 0 }, DLG_LAST = {}; // sin repetir seguido: evita las últimas 3 frases de fichero de cada grupo
 function pickNR(arr, k) { const L = DLG_LAST[k] || (DLG_LAST[k] = []), ok = arr.filter(x => !L.includes(x[0])); const q = pick(ok.length ? ok : arr); DLG_N[k]++; /* historial común por grupo (charla y frase suelta): nunca la misma seguida */ L.push(q[0]); if (L.length > Math.min(3, arr.length - 1)) L.shift(); return q; }
 function talker(a) { return a.visible && !a.ko && !a.remote && a !== P.a && a.trip <= 0 && !a.hidden && !BUBS.some(b => b.a === a); }
-function updAmbient(dt) { ambT -= dt; if (ambT > 0) return; ambT = rnd(1.3, 2.4); if (BUBS.length >= 5) return;
-  const vis = AG.filter(a => talker(a) && a.pos.distanceTo(P.pos) < 10); if (!vis.length) return; const vg = vis.filter(x => kindG(x) === 'gang'), vc = vis.filter(x => kindG(x) !== 'gang');
+function updAmbient(dt) { ambGap -= dt; ambT -= dt; if (ambT > 0 || ambGap > 0) return; ambT = rnd(2.6, 4.8); // la mitad de a menudo que antes (1,3–2,4 s)
+  const cap = AMB_CAP(); if (bubCount() + ambRes >= cap) return;
+  const vis = AG.filter(a => talker(a) && a.pos.distanceTo(P.pos) < 10 && screenOf(headPos(a, 0.3)).ok); if (!vis.length) return; const vg = vis.filter(x => kindG(x) === 'gang'), vc = vis.filter(x => kindG(x) !== 'gang');
   // reparto: le toca hablar al grupo (pandilla / público+camareros) que menos frases de fichero lleva, con algo de azar
   const wantG = vg.length && (!vc.length || (Math.random() < 0.8 ? DLG_N.g <= DLG_N.c : Math.random() < 0.5));
-  const a = pick(wantG ? vg : vc.length ? vc : vis), ka = kindG(a);
+  // quien hable tiene que caber en pantalla sin pisar otro bocadillo: se prueba primero el grupo al que le toca
+  const order = [...(wantG ? vg : vc.length ? vc : vis)].sort(() => Math.random() - 0.5).concat([...(wantG ? vc : vg)].sort(() => Math.random() - 0.5));
+  const a = order.find(x => ambFree(x, null)); if (!a) { ambT = rnd(0.8, 1.4); return; } const ka = kindG(a); // todo ocupado: se reintenta en un rato
   const near = vis.filter(b => b !== a && b.pos.distanceTo(a.pos) < 3.2);
-  if (near.length && Math.random() < (ka === 'gang' ? 0.65 : 0.55)) { const ng = ka === 'gang' ? near.filter(x => kindG(x) === 'gang') : []; const b = ng.length && Math.random() < 0.75 ? pick(ng) : pick(near), kb = kindG(b); let q = null;
+  if (near.length && bubCount() + 2 <= cap && Math.random() < (ka === 'gang' ? 0.65 : 0.55)) { const ng = ka === 'gang' ? near.filter(x => kindG(x) === 'gang') : []; const b = ng.length && Math.random() < 0.75 ? pick(ng) : pick(near), kb = kindG(b); let q = null;
     const fileP = DLG.filter(d => d.who.has(ka) && d.who.has(kb)).flatMap(d => d.pairs);
     if (ka === 'gang' && kb === 'gang') q = fileP.length && Math.random() < 0.8 ? pickNR(fileP, 'g') : pick(PAIRS_GANG); // los del usuario salen a menudo
     else if ((ka === 'gang') !== (kb === 'gang')) q = pick(PAIRS_MIX);
     else q = fileP.length && Math.random() < 0.85 ? pickNR(fileP, 'c') : pick(PAIRS_CROWD);
-    if (!q) return; a.look = 3.5; a.lookAt = b.pos; b.look = 4; b.lookAt = a.pos; say(a, fmt(q[0]), 2.4);
-    setTimeoutG(() => { if (talker(b) || BUBS.some(x => x.a === b)) { say(b, fmt(q[1]), 2.4); b.wave = 0.8; } }, rnd(1.0, 2.0)); return; }
+    if (!q || !sayAmb(a, fmt(q[0]), 2.4)) return; a.look = 3.5; a.lookAt = b.pos; b.look = 4; b.lookAt = a.pos; ambRes = 1; // la respuesta tiene su hueco guardado
+    const t0 = gameT, reply = () => { if (!(talker(b) || BUBS.some(x => x.a === b)) || !b.visible) { ambRes = 0; return; } ambRes = 0;
+      if (sayAmb(b, fmt(q[1]), 2.4, '', true)) { b.wave = 0.8; b.look = 3; b.lookAt = a.pos; return; } // si pisaría otro bocadillo, espera (a que termine la pregunta)
+      if (gameT - t0 < 6.5) { ambRes = 1; setTimeoutG(reply, 0.4); } };
+    setTimeoutG(reply, rnd(1.0, 2.0)); return; }
   // frase suelta (con los diálogos de fichero también como monólogo de vez en cuando)
   const own = DLG.filter(d => d.who.has(ka)).flatMap(d => d.pairs);
   const pool = ka === 'gang' ? AMB.gang.concat(L.gangAmb) : ka === 'waiter' ? AMB.waiter.concat(L.waiterAmb) : AMB.crowd.concat(L.crowdAmb);
-  say(a, fmt(own.length && Math.random() < 0.65 ? pickNR(own, ka === 'gang' ? 'g' : 'c')[0] : pick(pool)), 2.6, 0, ka === 'waiter' ? 'w' : '');
+  if (!sayAmb(a, fmt(own.length && Math.random() < 0.75 ? pickNR(own, ka === 'gang' ? 'g' : 'c')[0] : pick(pool)), 2.6, ka === 'waiter' ? 'w' : '')) return;
   if (ka === 'gang' && a.pos.distanceTo(P.pos) < 4) { a.look = 2; a.lookAt = P.pos; if (!a.seat) a.wave = 1.2; } }
 // ---------- vida: gestos y paseos ----------
 const WANDER = [[-6.5, 2.2], [-5.0, 3.6], [-3.6, 3.3], [-2.0, 3.6], [-0.3, 3.4], [1.4, 3.6], [3.0, 3.2], [4.8, 2.6], [6.5, 3.0], [-4.2, 5.4], [-1.0, 5.6], [2.4, 5.2], [5.2, 5.0], [-7.5, 3.0], [7.6, 2.4], [-2.6, 6.6], [3.6, 6.6]];
@@ -6124,7 +6148,7 @@ const showBest = () => { $('best').textContent = best > 0 ? 'Récord: ' + best +
 function showMenu() { if (STATE === 'trip') endTrip(); resetScooters(); resetCocktail(); resetFlutes(); resetBus(); STATE = 'menu'; P.sit = false; hideTripQ(); $('menu').classList.add('on'); $('end').classList.remove('on'); $('hud').classList.remove('on'); showBest(); if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); P.a = null; } }
 function resetFlutes() { returnFlute('silent'); P.flute = null; P.flPlay = 0; P.tune = null; for (const o of OWNERS) { setOwnerFlute(o, true); o.flPlay = 0; o.flLock = 0; o.spareT = 0; } for (const q of AG) { q.dance = false; q.danceT = 0; } }
 function resetRound() { if (EVN) EVN.reset(); if (DJ) DJ.reset(); if (FT) FT.reset(); resetScooters(); resetCocktail(); resetFlutes(); resetBus(); for (const T of TABLES) if (T.state !== 'up') { T.state = 'up'; T.thudd = 0; T.root.quaternion.identity(); T.root.position.set(T.x, T.y, T.z); T.inner.position.set(0, 0, 0); if (!W.COLL.includes(T.coll)) W.COLL.push(T.coll); fillTable(T); }
-  for (const p of PARTS) if (p.m.parent) p.m.parent.remove(p.m); PARTS.length = 0; TIMERS.length = 0; for (const b of BUBS) b.el.remove(); BUBS.length = 0;
+  for (const p of PARTS) if (p.m.parent) p.m.parent.remove(p.m); PARTS.length = 0; TIMERS.length = 0; for (const b of BUBS) b.el.remove(); BUBS.length = 0; ambRes = 0; ambGap = 2;
   for (const a of AG) { a.trip = 0; a.untied = 0; a.wet = 0; a.cd = 0; a.n.rotation.set(0, a.yaw, 0); for (const k of ['complain', 'startle', 'push', 'crouch', 'pour', 'drink', 'pose', 'scratch']) { a.pose[k] = 0; } if (a.beerHand != null && a.kind !== 'waiter' && !a.selfie) giveBeer(a); }
   for (const w of WAITER_A) { w.alert = 0; w.freeze = false; }
   score = 0; timeLeft = TRAILER ? 999 : 240; combo = 1; comboT = 0; lastPrank = -99; pillado = 0; seenT = 99; stats = { pranks: 0, tables: 0, beers: 0, maxCombo: 1 }; }
@@ -6808,14 +6832,27 @@ function matchWith(c) { const a = c.a; PH.tin.matches++; const ov = el('div', 't
   const s0 = score; award(220, a.pos, '💘'); PH.tin.pts += score - s0; popText(a.pos, '💘', '#ff6b9a');
   if (STATE === 'play' && a.visible && !a.ko) { a.look = 3.2; a.lookAt = P.pos; a.wave = 1.6; a.cd = Math.max(a.cd, 3); say(a, pick(MATCH_L), 2.6, 0.4); setTimeoutG(() => { if (!a.ko) setPose(a, 'pose', 1, 0.9); }, 0.5); } }
 // ---------- BITCOIN ----------
-const BTC = { p: 61250, open: 61250, hist: [], t: 0, tv: null, tvT: 0 };
-for (let i = 0; i < 60; i++) BTC.hist.push(BTC.p);
-function btcWalk(dt) { BTC.t += dt; if (BTC.t < 0.5) return; BTC.t = 0; BTC.p = Math.round(BTC.p * (1 + (Math.random() - 0.49) * 0.006) + (61250 - BTC.p) * 0.01); BTC.hist.push(BTC.p); if (BTC.hist.length > 60) BTC.hist.shift(); }
-const eur = v => Math.round(v).toLocaleString('es-ES') + ' €';
-function openBtc() { const p0 = BTC.p; const dips = [2.2 + rnd(0, 1.2), 5.8 + rnd(0, 1.2), 9.0 + rnd(0, 0.8)];
-  PH.btc = { T: 0, D: 12, p0, p: p0, hist: [p0], buys: [], dips, done: false, said: 0, path: t => { let v = Math.sin(t * 2.3) * 0.004 + Math.sin(t * 5.1) * 0.0025; for (const d of dips) { const x = t - d; v -= 0.09 * Math.exp(-x * x / 0.32); } return p0 * (1 + v + (t > 10.3 ? (t - 10.3) * 0.055 : 0) + t * 0.0018); } };
-  scr.appendChild(el('div', 'bHead', '<b class="coin">₿</b> BTC / EUR <span class="live">● EN DIRECTO</span>'));
-  scr.appendChild(el('div', 'bPrice', `<span id="bP">${eur(p0)}</span><small id="bPc">+0,00 %</small>`));
+// precio REAL en dólares (Coinbase → Binance → CoinGecko, sin clave, cada 60 s, en cada navegador: también en multijugador cada uno lo suyo).
+// Sin red: el último conocido (localStorage) con '—' en la variación; nunca un precio inventado. Tests: ?btc=12345[&btc24=-1.5] lo fija sin red; ?test=1 sin ?btc no sale a la red.
+const BTC = { p: null, c24: null, ok: false, src: '', at: 0, hist: [], tv: null, tvT: 0 };
+if (!TEST) try { const o = JSON.parse(localStorage.getItem('laCurvaBtc') || 'null'); if (o && o.p > 100) { BTC.p = o.p; BTC.at = o.at || 0; BTC.hist.push(o.p); } } catch (_) {}
+const usd = v => v == null || !isFinite(v) ? '$—' : '$' + Math.round(v).toLocaleString('en-US');
+const pct = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+function btcSet(p, c, src) { if (!(p > 100 && isFinite(p))) return false; BTC.p = p; BTC.c24 = c != null && isFinite(c) ? +c : null; BTC.ok = true; if (BTC.src === 'test' && src !== 'test') BTC.hist.length = 0; BTC.src = src; BTC.at = Date.now();
+  BTC.hist.push(p); if (BTC.hist.length > 60) BTC.hist.shift(); try { localStorage.setItem('laCurvaBtc', JSON.stringify({ p, at: BTC.at })); } catch (_) {} if (BTC.tv) BTC.tv.drawn = 0; BTC.tvT = 0; return true; }
+async function getJ(u) { const ac = new AbortController(), t = setTimeout(() => ac.abort(), 6000); try { const r = await fetch(u, { signal: ac.signal, cache: 'no-store' }); if (!r.ok) throw new Error(r.status); return await r.json(); } finally { clearTimeout(t); } }
+const BTC_SRC = [
+  async () => { const j = await getJ('https://api.coinbase.com/v2/prices/BTC-USD/spot'); let c = null; try { const s = await getJ('https://api.exchange.coinbase.com/products/BTC-USD/stats'); if (+s.open > 0) c = (+s.last / +s.open - 1) * 100; } catch (_) {} return [+j.data.amount, c, 'Coinbase']; },
+  async () => { const j = await getJ('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'); return [+j.lastPrice, +j.priceChangePercent, 'Binance']; },
+  async () => { const j = await getJ('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT'); return [+j.price, null, 'Binance']; },
+  async () => { const j = await getJ('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true'); return [+j.bitcoin.usd, j.bitcoin.usd_24h_change, 'CoinGecko']; }];
+async function btcFetch() { for (const f of BTC_SRC) { try { const [p, c, src] = await f(); if (btcSet(p, c, src)) return true; } catch (_) {} } BTC.ok = false; if (BTC.tv) BTC.tv.drawn = 0; BTC.tvT = 0; return false; }
+if (Q.has('btc')) { const m = parseFloat(Q.get('btc')), c = parseFloat(Q.get('btc24')); if (!btcSet(m, isFinite(c) ? c : null, 'test')) { BTC.ok = false; } } // ?btc=off → sin datos
+else if (!TEST) { btcFetch(); setInterval(btcFetch, 60000); }
+function openBtc() { const real = BTC.p, p0 = real || 1; const dips = [2.2 + rnd(0, 1.2), 5.8 + rnd(0, 1.2), 9.0 + rnd(0, 0.8)];
+  PH.btc = { T: 0, D: 12, real: !!real, p0, p: p0, hist: [p0], buys: [], dips, done: false, said: 0, path: t => { let v = Math.sin(t * 2.3) * 0.004 + Math.sin(t * 5.1) * 0.0025; for (const d of dips) { const x = t - d; v -= 0.09 * Math.exp(-x * x / 0.32); } return p0 * (1 + v + (t > 10.3 ? (t - 10.3) * 0.055 : 0) + t * 0.0018); } };
+  scr.appendChild(el('div', 'bHead', '<b class="coin">₿</b> BTC / USD <span class="live">● EN DIRECTO</span>'));
+  scr.appendChild(el('div', 'bPrice', `<span id="bP">${usd(real)}</span><small id="bPc">+0.00%</small>`));
   const cv = el('canvas', 'bChart'); cv.id = 'bChart'; cv.width = 520; cv.height = 300; scr.appendChild(cv);
   scr.appendChild(el('div', 'bInfo', '<span id="bBuys">Compras: 0/3</span><span id="bTime">12 s</span>'));
   const b = el('button', 'bBuy', 'COMPRA EN EL DIP' + (TOUCH ? '' : ' <kbd>Espacio</kbd>')); b.id = 'bBuy'; b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); btcBuy(); }); scr.appendChild(b);
@@ -6823,7 +6860,7 @@ function openBtc() { const p0 = BTC.p; const dips = [2.2 + rnd(0, 1.2), 5.8 + rn
   const ng = nearGang(7)[0]; if (ng) say(ng, fmt('¿Has visto el Bitcoin, {P}?'), 2.2, 0.3); drawBtc(); }
 function btcBuy() { const B = PH.btc; if (!PH.open || PH.kind !== 'btc' || !B || B.done || B.buys.length >= 3) return; const h = B.hist, n = h.length, w = h.slice(Math.max(0, n - 25)), mn = Math.min(...w), mx = Math.max(...w);
   const dip = B.p < B.p0 * 0.97 && B.p <= mn + (mx - mn) * 0.25; B.buys.push({ p: B.p, t: B.T, dip }); sfx(dip ? 'ding' : 'clink');
-  $('bBuys').textContent = 'Compras: ' + B.buys.length + '/3'; const f = el('div', 'bFlash ' + (dip ? 'ok' : 'meh'), dip ? '¡DIP CAZADO! 🔥' : 'Comprado a ' + eur(B.p)); scr.appendChild(f); setTimeout(() => f.remove(), 900);
+  $('bBuys').textContent = 'Compras: ' + B.buys.length + '/3'; const f = el('div', 'bFlash ' + (dip ? 'ok' : 'meh'), dip ? '¡DIP CAZADO! 🔥' : (B.real ? 'Comprado a ' + usd(B.p) : '¡Comprado!')); scr.appendChild(f); setTimeout(() => f.remove(), 900);
   if (B.buys.length >= 3) $('bBuy').classList.add('off'); }
 function drawBtc() { const B = PH.btc, cv = $('bChart'); if (!cv || !B) return; const x = cv.getContext('2d'), W2 = cv.width, H2 = cv.height, h = B.hist;
   const mn = Math.min(...h, B.p0 * 0.9), mx = Math.max(...h, B.p0 * 1.04), N = Math.max(2, B.D * 15); const X = i => i / N * W2, Y = v => H2 - 18 - (v - mn) / (mx - mn) * (H2 - 40);
@@ -6835,9 +6872,9 @@ function drawBtc() { const B = PH.btc, cv = $('bChart'); if (!cv || !B) return; 
   for (const b of B.buys) { const i = Math.round(b.t * 15); x.fillStyle = b.dip ? '#ffd23a' : '#9aa4c7'; x.beginPath(); x.arc(X(i), Y(b.p), 9, 0, 7); x.fill(); x.fillStyle = '#111'; x.font = 'bold 12px sans-serif'; x.textAlign = 'center'; x.fillText('₿', X(i), Y(b.p) + 4); }
   const li = h.length - 1; x.fillStyle = col; x.beginPath(); x.arc(X(li), Y(h[li]), 6 + 2 * Math.sin(performance.now() / 120), 0, 7); x.fill(); }
 function stepBtc(dt) { const B = PH.btc; if (!B || B.done) return; B.T += dt; const n = Math.floor(B.T * 15); while (B.hist.length <= n && B.hist.length <= B.D * 15) B.hist.push(B.path(B.hist.length / 15) * (1 + (Math.random() - 0.5) * 0.002));
-  B.p = B.hist[B.hist.length - 1]; const pc = (B.p / B.p0 - 1) * 100; const pe = $('bP'); if (pe) { pe.textContent = eur(B.p); const c = $('bPc'); c.textContent = (pc >= 0 ? '+' : '') + pc.toFixed(2).replace('.', ',') + ' %'; c.className = pc >= 0 ? 'up' : 'dn'; $('bTime').textContent = Math.max(0, Math.ceil(B.D - B.T)) + ' s'; }
+  B.p = B.hist[B.hist.length - 1]; const pc = (B.p / B.p0 - 1) * 100; const pe = $('bP'); if (pe) { pe.textContent = B.real ? usd(B.p) : '$—'; const c = $('bPc'); c.textContent = pct(pc); c.className = pc >= 0 ? 'up' : 'dn'; $('bTime').textContent = Math.max(0, Math.ceil(B.D - B.T)) + ' s'; }
   const dn = pc < -5; if (dn && B.said <= 0) { B.said = 4; const g = nearGang(8)[0]; if (g) say(g, fmt(pick(GANG_DN)), 1.8); } B.said -= dt; drawBtc();
-  if (B.T >= B.D) { B.done = true; const F = B.p; let pts = 0; for (const b of B.buys) pts += Math.max(10, Math.round((F - b.p) / F * 1600)); BTC.p = Math.round(F); BTC.hist.push(BTC.p); BTC.hist.shift();
+  if (B.T >= B.D) { B.done = true; const F = B.p; let pts = 0; for (const b of B.buys) pts += Math.max(10, Math.round((F - b.p) / F * 1600)); 
     const ov = el('div', 'tMatch btc', pts ? `<b>¡A LA LUNA! 🚀</b><small>${B.buys.length} compra${B.buys.length > 1 ? 's' : ''} · +${pts} puntos</small>` : '<b>¡HODL! 💎</b><small>No has comprado nada…</small>'); scr.appendChild(ov); setTimeout(() => ov.classList.add('on'), 10);
     if (pts) { const s0 = score; award(pts, P.pos, '₿'); pts = score - s0; [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.14, 'triangle', 0.13, 1, i * 0.07)); for (const g of nearGang(9).slice(0, 2)) { say(g, fmt(pick(GANG_UP)), 2.2, rnd(0.1, 0.6)); g.wave = 1.2; } }
     else for (const g of nearGang(9).slice(0, 1)) say(g, fmt('{P}, ¡que se te ha escapado!'), 2.0, 0.3);
@@ -6849,10 +6886,14 @@ function stepBtc(dt) { const B = PH.btc; if (!B || B.done) return; B.T += dt; co
   const arm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.08), new THREE.MeshStandardMaterial({ color: '#222' })); arm.position.x = -0.07; g.add(arm);
   g.position.set(W.BX0 + 0.12, W.FLOOR_IN + 2.38, -4.15); scene.add(g); BTC.tv = { cv, tex, g };
   const glow = new THREE.PointLight('#ffb050', 0, 2.2, 2); if (!LITE) { glow.position.set(W.BX0 + 0.5, W.FLOOR_IN + 2.3, -4.15); scene.add(glow); BTC.tv.glow = glow; } }
-function drawTV() { const T = BTC.tv, x = T.cv.getContext('2d'), w = T.cv.width, h = T.cv.height; const live = PH.btc && PH.open && !PH.btc.done ? PH.btc : null, hist = live ? live.hist : BTC.hist, p = live ? live.p : BTC.p, p0 = live ? live.p0 : hist[0], up = p >= p0;
-  x.fillStyle = '#07090f'; x.fillRect(0, 0, w, h); x.fillStyle = '#f7931a'; x.font = 'bold 22px sans-serif'; x.textAlign = 'left'; x.fillText('₿ BTC/EUR', 10, 28); x.fillStyle = '#fff'; x.font = 'bold 30px sans-serif'; x.fillText(eur(p), 10, 62);
-  const pc = (p / p0 - 1) * 100; x.fillStyle = up ? '#2ee59d' : '#ff4d6d'; x.font = 'bold 18px sans-serif'; x.textAlign = 'right'; x.fillText((up ? '▲ +' : '▼ ') + pc.toFixed(2).replace('.', ',') + '%', w - 10, 28);
-  const mn = Math.min(...hist), mx = Math.max(...hist) + 1; x.beginPath(); hist.forEach((v, i) => { const X = 10 + i / (hist.length - 1) * (w - 20), Y = h - 12 - (v - mn) / (mx - mn) * 58; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.strokeStyle = up ? '#2ee59d' : '#ff4d6d'; x.lineWidth = 3; x.stroke();
+function drawTV() { const T = BTC.tv, x = T.cv.getContext('2d'), w = T.cv.width, h = T.cv.height, c = BTC.ok ? BTC.c24 : null, up = c == null ? true : c >= 0, col = c == null ? '#9aa4c7' : up ? '#2ee59d' : '#ff4d6d'; // siempre el precio real, nunca el del minijuego
+  x.fillStyle = '#07090f'; x.fillRect(0, 0, w, h); const m = Math.round(w * 0.6); // izquierda: precio real · derecha: previsión ∞
+  x.fillStyle = '#f7931a'; x.font = 'bold 13px sans-serif'; x.textAlign = 'left'; x.fillText('₿ BTC/USD · AHORA', 8, 20); x.fillStyle = BTC.ok ? '#fff' : '#c9cfdd'; x.font = 'bold 27px sans-serif'; x.fillText(usd(BTC.p), 8, 54);
+  x.fillStyle = col; x.font = 'bold 14px sans-serif'; x.fillText(c == null ? '—' : (up ? '↑ ' : '↓ ') + pct(c), 8, 74); x.font = '11px sans-serif'; x.fillStyle = 'rgba(255,255,255,.55)'; x.fillText(BTC.ok ? '24 h' : 'sin conexión', 70, 74);
+  const hist = BTC.hist.length > 1 ? BTC.hist : BTC.hist.length ? [BTC.hist[0], BTC.hist[0]] : []; if (hist.length) { const mn = Math.min(...hist), mx = Math.max(...hist) + 1; x.beginPath(); hist.forEach((v, i) => { const X = 8 + i / (hist.length - 1) * (m - 20), Y = h - 12 - (v - mn) / (mx - mn) * 40; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.strokeStyle = col; x.lineWidth = 3; x.stroke(); }
+  x.fillStyle = '#f7931a'; x.fillRect(m, 8, 2, h - 16); x.fillStyle = 'rgba(46,229,157,.08)'; x.fillRect(m + 2, 0, w - m - 2, h);
+  const cx = m + (w - m) / 2; x.textAlign = 'center'; x.fillStyle = '#f7931a'; x.font = 'bold 14px sans-serif'; x.fillText('PREVISIÓN', cx, 20);
+  x.fillStyle = '#2ee59d'; x.font = 'bold 64px sans-serif'; x.fillText('∞', cx, 92); x.font = 'bold 18px sans-serif'; x.fillText('$ ∞', cx, 118); x.font = '11px sans-serif'; x.fillStyle = 'rgba(255,255,255,.6)'; x.fillText('¡A LA LUNA! 🚀', cx, 136);
   x.fillStyle = 'rgba(255,255,255,.06)'; for (let y = 0; y < h; y += 3) x.fillRect(0, y, w, 1); T.tex.needsUpdate = true; if (T.glow) T.glow.intensity = 0.6; }
 // ---------- PÁDEL (reto de la pandilla por el móvil) ----------
 // Pista vista desde arriba: tu pala abajo (arrastra el dedo/ratón sobre la pista o ←/→), el rival de la pandilla arriba. La bola rebota en los cristales laterales.
@@ -6904,7 +6945,7 @@ function drawPad() { const G = PH.pad, cv = $('pCourt'); if (!cv || !G) return; 
   x.fillStyle = '#e6ff4a'; x.beginPath(); x.arc(bx, by - z * 14, 9 + z * 3, 0, 7); x.fill(); x.strokeStyle = 'rgba(255,255,255,.8)'; x.lineWidth = 1.5; x.beginPath(); x.arc(bx - 4, by - z * 14, 7, -1, 1); x.stroke();
   if (G.flash > 0 && G.fl) { x.globalAlpha = Math.min(1, G.flash * 3); x.font = '900 34px sans-serif'; x.textAlign = 'center'; x.fillStyle = G.fl[0] === '+' ? '#ffd23a' : '#ff4d6d'; x.strokeStyle = '#000'; x.lineWidth = 5; x.strokeText(G.fl, w / 2, h * 0.62); x.fillText(G.fl, w / 2, h * 0.62); x.globalAlpha = 1; } }
 // ---------- bucle ----------
-function phoneTick(dt) { btcWalk(dt);
+function phoneTick(dt) {
   BTC.tvT -= dt; if (BTC.tvT <= 0) { const near = !P.a || P.pos.distanceTo(BTC.tv.g.position) < 9; BTC.tvT = near ? (PH.open && PH.kind === 'btc' ? 0.1 : 0.5) : 2; if (near || !BTC.tv.drawn) { drawTV(); BTC.tv.drawn = 1; } }
   if (STATE !== 'play') { if (PH.open) closePhone(); if (PH.toast) hideToast(); return; }
   if (PH.open) { prankQ = false; jumpQ = 0; if (!canPhone()) { closePhone(); return; } if (PH.kind === 'btc') stepBtc(dt); else if (PH.kind === 'pad') stepPad(dt); return; }
@@ -6916,7 +6957,7 @@ function phoneKey(e) { if (PH.open) { if (e.code === 'Escape') { closePhone(); r
     if (PH.kind === 'pad' && ['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) { keys[e.code] = true; e.preventDefault(); return true; }
     if (['ArrowUp', 'ArrowDown', 'Space', 'KeyW', 'KeyS', 'KeyE', 'KeyX', 'Enter'].includes(e.code)) { e.preventDefault(); return true; } return false; }
   if (PH.toast > 0 && e.code === 'KeyT' && !e.repeat) { audioOn(); openPhone(); return true; } return false; }
-PH.padEnd = padEnd; PH.drawPad = drawPad; PH.tick = phoneTick; PH.key = phoneKey; PH.notify = notify; PH.openPhone = openPhone; PH.close = closePhone; PH.swipe = swipe; PH.buy = btcBuy; PH.BTC = BTC; PH.portraitOf = portraitOf;
+PH.padEnd = padEnd; PH.drawPad = drawPad; PH.tick = phoneTick; PH.key = phoneKey; PH.notify = notify; PH.openPhone = openPhone; PH.close = closePhone; PH.swipe = swipe; PH.buy = btcBuy; PH.BTC = BTC; PH.btcFetch = btcFetch; PH.btcSet = btcSet; PH.portraitOf = portraitOf;
 }
 
 // ======================= EVENTO: RONDA DE NIGIRIS (src/eventos.js, inyectado en /*__EVENTOS__*/) =======================
