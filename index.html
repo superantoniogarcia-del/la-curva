@@ -66,6 +66,8 @@ canvas{display:block;touch-action:none;position:fixed;inset:0}
 #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:8;transition:opacity .25s}
 #big{position:fixed;left:0;right:0;top:22%;text-align:center;font-weight:900;font-size:clamp(34px,10vw,64px);color:#ffd67a;text-shadow:0 4px 0 #b3261e,0 0 20px rgba(0,0,0,.5);pointer-events:none;z-index:9;opacity:0;transition:opacity .2s,transform .2s;transform:scale(.7)}
 #big.on{opacity:1;transform:scale(1)}
+#big.on{animation:bigPop .5s cubic-bezier(.2,1.5,.35,1)}@keyframes bigPop{0%{transform:scale(.4) rotate(-4deg);opacity:0;filter:blur(3px)}55%{transform:scale(1.12) rotate(1deg);opacity:1;filter:blur(0)}100%{transform:scale(1) rotate(0)}}
+#prompt{animation:promptIn .22s cubic-bezier(.2,1.4,.4,1)}@keyframes promptIn{from{opacity:0;transform:translateX(-50%) translateY(8px) scale(.92)}}
 #end{background:radial-gradient(circle at 50% 35%,rgba(42,47,90,.92),rgba(13,17,36,.97));justify-content:center;text-align:center}
 #endTitle{font-size:clamp(26px,8vw,44px);font-weight:900;color:#ffd67a;margin:10px 0 4px;text-shadow:0 3px 0 #b3261e}
 #endScore{font-size:clamp(48px,16vw,90px);font-weight:900;line-height:1}
@@ -227,6 +229,17 @@ body.rk #layer,body.rkp #netPill,body.rkp #feed,body.rk #big{display:none!import
 .bFlash{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:4;font-weight:900;font-size:22px;padding:8px 14px;border-radius:14px;white-space:nowrap;animation:bfl .9s ease-out forwards;pointer-events:none}
 .bFlash.ok{background:#ffd23a;color:#1b1000}.bFlash.meh{background:rgba(255,255,255,.9);color:#1d2533;font-size:15px}
 @keyframes bfl{0%{transform:translate(-50%,-50%) scale(.6);opacity:0}20%{transform:translate(-50%,-50%) scale(1.08);opacity:1}100%{transform:translate(-50%,-110%) scale(1);opacity:0}}
+/* ---- pádel en el móvil ---- */
+#pToast .ic.pad{background:linear-gradient(135deg,#2a6fd0,#4ad0ff)}
+#phone.pad #phScr{background:linear-gradient(180deg,#0f2a52,#081428);color:#fff}#phone.pad .tHint{color:#fff}
+.pHead{padding:32px 14px 4px;font-weight:900;font-size:16px;display:flex;align-items:center;gap:6px}.pHead span{margin-left:auto;font-size:12px;opacity:.85;background:rgba(255,255,255,.12);padding:3px 8px;border-radius:10px}
+.pCourt{position:static;inset:auto;display:block;width:calc(100% - 20px);margin:2px 10px 6px;flex:1 1 200px;min-height:150px;border-radius:12px;touch-action:none;cursor:ew-resize;box-shadow:0 0 0 2px rgba(255,255,255,.12),0 8px 18px rgba(0,0,0,.35);object-fit:contain;background:#1d56a8}
+.pInfo{padding-bottom:4px}
+.tMatch.pad{background:radial-gradient(circle,rgba(42,111,208,.95),rgba(8,20,40,.95))}
+/* aviso del móvil: en pantallas estrechas el texto respira (bloque 2) */
+#pToast span{min-width:0;overflow-wrap:anywhere}
+@media (max-width:430px){#pToast{width:calc(100vw - 24px);max-width:none;top:calc(env(safe-area-inset-top) + 104px);padding:10px 10px 10px 12px;gap:12px;font-size:14px;line-height:1.3}#pToast span b{font-size:15px}#pToast .btn{padding:11px 14px;font-size:14px;flex:none}}
+@media (max-width:340px){#pToast{font-size:12.5px;gap:8px}#pToast .ic{width:32px;height:32px;font-size:18px}#pToast .btn{padding:9px 10px;font-size:13px}}
 @media (min-aspect-ratio:1/1){#phone{top:auto;bottom:calc(env(safe-area-inset-bottom) + 18px);left:auto;right:calc(env(safe-area-inset-right) + 24px);transform:translate(0,40px) scale(.9) rotate(2deg)}#phone.on{transform:translate(0,0) scale(1)}}
 </style></head><body>
 <div id="load" class="scr on"><div class="logo">LA CURVA</div><div class="sub">El Último Tango · C. Diario de Córdoba</div><div id="bar"><i></i></div><div id="loadtxt">Cargando el barrio…</div></div>
@@ -1270,7 +1283,7 @@ const bar = new THREE.Group(); scene.add(bar);
   const ledM = new THREE.MeshStandardMaterial({ color: '#ffd28a', emissive: '#ffb347', emissiveIntensity: 1.6 });
   for (let sh = 0; sh < 3; sh++) { const y = FLOOR_IN + 1.35 + sh * 0.45; box(3.2, 0.03, 0.3, M.glass, BX0 + 1.7, y, bbZ + 0.05, scene, { cast: false }); box(3.2, 0.012, 0.02, ledM, BX0 + 1.7, y - 0.02, bbZ + 0.18, scene, { cast: false });
     for (let k = 0; k < 22; k++) { const x = BX0 + 0.25 + k * 0.135 + Math.random() * 0.03; const h = 0.22 + Math.random() * 0.12; const col = bottleCols[(Math.random() * bottleCols.length) | 0];
-      const bm = std({ color: col, roughness: 0.15, metalness: 0.1 }); cyl(0.035, 0.04, h, bm, x, y + h / 2 + 0.015, bbZ + 0.05, scene, 10); cyl(0.012, 0.025, 0.08, bm, x, y + h + 0.05, bbZ + 0.05, scene, 8); } }
+      const bm = LITE_W ? std({ color: col, roughness: 0.12, metalness: 0.1, emissive: col, emissiveIntensity: 0.14 }) : new THREE.MeshPhysicalMaterial({ color: col, roughness: 0.06, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.04, transparent: true, opacity: 0.9, emissive: col, emissiveIntensity: 0.22, envMapIntensity: 1.6 }); /* botellas: cristal brillante retroiluminado por el LED */ cyl(0.035, 0.04, h, bm, x, y + h / 2 + 0.015, bbZ + 0.05, scene, 10); cyl(0.012, 0.025, 0.08, bm, x, y + h + 0.05, bbZ + 0.05, scene, 8); } }
   for (const x of [BX0 + 0.1, BX0 + 3.3]) box(0.03, 1.5, 0.03, M.steel, x, FLOOR_IN + 1.95, bbZ + 0.18);
   for (let k = 0; k < 20; k++) cyl(0.03, 0.025, 0.12, M.glass, BX0 + 0.3 + k * 0.15, FLOOR_IN + 0.97, bbZ + 0.2, scene, 10); // vasos
   { const pl = new THREE.Group(); pl.position.set(BX0 + 2.6, FLOOR_IN + 2.55, bbZ + 0.05); scene.add(pl); cyl(0.1, 0.08, 0.16, std({ color: '#d8d3c8' }), 0, 0.08, 0, pl); for (let k = 0; k < 9; k++) { const lf = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.45, 5), M.leaf); lf.position.y = 0.3; lf.rotation.set(Math.cos(k * 0.7) * 0.6, 0, Math.sin(k * 0.7) * 0.6); pl.add(lf); } }
@@ -5544,13 +5557,14 @@ let baseFov = 50; function fitView() { camera.aspect = innerWidth / innerHeight;
 addEventListener('resize', fitView); fitView();
 
 // ---------- bromas ----------
-const PR = { steal: ['🍺', 'Robar caña', 100], pour: ['💦', 'Echarle la caña', 170], untie: ['👟', 'Desatar cordones', 140], scare: ['😱', '¡BUH!', 90], photo: ['📸', 'Photobomb', 150], phone: ['📱', 'Esconder móvil', 130], queue: ['🚽', 'Colarse', 160], drink: ['🍺', 'Bebérsela', 40], sit: ['🚽', 'Sentarse', 0], stand: ['🧻', 'Levantarse', 0], cocktail: ['🍹', 'Pedir cóctel', 0, 'Cóctel'], grab: ['🍹', 'Coger cóctel', 0, 'Coger'], sip: ['🍹', 'Beber cóctel', 0, 'Beber'], ride: ['🛵', 'Montarse en la moto', 0, 'Montarse'], unride: ['🛵', 'Bajarse', 0, 'Bajarse'], flute: ['🎵', 'Robar flauta', 150, 'Robar<br>flauta'], fPlay: ['🎶', 'Tocar flauta', 0, 'Tocar'], fBack: ['☮', 'Devolver flauta', 0, 'Devolver'] };
+const PR = { steal: ['🍺', 'Robar caña', 100], pour: ['💦', 'Echarle la caña', 170], untie: ['👟', 'Desatar cordones', 140], scare: ['😱', '¡BUH!', 90], photo: ['📸', 'Photobomb', 150], phone: ['📱', 'Esconder móvil', 130], queue: ['🚽', 'Colarse', 160], drink: ['🍺', 'Bebérsela', 40], sit: ['🚽', 'Sentarse', 0], stand: ['🧻', 'Levantarse', 0], cocktail: ['🍹', 'Pedir cóctel', 0, 'Cóctel'], grab: ['🍹', 'Coger cóctel', 0, 'Coger'], sip: ['🍹', 'Beber cóctel', 0, 'Beber'], ride: ['🛵', 'Montarse en la moto', 0, 'Montarse'], unride: ['🛵', 'Bajarse', 0, 'Bajarse'], flute: ['🎵', 'Robar flauta', 150, 'Robar<br>flauta'], nigiri: ['🍣', 'Robar nigiri', 180, 'Robar<br>nigiri'], fPlay: ['🎶', 'Tocar flauta', 0, 'Tocar'], fBack: ['☮', 'Devolver flauta', 0, 'Devolver'] };
 let curPrank = null, prankScan = 0;
 const fwd = (yaw) => V3(Math.sin(yaw), 0, Math.cos(yaw));
 function findPrank() {
   const me = P.pos; let best = null, bd = 9; if (P.dead || (PH && PH.open)) return null;
   if (P.sit) return { k: 'stand', p: P.pos };
   if (P.ride) return { k: 'unride', p: P.pos };
+  if (EVN) { const q = EVN.find(me); if (q) return q; }
   const inBar = me.z < -0.3 && Math.abs(me.x) < W.BW / 2;
   if (inBar && CKS.st === 'wait' && CKS.glass && !P.cocktail && Math.hypot(CKS.glass.g.position.x - me.x, CKS.glass.g.position.z - me.z) < 1.4) return { k: 'grab', p: P.pos };
   if (inBar && CKS.st === 'idle' && !P.cocktail && !inBath(me)) { const cn = counterNear(me); if (cn.side < 0 && cn.d < 0.9 && cn.t > 0.02 && cn.t < 0.97) return { k: 'cocktail', cn, p: P.pos }; }
@@ -5577,7 +5591,7 @@ function findPrank() {
 function award(pts, p, label) { const now = gameT; if (now - lastPrank < 6.5) { combo = Math.min(5, combo + 1); if (combo > stats.maxCombo) stats.maxCombo = combo; if (combo >= 2) { bigText('¡COMBO x' + combo + '!'); sfx('combo'); } } else combo = 1; lastPrank = now; comboT = 6.5;
   const v = Math.round(pts * combo); score += v; popText(p, '+' + v + (label ? ' ' + label : '')); stats.pranks++; }
 function doPrank(pr) { if (!pr || P.lock > 0) return; if (pr.k === 'sit') { sitWC(); return; } if (pr.k === 'stand') { standWC(true); return; }
-  if (pr.k === 'cocktail') { orderCocktail(pr.cn); return; } if (pr.k === 'grab') { grabCocktail(); return; } if (pr.k === 'sip') { sipCocktail(); return; } if (pr.k === 'ride') { mountScooter(pr.S); return; } if (pr.k === 'unride') { dismount(false); return; } if (pr.k === 'fPlay') { playFlute(); return; } if (pr.k === 'fBack') { returnFlute('give'); return; } if (pr.pl) { mpDoPlayerPrank(pr); return; } const a = pr.a, [ic, lab, pts] = PR[pr.k]; sfx('prank');
+  if (pr.k === 'cocktail') { orderCocktail(pr.cn); return; } if (pr.k === 'grab') { grabCocktail(); return; } if (pr.k === 'sip') { sipCocktail(); return; } if (pr.k === 'ride') { mountScooter(pr.S); return; } if (pr.k === 'unride') { dismount(false); return; } if (pr.k === 'fPlay') { playFlute(); return; } if (pr.k === 'fBack') { returnFlute('give'); return; } if (pr.k === 'nigiri') { EVN.steal(pr); return; } if (pr.pl) { mpDoPlayerPrank(pr); return; } const a = pr.a, [ic, lab, pts] = PR[pr.k]; sfx('prank');
   const face = (q) => { P.yaw = Math.atan2(q.x - P.pos.x, q.z - P.pos.z); };
   if (a) { a.cd = 7; face(a.pos); }
   switch (pr.k) {
@@ -6047,14 +6061,14 @@ window.PORTRAITS = PORTRAITS;
 let selIdx = store.get('lacurva_pj', 0); if (!(selIdx >= 0 && selIdx < NG)) selIdx = 0;
 const grid = $('grid');
 GANG.forEach((g, i) => { const c = document.createElement('div'); c.className = 'card' + (i === selIdx ? ' sel' : ''); c.innerHTML = `<img alt="" src="${PORTRAITS[i]}"><b>${g.name}</b>`; c.onclick = () => { selIdx = i; [...grid.children].forEach((e, k) => e.classList.toggle('sel', k === i)); audioOn(); }; c.ondblclick = () => startGame(i); grid.appendChild(c); });
-const HOWTO = 'Elige a alguien de la pandilla y tienes <b>4 minutos</b> para liarla en El Último Tango sin que te echen. Muévete con el <b>joystick</b> (en el móvil) o con <b>WASD/flechas</b>; acércate a la gente y pulsa <b>BROMA</b> (o <b>E</b>) cuando aparezca la acción: robar cañas, echárselas por encima, desatar cordones por la espalda, dar sustos, hacer photobombs, esconder móviles o colarte en la cola del baño. Si vas lanzado contra una <b>mesa de la terraza</b>, ¡la tiras con todas las cañas! Encadena bromas seguidas para hacer <b>combos</b> (hasta x5). Ojo con los <b>camareros hippies</b>: si te ven dentro de su cono de visión sube el medidor de <b>PILLADO</b>, y si se llena… ¡a la calle! Escóndete detrás de la gente o de las paredes y deja que se te olvide. Y para relajarte: en la <b>barra</b> el camarero te prepara un <b>cóctel</b> 🍹, y en la calle puedes <b>montarte en una moto</b> 🛵 (con <b>Espacio</b> o SALTAR pitas). Junto a cada perro hay un <b>perroflauta</b>: ¡<b>róbale la flauta</b> 🎵, <b>tócala</b> 🎶 delante de la gente y devuélvesela con buen rollo ☮! Y cuidado: cada minuto baja el <b>autobús 3 de AUCORSA</b> 🚌 por el carril de enfrente: si estás en la mitad de la calzada lejos del bar o en la otra acera… ¡te arrolla! Y atento al <b>móvil</b> 📱: cuando vibre, ábrelo (<b>T</b> o ABRIR) para un <b>Tinder</b> 🔥 con la gente del bar (desliza o ←/→) o para <b>comprar Bitcoin en el dip</b> ₿ (toca o Espacio cuando se desplome).';
+const HOWTO = 'Elige a alguien de la pandilla y tienes <b>4 minutos</b> para liarla en El Último Tango sin que te echen. Muévete con el <b>joystick</b> (en el móvil) o con <b>WASD/flechas</b>; acércate a la gente y pulsa <b>BROMA</b> (o <b>E</b>) cuando aparezca la acción: robar cañas, echárselas por encima, desatar cordones por la espalda, dar sustos, hacer photobombs, esconder móviles o colarte en la cola del baño. Si vas lanzado contra una <b>mesa de la terraza</b>, ¡la tiras con todas las cañas! Encadena bromas seguidas para hacer <b>combos</b> (hasta x5). Ojo con los <b>camareros hippies</b>: si te ven dentro de su cono de visión sube el medidor de <b>PILLADO</b>, y si se llena… ¡a la calle! Escóndete detrás de la gente o de las paredes y deja que se te olvide. Y para relajarte: en la <b>barra</b> el camarero te prepara un <b>cóctel</b> 🍹, y en la calle puedes <b>montarte en una moto</b> 🛵 (con <b>Espacio</b> o SALTAR pitas). Junto a cada perro hay un <b>perroflauta</b>: ¡<b>róbale la flauta</b> 🎵, <b>tócala</b> 🎶 delante de la gente y devuélvesela con buen rollo ☮! Y cuidado: cada minuto baja el <b>autobús 3 de AUCORSA</b> 🚌 por el carril de enfrente: si estás en la mitad de la calzada lejos del bar o en la otra acera… ¡te arrolla! Y atento al <b>móvil</b> 📱: cuando vibre, ábrelo (<b>T</b> o ABRIR) para un <b>Tinder</b> 🔥 con la gente del bar (desliza o ←/→) o para <b>comprar Bitcoin en el dip</b> ₿ (toca o Espacio cuando se desplome), o para aceptar un <b>reto de pádel</b> 🎾 de la pandilla (mueve la pala arrastrando o con ←/→). Y cuando llegue la <b>ronda de nigiris</b> 🍣 a la mesa de la pandilla, ¡roba uno (BROMA/E) mientras están distraídos 💬! Si te miran 👀… te pillan.';
 $('howto').innerHTML = HOWTO; $('howBtn').onclick = () => $('howto').classList.toggle('on');
 $('play').onclick = () => { audioOn(); startGame(selIdx); };
 $('again').onclick = () => { audioOn(); startGame(selIdx); }; $('change').onclick = () => showMenu();
 const showBest = () => { $('best').textContent = best > 0 ? 'Récord: ' + best + ' puntos' : ''; };
 function showMenu() { if (STATE === 'trip') endTrip(); resetScooters(); resetCocktail(); resetFlutes(); resetBus(); STATE = 'menu'; P.sit = false; hideTripQ(); $('menu').classList.add('on'); $('end').classList.remove('on'); $('hud').classList.remove('on'); showBest(); if (P.a) { P.a.visible = true; seatGang(P.a); P.a.tagT.el.classList.remove('me'); P.a = null; } }
 function resetFlutes() { returnFlute('silent'); P.flute = null; P.flPlay = 0; P.tune = null; for (const o of OWNERS) { setOwnerFlute(o, true); o.flPlay = 0; o.flLock = 0; o.spareT = 0; } for (const q of AG) { q.dance = false; q.danceT = 0; } }
-function resetRound() { resetScooters(); resetCocktail(); resetFlutes(); resetBus(); for (const T of TABLES) if (T.state !== 'up') { T.state = 'up'; T.thudd = 0; T.root.quaternion.identity(); T.root.position.set(T.x, T.y, T.z); T.inner.position.set(0, 0, 0); if (!W.COLL.includes(T.coll)) W.COLL.push(T.coll); fillTable(T); }
+function resetRound() { if (EVN) EVN.reset(); resetScooters(); resetCocktail(); resetFlutes(); resetBus(); for (const T of TABLES) if (T.state !== 'up') { T.state = 'up'; T.thudd = 0; T.root.quaternion.identity(); T.root.position.set(T.x, T.y, T.z); T.inner.position.set(0, 0, 0); if (!W.COLL.includes(T.coll)) W.COLL.push(T.coll); fillTable(T); }
   for (const p of PARTS) if (p.m.parent) p.m.parent.remove(p.m); PARTS.length = 0; TIMERS.length = 0; for (const b of BUBS) b.el.remove(); BUBS.length = 0;
   for (const a of AG) { a.trip = 0; a.untied = 0; a.wet = 0; a.cd = 0; a.n.rotation.set(0, a.yaw, 0); for (const k of ['complain', 'startle', 'push', 'crouch', 'pour', 'drink', 'pose', 'scratch']) { a.pose[k] = 0; } if (a.beerHand != null && a.kind !== 'waiter' && !a.selfie) giveBeer(a); }
   for (const w of WAITER_A) { w.alert = 0; w.freeze = false; }
@@ -6083,7 +6097,7 @@ let domAcc = 0;
 function frame(dt, noRender) {
   if (STATE === 'pause') { updDOM(0); renderer.render(scene, camera); return; }
   if (STATE === 'trip') { updTrip(dt); if (MP.on) mpFrame(dt); return; }
-  gameT += dt; if (PH) PH.tick(dt);
+  gameT += dt; if (PH) PH.tick(dt); if (EVN) EVN.tick(dt); if (FX) FX.tick(dt);
   if (STATE === 'play' || STATE === 'caught') {
     if (STATE === 'play') { timeLeft -= dt; if (timeLeft <= 0) { timeLeft = 0; if (MP.on) mpTimeUp(); else endGame(false); } }
     stepPlayer(dt);
@@ -6670,7 +6684,7 @@ $('rankAgain').onclick = () => { audioOn(); if (MP.host) mpHostStart(); else if 
 $('mpResume').onclick = () => $('mpPause').classList.remove('on'); $('mpQuit').onclick = () => mpLeave();
 if (Q.get('sala')) { const code = LCNet.cleanCode(Q.get('sala')), yo = gangFromYo(Q.get('yo')); setTimeout(() => { mpOpen(); $('mpCodeIn').value = code; if (yo >= 0) mpYoShow(yo, code); mpJoin(code); }, 0); }
 
-// ======================= MÓVIL: eventos opcionales (Tinder y Bitcoin) =======================
+// ======================= MÓVIL: eventos opcionales (Tinder, Bitcoin y reto de pádel) =======================
 // Te vibra el móvil: aviso arriba (ABRIR / tecla T). Si no lo abres, se va solo. Todo es local (no se envía nada por red salvo la puntuación del latido normal).
 // Tinder: perfiles del público con su foto real; desliza (dedo/ratón) o ←/→. Match = puntos + reacción del NPC.
 // Bitcoin: gráfica en vivo 12 s; "COMPRA EN EL DIP" (toque, Espacio/E); al final sube y cobras según lo bien que compraste. La tele del bar muestra el precio siempre.
@@ -6704,13 +6718,14 @@ function mobPhone() { const a = P.a; if (!a || a.mobPh) return; const g = new TH
 // ---------- aviso ----------
 function canPhone() { return STATE === 'play' && P.a && !P.sit && !P.ride && !P.dead && !tripQOpen() && !CHAT.open && !TRAILER && (cam.bath || 0) < 0.3; }
 function notify(kind) { if (PH.open) return; PH.toast = 8; PH.toastKind = kind; buzz(); if (navigator.vibrate && TOUCH) try { navigator.vibrate([90, 60, 90]); } catch (_) {}
-  toastEl.innerHTML = kind === 'tin' ? '<b class="ic tin">🔥</b><span><b>Tinder</b><br>Hay gente cerca de ti… 👀</span>' : '<b class="ic btc">₿</b><span><b>Bitcoin</b><br>¡Se está moviendo! 📉📈</span>';
+  if (kind === 'pad') PH.padRival = padRival();
+  toastEl.innerHTML = kind === 'tin' ? '<b class="ic tin">🔥</b><span><b>Tinder</b><br>Hay gente cerca de ti… 👀</span>' : kind === 'pad' ? `<b class="ic pad">🎾</b><span><b>${PH.padRival.name}</b><br>¿Pádel? Te reto 🎾</span>` : '<b class="ic btc">₿</b><span><b>Bitcoin</b><br>¡Se está moviendo! 📉📈</span>';
   const b = el('button', 'btn', 'ABRIR' + (TOUCH ? '' : ' <kbd>T</kbd>')); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioOn(); openPhone(); }); toastEl.appendChild(b);
   toastEl.classList.add('on'); if (P.a) P.a.wave = 0; }
 function hideToast() { PH.toast = 0; toastEl.classList.remove('on'); }
 function openPhone(kind) { kind = kind || PH.toastKind; if (!kind || PH.open || !canPhone()) return; hideToast(); PH.open = true; PH.kind = kind; PH.cnt++; P.vel.set(0, 0, 0); input = { x: 0, z: 0, run: false };
-  phoneEl.className = 'on ' + kind; scr.replaceChildren(); if (kind === 'tin') openTinder(); else openBtc(); if (P.a) { setPose(P.a, 'mob', 1); mobPhone(); if (P.a.mobPh) P.a.mobPh.userData.sc.material.color.set(kind === 'tin' ? '#ff6b8a' : '#ffb347'); } }
-function closePhone(msg) { if (!PH.open) return; PH.open = false; phoneEl.classList.remove('on'); PH.drag = null; if (P.a) setPose(P.a, 'mob', 0); if (msg) feed(msg, PH.kind === 'tin' ? '#fd5068' : '#f7931a'); PH.kind = null; PH.next = rnd(48, 70); }
+  phoneEl.className = 'on ' + kind; scr.replaceChildren(); if (kind === 'tin') openTinder(); else if (kind === 'pad') openPadel(); else openBtc(); if (P.a) { setPose(P.a, 'mob', 1); mobPhone(); if (P.a.mobPh) P.a.mobPh.userData.sc.material.color.set(kind === 'tin' ? '#ff6b8a' : kind === 'pad' ? '#4aa3ff' : '#ffb347'); } }
+function closePhone(msg) { if (!PH.open) return; PH.open = false; phoneEl.classList.remove('on'); PH.drag = null; if (P.a) setPose(P.a, 'mob', 0); if (msg) feed(msg, PH.kind === 'tin' ? '#fd5068' : PH.kind === 'pad' ? '#4aa3ff' : '#f7931a'); PH.kind = null; PH.next = rnd(48, 70); }
 // ---------- TINDER ----------
 const nearGang = (r) => GANG_A.filter(g => g !== P.a && g.visible && !g.remote && g.pos.distanceTo(P.pos) < r).sort((m, n) => m.pos.distanceTo(P.pos) - n.pos.distanceTo(P.pos));
 function openTinder() { const pool = AG.filter(a => a.kind === 'crowd' && a.visible && !a.ko && !a.remote).sort(() => Math.random() - 0.5).slice(0, 4);
@@ -6784,19 +6799,169 @@ function drawTV() { const T = BTC.tv, x = T.cv.getContext('2d'), w = T.cv.width,
   const pc = (p / p0 - 1) * 100; x.fillStyle = up ? '#2ee59d' : '#ff4d6d'; x.font = 'bold 18px sans-serif'; x.textAlign = 'right'; x.fillText((up ? '▲ +' : '▼ ') + pc.toFixed(2).replace('.', ',') + '%', w - 10, 28);
   const mn = Math.min(...hist), mx = Math.max(...hist) + 1; x.beginPath(); hist.forEach((v, i) => { const X = 10 + i / (hist.length - 1) * (w - 20), Y = h - 12 - (v - mn) / (mx - mn) * 58; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.strokeStyle = up ? '#2ee59d' : '#ff4d6d'; x.lineWidth = 3; x.stroke();
   x.fillStyle = 'rgba(255,255,255,.06)'; for (let y = 0; y < h; y += 3) x.fillRect(0, y, w, 1); T.tex.needsUpdate = true; if (T.glow) T.glow.intensity = 0.6; }
+// ---------- PÁDEL (reto de la pandilla por el móvil) ----------
+// Pista vista desde arriba: tu pala abajo (arrastra el dedo/ratón sobre la pista o ←/→), el rival de la pandilla arriba. La bola rebota en los cristales laterales.
+// Cada devolución suma más (la bola acelera). 2 bolas falladas o 20 s y se acaba. Todo local.
+const PAD_CH = ['¿Una bola rápida, {P}? Te reto 🎾', '{P}, ¿pádel? El que pierda paga la ronda', 'Bandeja y a la red, {P}. ¿Te atreves?', 'Revancha de lo del domingo, {P} 🎾'];
+const PAD_WIN = ['¡Qué víbora, {P}!', '¡Eso es nivel Premier Padel!', '¡Vaya bandeja, {P}!', '¡Vale, vale, pago yo la ronda!'];
+const PAD_LOSE = ['¡A la red, {P}! 😂', '¡Eso fue a la reja!', '{P}, menos Tinder y más pádel', '¡Te falta muñeca, {P}!'];
+function padRival() { const g = GANG_A.filter(a => a !== P.a && !a.remote); return pick(g.length ? g : GANG_A); }
+function openPadel() { const riv = PH.padRival || padRival(); PH.padRival = null;
+  PH.pad = { T: 0, D: 20, lives: 2, rally: 0, best: 0, hits: 0, pts: 0, px: 0.5, ox: 0.5, bx: 0.5, by: 0.2, vx: 0.18, vy: 0.56, serve: 0.6, done: false, riv, flash: 0, said: 0, trail: [] };
+  scr.appendChild(el('div', 'pHead', `<b class="ball">🎾</b> Pádel <span>vs ${riv.name}</span>`));
+  const cv = el('canvas', 'pCourt'); cv.id = 'pCourt'; cv.width = 400; cv.height = 520; scr.appendChild(cv);
+  scr.appendChild(el('div', 'bInfo pInfo', '<span id="pLives">🎾🎾</span><span id="pRally">Golpes: 0</span><span id="pTime">20 s</span>'));
+  scr.appendChild(el('div', 'tHint', TOUCH ? 'Arrastra el dedo por la pista para mover la pala' : 'Mueve la pala con ← / → (o arrastra el ratón)'));
+  const mv = e => { if (!PH.pad || PH.pad.done) return; const r = cv.getBoundingClientRect(); PH.pad.px = clamp((e.clientX - r.left) / r.width, 0.1, 0.9); };
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { cv.setPointerCapture(e.pointerId); } catch (_) {} PH.pad.drag = e.pointerId; mv(e); });
+  cv.addEventListener('pointermove', e => { if (TOUCH && PH.pad && PH.pad.drag !== e.pointerId) return; mv(e); });
+  const up = e => { if (PH.pad && PH.pad.drag === e.pointerId) PH.pad.drag = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  if (riv && riv.visible && !riv.ko) { riv.look = 3; riv.lookAt = P.pos; say(riv, fmt(pick(PAD_CH)), 2.4, 0.2); } drawPad(); }
+function padHitSfx(hi) { tone(hi ? 330 : 260, 0.06, 'square', 0.1, 0.5); noise(0.05, 0.08, 1800); }
+function stepPad(dt) { const G = PH.pad; if (!G || G.done) return; G.T += dt; G.flash = Math.max(0, G.flash - dt); G.said -= dt;
+  const kx = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0); if (kx) G.px = clamp(G.px + kx * dt * 1.25, 0.1, 0.9);
+  if (G.serve > 0) { G.serve -= dt; G.bx = G.ox; G.by = 0.14; } else {
+    const n = Math.max(1, Math.ceil(dt / 0.01)), h = dt / n; for (let i = 0; i < n && !G.done; i++) { G.bx += G.vx * h; G.by += G.vy * h;
+      if (G.bx < 0.05) { G.bx = 0.05; G.vx = Math.abs(G.vx); tone(900, 0.03, 'triangle', 0.05); } if (G.bx > 0.95) { G.bx = 0.95; G.vx = -Math.abs(G.vx); tone(900, 0.03, 'triangle', 0.05); }
+      if (G.vy < 0 && G.by <= 0.12) { G.by = 0.12; G.vy = Math.abs(G.vy); G.vx = clamp(G.vx + rnd(-0.22, 0.22), -0.5, 0.5); padHitSfx(false); }
+      if (G.vy > 0 && G.by >= 0.86) { const PW = 0.13; if (Math.abs(G.bx - G.px) < PW + 0.025) { G.by = 0.86; const sp = Math.min(1.4, Math.abs(G.vy) * 1.07); G.vy = -sp; G.vx = clamp(G.vx * 0.5 + (G.bx - G.px) * 2.6, -0.6, 0.6); G.rally++; G.hits++; G.best = Math.max(G.best, G.rally); const add = 25 + 10 * Math.min(G.rally, 12); G.pts += add; G.flash = 0.35; G.fl = '+' + add; padHitSfx(true);
+          if (G.rally === 6 || G.rally === 12) { const g = nearGang(8)[0] || G.riv; if (g && G.said <= 0) { G.said = 3; say(g, fmt(pick(PAD_WIN)), 2, 0.1); } } }
+        else if (G.by > 1.02) { G.lives--; G.rally = 0; G.flash = 0.7; G.fl = '¡FALLO!'; tone(180, 0.25, 'sawtooth', 0.08, 0.6); if (G.lives <= 0) { padEnd(); break; } G.serve = 0.9; G.ox = rnd(0.3, 0.7); G.vx = rnd(-0.25, 0.25); G.vy = 0.56 + Math.min(0.2, G.hits * 0.01); G.by = 0.14; } } } }
+  G.ox += clamp((G.vy < 0 ? G.bx : 0.5) - G.ox, -dt * 0.9, dt * 0.9); G.trail.push([G.bx, G.by]); if (G.trail.length > 7) G.trail.shift();
+  if (G.T >= G.D && !G.done) padEnd(); const t = $('pTime'); if (t) { t.textContent = Math.max(0, Math.ceil(G.D - G.T)) + ' s'; $('pRally').textContent = 'Golpes: ' + G.hits; $('pLives').textContent = '🎾'.repeat(Math.max(0, G.lives)) || '—'; } drawPad(); }
+function padEnd() { const G = PH.pad; if (!G || G.done) return; G.done = true; let pts = G.pts + (G.best >= 8 ? 150 : 0);
+  const ov = el('div', 'tMatch pad', pts ? `<b>${G.best >= 8 ? '¡PUNTO DE ORO! 🏆' : '¡BUEN PARTIDO! 🎾'}</b><small>${G.hits} golpe${G.hits === 1 ? '' : 's'} · +${pts} puntos</small>` : `<b>¡A LA RED! 🙈</b><small>${G.riv.name} se ríe de ti</small>`); scr.appendChild(ov); setTimeout(() => ov.classList.add('on'), 10);
+  if (pts) { const s0 = score; award(pts, P.pos, '🎾'); pts = score - s0; [659, 784, 988, 1318].forEach((f, i) => tone(f, 0.13, 'triangle', 0.12, 1, i * 0.07)); }
+  const r = G.riv; if (r && r.visible && !r.ko && STATE === 'play') { r.look = 3; r.lookAt = P.pos; if (G.hits >= 5) { r.wave = 1.2; say(r, fmt(pick(PAD_WIN)), 2.4, 0.3); } else { setPose(r, 'pose', 1, 0.8); say(r, fmt(pick(PAD_LOSE)), 2.4, 0.3); } }
+  for (const g of nearGang(8).filter(g => g !== r).slice(0, 1)) say(g, fmt(G.hits >= 5 ? '¡Ese revés, {P}!' : '¡Paquete! 😂'), 2, 0.9);
+  PH.padPts = pts; setTimeout(() => closePhone(pts ? `🎾 Pádel vs ${G.riv.name}: ${G.hits} golpes · +${pts}` : `🎾 Pádel: ${G.riv.name} te ha ganado`), 1500); }
+function drawPad() { const G = PH.pad, cv = $('pCourt'); if (!cv || !G) return; const x = cv.getContext('2d'), w = cv.width, h = cv.height;
+  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2a6fd0'); g.addColorStop(1, '#1d56a8'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  x.fillStyle = 'rgba(255,255,255,.035)'; for (let i = 0; i < w; i += 8) x.fillRect(i, 0, 3, h); // césped artificial
+  x.strokeStyle = 'rgba(255,255,255,.9)'; x.lineWidth = 3; x.strokeRect(14, 10, w - 28, h - 20); x.beginPath(); x.moveTo(14, h * 0.27); x.lineTo(w - 14, h * 0.27); x.moveTo(14, h * 0.73); x.lineTo(w - 14, h * 0.73); x.moveTo(w / 2, h * 0.27); x.lineTo(w / 2, h * 0.73); x.stroke();
+  x.fillStyle = 'rgba(200,235,255,.25)'; x.fillRect(0, 0, 10, h); x.fillRect(w - 10, 0, 10, h); // cristales
+  x.fillStyle = '#111'; x.fillRect(8, h / 2 - 3, w - 16, 6); x.fillStyle = 'rgba(255,255,255,.7)'; for (let i = 12; i < w - 12; i += 10) x.fillRect(i, h / 2 - 2, 5, 1.5); x.fillStyle = '#fff'; x.fillRect(8, h / 2 - 5, w - 16, 2); // red
+  const pala = (cx, cy, col, nm) => { x.save(); x.translate(cx * w, cy * h); x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(4, 6, 0.13 * w, 11, 0, 0, 7); x.fill(); x.fillStyle = col; x.beginPath(); x.ellipse(0, 0, 0.13 * w, 11, 0, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.35)'; for (let i = -3; i <= 3; i++) { x.beginPath(); x.arc(i * 12, 0, 2, 0, 7); x.fill(); } x.font = 'bold 15px sans-serif'; x.textAlign = 'center'; x.fillStyle = '#fff'; x.fillText(nm, 0, cy < 0.5 ? -16 : 30); x.restore(); };
+  pala(G.ox, 0.1, '#ff4d6d', G.riv.name); pala(G.px, 0.88, '#ffd23a', 'Tú');
+  const z = G.serve > 0 ? 0.3 : Math.abs(Math.sin((G.by - 0.12) / 0.74 * Math.PI * 1.5)) * 0.6, bx = G.bx * w, by = G.by * h;
+  G.trail.forEach(([tx, ty], i) => { x.fillStyle = `rgba(230,255,90,${(i + 1) / G.trail.length * 0.25})`; x.beginPath(); x.arc(tx * w, ty * h - z * 14, 6, 0, 7); x.fill(); });
+  x.fillStyle = 'rgba(0,0,0,.3)'; x.beginPath(); x.ellipse(bx + z * 8, by + z * 6, 9, 6, 0, 0, 7); x.fill();
+  x.fillStyle = '#e6ff4a'; x.beginPath(); x.arc(bx, by - z * 14, 9 + z * 3, 0, 7); x.fill(); x.strokeStyle = 'rgba(255,255,255,.8)'; x.lineWidth = 1.5; x.beginPath(); x.arc(bx - 4, by - z * 14, 7, -1, 1); x.stroke();
+  if (G.flash > 0 && G.fl) { x.globalAlpha = Math.min(1, G.flash * 3); x.font = '900 34px sans-serif'; x.textAlign = 'center'; x.fillStyle = G.fl[0] === '+' ? '#ffd23a' : '#ff4d6d'; x.strokeStyle = '#000'; x.lineWidth = 5; x.strokeText(G.fl, w / 2, h * 0.62); x.fillText(G.fl, w / 2, h * 0.62); x.globalAlpha = 1; } }
 // ---------- bucle ----------
 function phoneTick(dt) { btcWalk(dt);
   BTC.tvT -= dt; if (BTC.tvT <= 0) { const near = !P.a || P.pos.distanceTo(BTC.tv.g.position) < 9; BTC.tvT = near ? (PH.open && PH.kind === 'btc' ? 0.1 : 0.5) : 2; if (near || !BTC.tv.drawn) { drawTV(); BTC.tv.drawn = 1; } }
   if (STATE !== 'play') { if (PH.open) closePhone(); if (PH.toast) hideToast(); return; }
-  if (PH.open) { prankQ = false; jumpQ = 0; if (!canPhone()) { closePhone(); return; } if (PH.kind === 'btc') stepBtc(dt); return; }
+  if (PH.open) { prankQ = false; jumpQ = 0; if (!canPhone()) { closePhone(); return; } if (PH.kind === 'btc') stepBtc(dt); else if (PH.kind === 'pad') stepPad(dt); return; }
   if (PH.toast > 0) { PH.toast -= dt; if (PH.toast <= 0 || !canPhone()) hideToast(); return; }
-  if (!MOVIL_ON) return; PH.next -= dt; if (PH.next <= 0) { if (canPhone() && timeLeft > 20) { PH.last = PH.last === 'tin' ? 'btc' : 'tin'; notify(PH.last); PH.next = rnd(48, 70); } else PH.next = 4; } }
+  if (!MOVIL_ON) return; PH.next -= dt; if (PH.next <= 0) { if (canPhone() && timeLeft > 20) { PH.last = PH.last === 'tin' ? 'pad' : PH.last === 'pad' ? 'btc' : 'tin'; notify(PH.last); PH.next = rnd(48, 70); } else PH.next = 4; } }
 function phoneKey(e) { if (PH.open) { if (e.code === 'Escape') { closePhone(); return true; }
     if (PH.kind === 'tin' && (e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code === 'KeyA' || e.code === 'KeyD')) { if (!e.repeat) swipe(e.code === 'ArrowRight' || e.code === 'KeyD' ? 1 : -1); e.preventDefault(); return true; }
     if (PH.kind === 'btc' && (e.code === 'Space' || e.code === 'KeyE' || e.code === 'Enter' || e.code === 'KeyX')) { if (!e.repeat) btcBuy(); e.preventDefault(); return true; }
+    if (PH.kind === 'pad' && ['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) { keys[e.code] = true; e.preventDefault(); return true; }
     if (['ArrowUp', 'ArrowDown', 'Space', 'KeyW', 'KeyS', 'KeyE', 'KeyX', 'Enter'].includes(e.code)) { e.preventDefault(); return true; } return false; }
   if (PH.toast > 0 && e.code === 'KeyT' && !e.repeat) { audioOn(); openPhone(); return true; } return false; }
-PH.tick = phoneTick; PH.key = phoneKey; PH.notify = notify; PH.openPhone = openPhone; PH.close = closePhone; PH.swipe = swipe; PH.buy = btcBuy; PH.BTC = BTC; PH.portraitOf = portraitOf;
+PH.padEnd = padEnd; PH.drawPad = drawPad; PH.tick = phoneTick; PH.key = phoneKey; PH.notify = notify; PH.openPhone = openPhone; PH.close = closePhone; PH.swipe = swipe; PH.buy = btcBuy; PH.BTC = BTC; PH.portraitOf = portraitOf;
+}
+
+// ======================= EVENTO: RONDA DE NIGIRIS (src/eventos.js, inyectado en /*__EVENTOS__*/) =======================
+// Una vez por partida (a veces dos) el camarero planta una tabla de nigiris de salmón y atún en la mesa de la pandilla.
+// Acércate y pulsa BROMA/E para robar uno. La pandilla de la mesa vigila a ratos: 💬 = distraídos (robo limpio, muchos puntos),
+// 👀 = mirando (te pillan los amigos: pocos puntos y bronca de broma). Todo local: no se envía nada nuevo por la red.
+// En ?test=1 está apagado salvo ?nigiri=1; los tests lo lanzan con GAME.ev.nigiri().
+var EVN = null;
+{
+const TS = 1.6; // tabla algo más grande que la realidad (escala Funko) para que se lea bien
+const NIG_ON = !MANUAL || Q.has('nigiri');
+const NG_SAY_GO = ['¡Ronda de nigiris para la pandilla! 🍣', '¡Marchando sushi para la mesa del fondo!', 'Salmón y atún, ¡que aproveche!'];
+const NG_GANG_GO = ['¡Por fin! ¡Nigiris! 🍣', '¡Ese de atún es mío, eh!', '¡Nadie toque el de salmón!', '¡Esto está mejor que en Málaga!'];
+const NG_CAUGHT = ['¡{P}, ese nigiri era MÍO!', '¡Te he visto, {P}! ¡Suelta ese atún!', '¡Las manos quietas, {P}!', '¡Ladrón de nigiris! 😂'];
+const NG_MISS = ['¿Quién se ha comido mi nigiri? 🤨', '¿No había seis? Yo conté seis…', '¡Aquí faltan nigiris!', '¿Alguien ha visto mi salmón?'];
+const NG_EAT = ['¡Qué rico! 😋', 'Ñam. Atún de almadraba', 'Esto pide otra caña'];
+EVN = { on: false, T: null, tray: null, pieces: [], t: 0, watch: false, wt: 0, next: rnd(70, 100), done: 0, stolen: 0, caught: 0, pts: 0, sign: null };
+// ---------- materiales / geometrías (se crean una vez) ----------
+const ricM = new THREE.MeshStandardMaterial({ color: '#f4f1ea', roughness: 0.85 });
+function fishTex(base, stripe) { const c = document.createElement('canvas'); c.width = 64; c.height = 32; const x = c.getContext('2d'); x.fillStyle = base; x.fillRect(0, 0, 64, 32); x.strokeStyle = stripe; x.lineWidth = 3; for (let i = -40; i < 80; i += 9) { x.beginPath(); x.moveTo(i, 0); x.quadraticCurveTo(i + 10, 16, i + 4, 32); x.stroke(); } const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
+const salM = new THREE.MeshPhysicalMaterial({ map: fishTex('#ff8a55', 'rgba(255,240,225,.75)'), roughness: 0.35, clearcoat: LITE ? 0 : 0.7, clearcoatRoughness: 0.2 });
+const atuM = new THREE.MeshPhysicalMaterial({ map: fishTex('#c8233a', 'rgba(255,170,170,.35)'), roughness: 0.3, clearcoat: LITE ? 0 : 0.8, clearcoatRoughness: 0.15 });
+const boardM = new THREE.MeshStandardMaterial({ color: '#22252b', roughness: 0.55, metalness: 0.05 });
+const soyM = new THREE.MeshStandardMaterial({ color: '#2b1408', roughness: 0.1 }), bowlM = new THREE.MeshStandardMaterial({ color: '#f2efe8', roughness: 0.3 }), stickM = new THREE.MeshStandardMaterial({ color: '#c9a36a', roughness: 0.6 }), wasM = new THREE.MeshStandardMaterial({ color: '#8fc23f', roughness: 0.8 });
+const ricG = new THREE.CapsuleGeometry(0.016, 0.034, 3, 8); ricG.rotateZ(Math.PI / 2); const fishG = new THREE.BoxGeometry(0.074, 0.009, 0.036); { const p = fishG.attributes.position; for (let i = 0; i < p.count; i++) { const xx = p.getX(i); p.setY(i, p.getY(i) - xx * xx * 2.4); } fishG.computeVertexNormals(); }
+function nigiri(kind) { const g = new THREE.Group(); const r = new THREE.Mesh(ricG, ricM); r.scale.set(1, 0.85, 1.1); r.position.y = 0.016; g.add(r); const f = new THREE.Mesh(fishG, kind ? atuM : salM); f.position.y = 0.036; g.add(f); g.userData.kind = kind; return g; }
+// cartelito flotante 💬 / 👀 sobre la mesa (sprite con canvas)
+function signTex(eye) { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = eye ? 'rgba(255,77,109,.92)' : 'rgba(46,229,157,.92)'; x.beginPath(); x.arc(64, 60, 50, 0, 7); x.fill(); x.beginPath(); x.moveTo(52, 104); x.lineTo(64, 126); x.lineTo(76, 104); x.fill(); x.font = '58px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(eye ? '👀' : '💬', 64, 62); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
+const SIGN = [signTex(false), signTex(true)];
+function gangTable() { const opts = TABLES.filter(T => T.state === 'up' && T.seated.some(a => a.kind === 'gang' && a !== P.a && !a.remote)); return opts.length ? opts.sort((m, n) => n.seated.length - m.seated.length)[0] : null; }
+function watchers() { const T = EVN.T; if (!T) return []; const c = V3(T.x, 0, T.z); return GANG_A.filter(a => a !== P.a && a.visible && !a.remote && !a.ko && (T.seated.includes(a) || a.pos.distanceTo(c) < 2.2)); }
+function start(force) { if (EVN.on) return false; const T = gangTable(); if (!T || (!force && (STATE !== 'play' || timeLeft < 25))) return false;
+  const tray = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.016, 0.13), boardM); b.position.y = 0.008; b.castShadow = !LITE; b.receiveShadow = true; tray.add(b);
+  EVN.pieces = []; for (let i = 0; i < 6; i++) { const n = nigiri(i % 2); n.position.set(-0.11 + (i % 3) * 0.11 * 1.0 - 0.0, 0.016, i < 3 ? -0.03 : 0.03); n.position.x = -0.1 + (i % 3) * 0.1; n.rotation.y = rnd(-0.12, 0.12); tray.add(n); EVN.pieces.push(n); }
+  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.025, 0.02, 14), bowlM); bowl.position.set(0.2, 0.01, 0.0); tray.add(bowl); const soy = new THREE.Mesh(new THREE.CircleGeometry(0.03, 14), soyM); soy.rotation.x = -Math.PI / 2; soy.position.set(0.2, 0.018, 0); tray.add(soy);
+  const was = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), wasM); was.scale.set(1.3, 0.7, 1); was.position.set(0.13, 0.02, 0.05); tray.add(was);
+  for (const s of [-1, 1]) { const st = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.004, 0.2, 5), stickM); st.rotation.z = Math.PI / 2; st.position.set(0.0, 0.02, 0.085 + s * 0.006); tray.add(st); }
+  tray.position.set(0, 0.755, 0); tray.rotation.y = Math.atan2(P.pos.x - T.x, P.pos.z - T.z) + Math.PI / 2; tray.scale.setScalar(0.01); T.inner.add(tray);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: SIGN[0], depthTest: false, transparent: true })); sp.scale.setScalar(0.5); sp.position.set(T.x, T.y + 2.05, T.z); sp.renderOrder = 5; scene.add(sp);
+  Object.assign(EVN, { grown: 0, on: true, T, tray, t: 0, watch: false, wt: rnd(3.5, 5), sign: sp, stolen: 0, caught: 0, pts: 0 }); EVN.done++;
+  bigText('🍣 ¡RONDA DE NIGIRIS!', 1.6); feed('🍣 Nigiris en la mesa de la pandilla: ¡roba uno sin que te vean!', '#ff8a55'); sfx('ding');
+  const w = WAITER_A.filter(w => !w.ko).sort((m, n) => m.pos.distanceTo(V3(T.x, 0, T.z)) - n.pos.distanceTo(V3(T.x, 0, T.z)))[0]; if (w) say(w, pick(NG_SAY_GO), 2.4, 0, 'w');
+  watchers().slice(0, 2).forEach((g, k) => { g.look = 1.5; g.lookAt = V3(T.x, T.y, T.z); say(g, fmt(pick(NG_GANG_GO)), 2.2, 0.8 + k * 0.9); });
+  return true; }
+function finish(msg) { if (!EVN.on) return; const T = EVN.T; if (EVN.tray && EVN.tray.parent) EVN.tray.parent.remove(EVN.tray); if (EVN.sign) scene.remove(EVN.sign); EVN.on = false; EVN.tray = null; EVN.sign = null; EVN.pieces = [];
+  if (msg && STATE === 'play') { feed(msg, '#ff8a55'); } EVN.next = rnd(75, 110); }
+function setWatch(on) { EVN.watch = on; EVN.wt = on ? rnd(1.3, 2.1) : rnd(2.4, 4.4); EVN.sign.material.map = SIGN[on ? 1 : 0]; EVN.sign.material.needsUpdate = true; EVN.pop = 0.25;
+  const T = EVN.T, c = V3(T.x, T.y + 0.75, T.z); for (const g of watchers()) { if (on) { g.look = EVN.wt; g.lookAt = c; } else if (g.lookAt === c || g.look > 0) { g.look = 0; } } }
+function tick(dt) { if (!EVN.on) { if (!NIG_ON || STATE !== 'play' || EVN.done >= 2 || MP.passive) return; EVN.next -= dt; if (EVN.next <= 0) { if (!(PH && PH.open) && !start()) EVN.next = 6; else EVN.next = rnd(75, 110); } return; }
+  const T = EVN.T; if (STATE !== 'play' && STATE !== 'caught') { finish(); return; } if (T.state !== 'up') { finish('🍣 Los nigiris, por el suelo… 😩'); return; }
+  EVN.t += dt; if (!EVN.grown) { const k = Math.min(1, EVN.t / 0.45); EVN.tray.scale.setScalar(TS * Math.max(0.01, 1 - (1 - k) * (1 - k) + Math.sin(k * Math.PI) * 0.15)); if (k >= 1) { EVN.tray.scale.setScalar(TS); EVN.grown = 1; } }
+  EVN.pop = Math.max(0, (EVN.pop || 0) - dt); const sp = EVN.sign; sp.position.y = T.y + 2.05 + Math.sin(EVN.t * 3) * 0.03; sp.scale.setScalar(0.5 * (1 + EVN.pop * 1.6)); sp.material.opacity = Math.min(1, EVN.t * 3);
+  if (EVN.watch && watchers().length) { const c = V3(T.x, T.y + 0.75, T.z); for (const g of watchers()) if (!g.lookAt || g.look <= 0.2) { g.look = 0.5; g.lookAt = c; } }
+  EVN.wt -= dt; if (EVN.wt <= 0) setWatch(!EVN.watch);
+  if (EVN.t > 28) { const left = EVN.pieces.length; finish(left ? `🍣 La pandilla se come los ${left} nigiris que quedaban` : null); const g = GANG_A.find(a => T.seated.includes(a) && a !== P.a); if (g && left) say(g, '¡Qué ricos! 😋', 2); } }
+function find(me) { if (!EVN.on || !EVN.pieces.length || !EVN.grown || P.lock > 0) return null; const T = EVN.T; if (Math.hypot(T.x - me.x, T.z - me.z) > 1.15) return null; return { k: 'nigiri', T, p: V3(T.x, T.y + 0.8, T.z) }; }
+function steal(pr) { if (!EVN.on || !EVN.pieces.length) return; const T = EVN.T, n = EVN.pieces.pop(), kind = n.userData.kind; P.yaw = Math.atan2(T.x - P.pos.x, T.z - P.pos.z);
+  n.parent.remove(n); const hand = P.a.n.userData.arms[1]; n.position.set(0, -0.38, 0.06); n.rotation.set(0, 0, 0); n.scale.setScalar(1.3); hand.add(n); setPose(P.a, 'crouch', 1, 0.35); P.lock = 0.9; sfx('fsteal');
+  setTimeoutG(() => { setPose(P.a, 'drink', 1, 0.7); sfx('glug'); }, 0.35); setTimeoutG(() => { if (n.parent) n.parent.remove(n); }, 0.95);
+  const ws = watchers(); const wp = V3(T.x, T.y + 0.8, T.z);
+  if (EVN.watch && ws.length) { EVN.caught++; const g = ws.sort((m, q) => m.pos.distanceTo(P.pos) - q.pos.distanceTo(P.pos))[0]; award(30, wp, '🍣'); EVN.pts += 30; bigText('¡TE HAN VISTO!', 1.2); camShake(0.15);
+    ws.slice(0, 3).forEach((a, k) => { setPose(a, 'complain', 1, 1.8); a.look = 2.4; a.lookAt = P.pos; if (k < 2) say(a, fmt(k ? pick(['¡Siempre igual!', '¡Que pague la ronda!', '¡Pillado! 😂']) : pick(NG_CAUGHT)), 2.4, k * 0.5); }); }
+  else { EVN.stolen++; const pts = kind ? 200 : 180; const s0 = score; award(pts, wp, kind ? '🍣 atún' : '🍣 salmón'); EVN.pts += score - s0; popText(wp, kind ? '🐟' : '🍣', '#ff8a55'); say(P.a, pick(NG_EAT), 1.4, 0.9);
+    const g = ws[(Math.random() * ws.length) | 0]; if (g) setTimeoutG(() => { if (EVN.T === T || !EVN.on) { g.look = 1.6; g.lookAt = V3(T.x, T.y, T.z); setPose(g, 'complain', 1, 1.4); say(g, pick(NG_MISS), 2.4); } }, rnd(2.2, 3.2)); }
+  stats.pranks = stats.pranks; witness(P.pos, false, 'nigiri');
+  if (!EVN.pieces.length) setTimeoutG(() => finish(`🍣 Nigiris robados: ${EVN.stolen} limpios, ${EVN.caught} pillado${EVN.caught === 1 ? '' : 's'} · +${EVN.pts}`), 1.2); }
+function reset() { finish(); EVN.done = 0; EVN.next = rnd(70, 100); }
+Object.assign(EVN, { tick, find, steal, start, finish, reset, setWatch, watchers });
+}
+
+// ======================= CALIDAD (bloque 2): halos de luz falsos, neón del bar, parpadeos =======================
+// Sprites aditivos (sin postproceso) sobre globos, guirnalda, farolas y un neón "Último Tango" en la contrabarra. LITE: menos sprites y sin luz extra.
+var FX = null;
+{
+const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.18, 'rgba(255,255,255,.55)'); g.addColorStop(0.45, 'rgba(255,255,255,.14)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const HALOS = [];
+function halo(pos, col, size, op, kind) { const m = new THREE.SpriteMaterial({ map: haloTex, color: col, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, fog: true }); const s = new THREE.Sprite(m); s.position.copy(pos); s.scale.setScalar(size); s.renderOrder = 2; s.raycast = () => {}; scene.add(s); const h = { s, m, op, size, kind, ph: Math.random() * 6.28 }; HALOS.push(h); return h; }
+const wp = o => { o.updateWorldMatrix(true, false); return o.getWorldPosition(new THREE.Vector3()); };
+// globos colgantes del bar
+for (const [gl] of (W.WX.globes || [])) { const h = halo(wp(gl), '#ffd9a8', 1.05, 0.42, 'globe'); h.g = gl; }
+// guirnalda de bombillas de colores (pared izquierda)
+const fest = new Set(window.__festoon || []); let nf = 0; scene.traverse(o => { if (o.isMesh && fest.has(o.material) && (!LITE || nf % 2 === 0)) { halo(wp(o), o.material.color.getStyle(), 0.3, 0.55, 'fest'); } if (o.isMesh && fest.has(o.material)) nf++; });
+// farolas de la calle (su brillo sigue a la intensidad emisiva del farol)
+for (const l of W.LAMPS) { let mesh = null; scene.traverse(o => { if (!mesh && o.isMesh && o.material === l.glow) mesh = o; }); if (mesh) { const h = halo(wp(mesh), '#ffc77a', 1.9, 0.5, 'lamp'); h.L = l; } }
+// neón "Último Tango" sobre las botellas (contrabarra)
+const neon = (() => { const c = document.createElement('canvas'); c.width = 512; c.height = 160; const x = c.getContext('2d'); x.textAlign = 'center'; x.textBaseline = 'middle';
+  const txt = (s, y, f, col) => { x.font = f; x.shadowColor = col; for (const b of [26, 14, 6]) { x.shadowBlur = b; x.strokeStyle = col; x.lineWidth = 6; x.strokeText(s, 256, y); } x.shadowBlur = 4; x.fillStyle = '#fff5fb'; x.fillText(s, 256, y); };
+  txt('Último Tango', 70, 'italic 900 74px Georgia, serif', '#ff3fa4'); x.shadowBlur = 10; x.shadowColor = '#3fe0ff'; x.strokeStyle = '#7ff0ff'; x.lineWidth = 4; x.beginPath(); x.moveTo(90, 128); x.lineTo(422, 128); x.stroke();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const nm = new THREE.MeshBasicMaterial({ map: neon, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+const np = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.31), nm); np.position.set(W.BX0 + 1.1, W.FLOOR_IN + 2.87, -5.18); np.renderOrder = 3; scene.add(np);
+const nh = halo(np.position.clone().add(new THREE.Vector3(0, 0, 0.05)), '#ff4fb0', 1.3, 0.33, 'neon');
+let nL = null; if (!LITE) { nL = new THREE.PointLight('#ff4fb0', 0.9, 3.2, 2); nL.position.set(W.BX0 + 1.1, W.FLOOR_IN + 2.75, -4.85); scene.add(nL); }
+let flick = 0, fT = 4 + Math.random() * 6, T0 = 0;
+function tick(dt) { T0 += dt; fT -= dt; if (fT <= 0) { flick = 0.35; fT = 6 + Math.random() * 9; } let nOn = 1; if (flick > 0) { flick -= dt; nOn = Math.sin(flick * 70) > -0.2 ? 1 : 0.15; }
+  nm.opacity = 0.75 + 0.25 * nOn; if (nL) nL.intensity = 0.9 * nOn; nh.m.opacity = nh.op * nOn;
+  for (const h of HALOS) { if (h.kind === 'fest') h.m.opacity = h.op * (0.75 + 0.25 * Math.sin(T0 * 2.3 + h.ph)); else if (h.kind === 'lamp') { const e = h.L.glow.emissiveIntensity; h.m.opacity = h.op * Math.min(1, e / 2.4) * (0.94 + 0.06 * Math.sin(T0 * 7 + h.ph)); h.s.visible = e > 0.05; } else if (h.kind === 'globe') { h.s.visible = h.g.visible; h.m.opacity = h.op * (0.95 + 0.05 * Math.sin(T0 * 1.3 + h.ph)); } } }
+FX = { tick, HALOS, neon: np };
 }
 
 // ---------- arranque ----------
@@ -6804,7 +6969,7 @@ PH.tick = phoneTick; PH.key = phoneKey; PH.notify = notify; PH.openPhone = openP
 try { if (!BUS) BUS = makeBus(); BS.th = THa; placeBus(0); BUS.g.visible = true; const a0 = AG.find(a => a.kind === 'crowd'); const sp = a0 ? makeSpirit(a0) : null; const sm = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: SPLAT_T, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 })); BUS.g.add(sm); const st0 = makeStars(); renderer.compile(scene, camera); BUS.g.remove(sm); scene.remove(st0);
   BUS.g.visible = false; if (sp) { scene.remove(sp.c); SPIRITS.length = 0; } } catch (e) { console.warn('precompile', e); }
 prog(1, '¡Listo!'); $('load').classList.remove('on'); showMenu();
-window.GAME = { phone: PH, busPlan, get busSched() { return BS.sched.slice(); }, __cb: (x, z, r) => { const v = V3(x, 0, z); collideBoxes(v, r); return [v.x, v.z]; }, __ov: (a) => overlapAny(a, AG.filter(q => q.visible && q.trip <= 0)), chat: { send: t => chatSend(t), open: () => chatOpen(), close: () => chatClose(), near: () => !!chatNear(), log: () => CHAT.log.map(l => l.name + ': ' + l.text), clear: () => { CHAT.log.length = 0; $('chatLog').replaceChildren(); }, clean: chatClean, get isOpen() { return CHAT.open; } }, busKOSide, makeSpirit, BUBS, W, busClear, mp: MP, mpApi: { url: () => mpUrl(), create: mpCreate, join: mpJoin, pick: mpPick, start: mpHostStart, leave: mpLeave, emote: mpEmote, roster, colorOf, NPCL, beer() { if (!P.beer) P.beer = beerOn(P.a.n.userData.arms[1]); }, rank: mpRankData }, start: startGame, showMenu, endGame, step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) frame(dt, i < n - 1); }, tick(dt = 1 / 30, dom = false) { frame(dt, true); if (dom) { updDOM(dt); updHUD(); } }, setInput(o) { window.__input = o; }, prank() { prankQ = true; }, sitWC, standWC, tripYes, tripNo, showTripQ, skipTrip, inBath, bathDoor, BTH, TRIP, sepAgents, get tripQ() { return tripQOpen(); }, jump() { jumpQ = 0.2; }, findPrank, doPrank, knock, spawnBus, BS, get BUS() { return BUS; }, SPIRITS, koPlayer, OWNERS, DOGS, NOTES, stealFlute, returnFlute, playFlute, TUNES, fluteFor, W, SCOOT, CKS, counterNear, orderCocktail, grabCocktail, sipCocktail, mountScooter, dismount, barman, witness, P, AG, TABLES, QUEUE, WAITER_A, GANG_A, CROWD_A, BATH, cam, camera, renderer, scene, groundAt, bigText, say, setPose, popText,
+window.GAME = { phone: PH, ev: { get N() { return EVN; }, nigiri: (f = true) => EVN.start(f), finish: () => EVN.finish() }, busPlan, get busSched() { return BS.sched.slice(); }, __cb: (x, z, r) => { const v = V3(x, 0, z); collideBoxes(v, r); return [v.x, v.z]; }, __ov: (a) => overlapAny(a, AG.filter(q => q.visible && q.trip <= 0)), chat: { send: t => chatSend(t), open: () => chatOpen(), close: () => chatClose(), near: () => !!chatNear(), log: () => CHAT.log.map(l => l.name + ': ' + l.text), clear: () => { CHAT.log.length = 0; $('chatLog').replaceChildren(); }, clean: chatClean, get isOpen() { return CHAT.open; } }, busKOSide, makeSpirit, BUBS, W, busClear, mp: MP, mpApi: { url: () => mpUrl(), create: mpCreate, join: mpJoin, pick: mpPick, start: mpHostStart, leave: mpLeave, emote: mpEmote, roster, colorOf, NPCL, beer() { if (!P.beer) P.beer = beerOn(P.a.n.userData.arms[1]); }, rank: mpRankData }, start: startGame, showMenu, endGame, step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) frame(dt, i < n - 1); }, tick(dt = 1 / 30, dom = false) { frame(dt, true); if (dom) { updDOM(dt); updHUD(); } }, setInput(o) { window.__input = o; }, prank() { prankQ = true; }, sitWC, standWC, tripYes, tripNo, showTripQ, skipTrip, inBath, bathDoor, BTH, TRIP, sepAgents, get tripQ() { return tripQOpen(); }, jump() { jumpQ = 0.2; }, findPrank, doPrank, knock, spawnBus, BS, get BUS() { return BUS; }, SPIRITS, koPlayer, OWNERS, DOGS, NOTES, stealFlute, returnFlute, playFlute, TUNES, fluteFor, W, SCOOT, CKS, counterNear, orderCocktail, grabCocktail, sipCocktail, mountScooter, dismount, barman, witness, P, AG, TABLES, QUEUE, WAITER_A, GANG_A, CROWD_A, BATH, cam, camera, renderer, scene, groundAt, bigText, say, setPose, popText,
   get state() { return STATE; }, set state(v) { STATE = v; }, get score() { return score; }, set score(v) { score = v; }, get pillado() { return pillado; }, set pillado(v) { pillado = v; }, get timeLeft() { return timeLeft; }, set timeLeft(v) { timeLeft = v; }, get combo() { return combo; }, get curPrank() { return curPrank; }, stats: () => stats, BAKE, LITE, updCamera };
 window.GAME_READY = 1;
 })().catch(e => { console.error(e); const t = document.getElementById('loadtxt'); if (t) t.textContent = 'Error: ' + e.message; });
